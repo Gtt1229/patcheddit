@@ -3,6 +3,8 @@
  * https://github.com/wchill/patcheddit
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
+ * Modifications Copyright 2026 brealorg.
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
  */
 
 package app.morphe.extension.boost.http.imgur;
@@ -30,6 +32,7 @@ import app.morphe.extension.boost.http.HttpUtils;
 import app.morphe.extension.boost.http.wayback.WaybackMachine;
 import app.morphe.extension.boost.http.wayback.WaybackResponse;
 import app.morphe.extension.shared.requests.PatchedditInterceptor;
+import app.morphe.extension.boost.utils.BoostUndeleteSettings;
 import okhttp3.Response;
 import okhttp3.Request;
 
@@ -46,6 +49,10 @@ public class ImgurUndeleteInterceptor extends PatchedditInterceptor {
     @Override
     public Response doIntercept(Chain chain) throws IOException {
         Request request = chain.request();
+        if (!BoostUndeleteSettings.isImgurUndeleteEnabled()) {
+            return chain.proceed(request);
+        }
+
         String host = request.url().host();
 
         if (!host.contains("imgur.com") && !host.contains("imgur-apiv3.p.rapidapi.com")) {

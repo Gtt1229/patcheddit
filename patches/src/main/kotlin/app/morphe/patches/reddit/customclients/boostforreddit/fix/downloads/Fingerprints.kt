@@ -3,6 +3,8 @@
  * https://github.com/wchill/patcheddit
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
+ * Modifications Copyright 2026 brealorg.
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.downloads
@@ -13,3 +15,24 @@ internal object DownloadAudioFingerprint : Fingerprint(
     strings = listOf("/DASH_audio.mp4", "/audio")
 )
 
+internal val notificationChannelsHelperFingerprint = Fingerprint(
+    parameters = listOf("Landroid/content/Context;"),
+    strings = listOf(
+        "20_inbox_channel",
+        "50_modmail_channel",
+        "80_downloads_channel"
+    )
+)
+
+internal val downloadCompletedNotificationFingerprint = Fingerprint(
+    parameters = listOf(
+        "Landroid/content/Context;",
+        "Landroid/net/Uri;",
+        "Z",
+        "I",
+        "Ljava/lang/String;",
+        "J",
+        "Ljava/lang/String;"
+    ),
+    strings = listOf("80_downloads_channel")
+)

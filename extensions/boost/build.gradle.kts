@@ -3,6 +3,7 @@ plugins {
 }
 
 dependencies {
+    compileOnly(libs.androidx.preference)
     compileOnly(libs.morphe.extensions.library)
     compileOnly(libs.bundles.boost)
     compileOnly(project(":extensions:shared:library"))
@@ -11,6 +12,7 @@ dependencies {
     compileOnly(libs.okhttp)
     implementation(libs.room.runtime)
     ksp(libs.room.compiler)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
 
 android {
@@ -26,4 +28,3 @@ kotlin {
         freeCompilerArgs.add("-Xskip-metadata-version-check")
     }
 }
-

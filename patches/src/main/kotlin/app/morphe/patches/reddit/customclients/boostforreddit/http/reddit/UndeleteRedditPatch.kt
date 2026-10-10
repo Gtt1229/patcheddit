@@ -3,6 +3,8 @@
  * https://github.com/wchill/patcheddit
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
+ * Modifications Copyright 2026 brealorg.
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.http.reddit
@@ -24,6 +26,7 @@ import app.morphe.util.addInstructionsAtControlFlowLabel
 import app.morphe.util.getReference
 import app.morphe.util.indexOfFirstInstruction
 import app.morphe.util.indexOfFirstInstructionReversed
+import app.morphe.util.indexOfFirstInstructionReversedOrThrow
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
@@ -35,18 +38,46 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 
 
 internal const val OKHTTP_EXTENSION_CLASS_DESCRIPTOR = "Lapp/morphe/extension/boost/http/OkHttpRequestHook;"
+private const val GLIDE_REDDIT_MEDIA_WAYBACK_DESCRIPTOR =
+    "Lapp/morphe/extension/boost/http/reddit/GlideRedditMediaWayback;"
 internal const val EXTRA_EMOJI_CONTEXT_KEY = "extraEmoji"
 internal const val EXTRA_EMOJI_GETTER = "getExtraEmoji"
 
 @Suppress("unused")
 val undeleteRedditPatch = bytecodePatch(
     name = "Automatically undelete Reddit content",
-    default = true
+    default = false
 ) {
     dependsOn(ExtensionPatches.Boost, interceptHttpRequests)
     compatibleWith(*AppCompatibility.Boost)
 
     execute {
+        // Glide uses HttpURLConnection directly, bypassing the OkHttp interceptors.
+        GlideHttpUrlFetcherFetchFingerprint.method.apply {
+            val responseCodeIndex = indexOfFirstInstructionReversedOrThrow {
+                val methodReference = getReference<MethodReference>()
+                opcode == Opcode.INVOKE_STATIC &&
+                    methodReference?.definingClass == "Lcom/bumptech/glide/load/data/j;" &&
+                    methodReference.name == "f"
+            }
+            val insertIndex = responseCodeIndex - 2
+            addInstructionsWithLabels(
+                insertIndex,
+                """
+                iget-object         p3, p0, Lcom/bumptech/glide/load/data/j;->e:Ljava/net/HttpURLConnection;
+                invoke-static       {p3}, Lcom/bumptech/glide/load/data/j;->f(Ljava/net/HttpURLConnection;)I
+                move-result         p3
+                iget-object         p4, p0, Lcom/bumptech/glide/load/data/j;->e:Ljava/net/HttpURLConnection;
+                invoke-static       {p4, p3}, $GLIDE_REDDIT_MEDIA_WAYBACK_DESCRIPTOR->open(Ljava/net/HttpURLConnection;I)Ljava/io/InputStream;
+                move-result-object  p4
+                if-eqz              p4, :morphe_glide_wayback_continue
+                iput-object         p4, p0, Lcom/bumptech/glide/load/data/j;->f:Ljava/io/InputStream;
+                return-object       p4
+                """,
+                ExternalLabel("morphe_glide_wayback_continue", getInstruction(insertIndex))
+            )
+        }
+
         // region Add additional field and marshaling code for ContributionModel.
         val fieldType = "Ljava/lang/String;"
         ContributionModelConstructorFingerprint.classDef.apply {

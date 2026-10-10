@@ -3,6 +3,8 @@
  * https://github.com/wchill/patcheddit
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
+ * Modifications Copyright 2026 brealorg.
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
  */
 
 package app.morphe.extension.boost.http.reddit;
@@ -16,6 +18,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 import app.morphe.extension.boost.http.HttpUtils;
+import app.morphe.extension.boost.utils.BoostUndeleteSettings;
 import app.morphe.extension.boost.http.wayback.WaybackMachine;
 import app.morphe.extension.boost.http.wayback.WaybackResponse;
 import okhttp3.Interceptor;
@@ -31,6 +34,10 @@ public class RedditMediaUndeleteInterceptor implements Interceptor {
     @Override
     public Response intercept(Chain chain) throws IOException {
         Request request = chain.request();
+        if (!BoostUndeleteSettings.isRedditUndeleteEnabled()) {
+            return chain.proceed(request);
+        }
+
         String host = request.url().host();
 
         String contentUrl;

@@ -3,6 +3,8 @@
  * https://github.com/wchill/patcheddit
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
+ * Modifications Copyright 2026 brealorg.
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.http.reddit
@@ -70,4 +72,11 @@ internal object StateSubmissionViewHasValidRemovalReasonFingerprint : Fingerprin
     name = "d",
     accessFlags = listOf(AccessFlags.PRIVATE),
     strings = listOf("reddit"),
+)
+
+internal object GlideHttpUrlFetcherFetchFingerprint : Fingerprint(
+    definingClass = "Lcom/bumptech/glide/load/data/j;",
+    name = "j",
+    returnType = "Ljava/io/InputStream;",
+    parameters = listOf("Ljava/net/URL", "I", "Ljava/net/URL", "Ljava/util/Map")
 )

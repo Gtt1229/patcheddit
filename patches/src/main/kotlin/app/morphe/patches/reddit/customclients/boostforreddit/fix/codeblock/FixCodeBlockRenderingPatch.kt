@@ -1,0 +1,62 @@
+/*
+ * Copyright 2026 brealorg.
+ *
+ * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ */
+
+package app.morphe.patches.reddit.customclients.boostforreddit.fix.codeblock
+
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patches.reddit.customclients.AppCompatibility
+import app.morphe.patches.reddit.customclients.ExtensionPatches
+
+private const val CODEBLOCK_NORMALIZER_DESCRIPTOR =
+    "Lapp/morphe/extension/boost/codeblock/CodeBlockHtmlNormalizer;"
+
+@Suppress("unused")
+val fixCodeBlockRenderingPatch = bytecodePatch(
+    name = "Fix Boost code block rendering",
+    description = "Preserves Reddit code blocks and repairs malformed legacy HTML links with parenthesized URLs before Boost renders them.",
+    default = true
+) {
+    dependsOn(ExtensionPatches.Boost)
+    compatibleWith(*AppCompatibility.Boost)
+
+    execute {
+        boostHtmlSanitizerFingerprint.method.addInstructions(
+            0,
+            """
+                invoke-static {p0}, $CODEBLOCK_NORMALIZER_DESCRIPTOR->normalize(Ljava/lang/String;)Ljava/lang/String;
+                move-result-object p0
+                """
+        )
+
+        boostTableTextViewSetTextHtmlFingerprint.method.addInstructions(
+            0,
+            """
+                invoke-static {p1}, $CODEBLOCK_NORMALIZER_DESCRIPTOR->normalize(Ljava/lang/String;)Ljava/lang/String;
+                move-result-object p1
+                """
+        )
+
+        boostLinkTextViewSetTextHtmlParsedFingerprint.method.addInstructions(
+            0,
+            """
+                invoke-static {p1}, $CODEBLOCK_NORMALIZER_DESCRIPTOR->normalize(Ljava/lang/String;)Ljava/lang/String;
+                move-result-object p1
+            """,
+        )
+
+        boostSubmissionViewHolderSelfPreviewHtmlFingerprint.method.addInstructions(
+            7,
+            """
+                invoke-static {p1}, $CODEBLOCK_NORMALIZER_DESCRIPTOR->normalize(Ljava/lang/String;)Ljava/lang/String;
+                move-result-object p1
+            """,
+        )
+
+
+    }
+}

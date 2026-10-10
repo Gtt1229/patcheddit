@@ -3,6 +3,8 @@
  * https://github.com/wchill/patcheddit
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
+ * Modifications Copyright 2026 brealorg.
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
  */
 
 package app.morphe.extension.boost.http.reddit;
@@ -32,6 +34,8 @@ import app.morphe.extension.boost.http.arcticshift.ArcticShift;
 import app.morphe.extension.boost.http.AutoSavingCache;
 import app.morphe.extension.boost.http.HttpUtils;
 import app.morphe.extension.boost.utils.Emojis;
+import app.morphe.extension.boost.utils.LoggingUtils;
+import app.morphe.extension.boost.utils.BoostUndeleteSettings;
 import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
 import okhttp3.Request;
@@ -41,11 +45,16 @@ public class RedditSubredditUndeleteInterceptor implements Interceptor {
     private static final Pattern SUBREDDIT_ABOUT_API_REGEX = Pattern.compile("^https?://\\w+\\.reddit\\.com/r/(\\w+)/about$");
     private static final Pattern SUBREDDIT_ABOUT_RULES_API_REGEX = Pattern.compile("^https?://\\w+\\.reddit\\.com/r/(\\w+)/about/rules$");
     private static final Pattern SUBREDDIT_POSTS_API_REGEX = Pattern.compile("^https?://\\w+\\.reddit\\.com/r/(\\w+)/(?:hot|new|rising|top|controversial)");
+    private static final String SUBREDDIT_LISTING_SCOPE_MARKER = "morphe_boost_reddit_subreddit_listing_fallback_scope";
     private final AutoSavingCache subredditCache = new AutoSavingCache("RedditSubreddits", 10);
     @NotNull
     @Override
     public Response intercept(@NotNull Chain chain) throws IOException {
         Request request = chain.request();
+        if (!BoostUndeleteSettings.isRedditUndeleteEnabled()) {
+            return chain.proceed(request);
+        }
+
         String url = request.url().toString();
 
         Matcher matcher = SUBREDDIT_ABOUT_API_REGEX.matcher(url);
@@ -108,11 +117,23 @@ public class RedditSubredditUndeleteInterceptor implements Interceptor {
 
     private Response handlePosts(Chain chain, Request request, String subredditName) throws IOException {
         Optional<String> cached = subredditCache.get(subredditName);
+        Response response = null;
         if (cached.isEmpty()) {
-            Response response = chain.proceed(request);
-            // Check for HTTP 5xx because this can also indicate that reddit is having issues.
-            // In these situations, we don't want to mark the subreddit as banned.
+            response = chain.proceed(request);
+            // Keep normal successful listings and transient reddit/server failures untouched.
             if (response.isSuccessful() || response.code() >= 500) {
+                return response;
+            }
+
+            // r/all and r/popular are global listing surfaces, not deleted/banned subreddit detail surfaces.
+            // Falling back to Arctic Shift here can produce an empty synthetic listing, especially for r/all.
+            if (isGlobalListingSubreddit(subredditName)) {
+                final int statusCode = response.code();
+                LoggingUtils.logInfo(true, () -> SUBREDDIT_LISTING_SCOPE_MARKER
+                        + ": pass through global listing "
+                        + subredditName
+                        + " after HTTP "
+                        + statusCode);
                 return response;
             }
         }
@@ -145,6 +166,19 @@ public class RedditSubredditUndeleteInterceptor implements Interceptor {
 
         List<JsonNode> children = new ArrayList<>();
         JsonNode rootNode = ArcticShift.getSubredditPosts(subredditName, limit, before, after);
+        if (rootNode == null || !rootNode.isArray() || rootNode.size() == 0) {
+            final int statusCode = response == null ? -1 : response.code();
+            LoggingUtils.logInfo(true, () -> SUBREDDIT_LISTING_SCOPE_MARKER
+                    + ": empty Arctic Shift fallback for "
+                    + subredditName
+                    + ", pass through original HTTP "
+                    + statusCode);
+            if (response != null) {
+                return response;
+            }
+            return chain.proceed(request);
+        }
+
         long earliestTimestamp = 365241780471L;
         long latestTimestamp = 0L;
         for (JsonNode node : rootNode) {
@@ -158,7 +192,10 @@ public class RedditSubredditUndeleteInterceptor implements Interceptor {
                     "data", child
             )));
 
-            long timestamp = child.get("created_utc").asLong();
+            Long timestamp = parseCreatedUtcEpochSeconds(child.get("created_utc"));
+            if (timestamp == null) {
+                continue;
+            }
             if (timestamp < earliestTimestamp) {
                 earliestTimestamp = timestamp;
             }
@@ -167,11 +204,60 @@ public class RedditSubredditUndeleteInterceptor implements Interceptor {
             }
         }
 
+        if (children.isEmpty()) {
+            final int statusCode = response == null ? -1 : response.code();
+            LoggingUtils.logInfo(true, () -> SUBREDDIT_LISTING_SCOPE_MARKER
+                    + ": no usable fallback children for "
+                    + subredditName
+                    + ", pass through original HTTP "
+                    + statusCode);
+            if (response != null) {
+                return response;
+            }
+            return chain.proceed(request);
+        }
+
         ObjectNode listing = RedditApiUtils.createListing(children);
         ObjectNode listingData = (ObjectNode) listing.get("data");
         listingData.replace("after", new TextNode(convertUnixTimestamp(earliestTimestamp)));
         listingData.replace("before", new TextNode(convertUnixTimestamp(latestTimestamp)));
         return HttpUtils.makeJsonResponse(request, listing);
+    }
+
+    private static Long parseCreatedUtcEpochSeconds(JsonNode node) {
+        if (node == null) {
+            return null;
+        }
+
+        try {
+            String value = node.asText();
+            if (value == null) {
+                return null;
+            }
+
+            value = value.trim();
+            if (value.isEmpty()) {
+                return null;
+            }
+
+            int decimalIndex = value.indexOf('.');
+            if (decimalIndex > 0) {
+                value = value.substring(0, decimalIndex);
+            }
+
+            return Long.parseLong(value);
+        } catch (RuntimeException ignored) {
+            return null;
+        }
+    }
+
+    private static boolean isGlobalListingSubreddit(String subredditName) {
+        if (subredditName == null) {
+            return false;
+        }
+
+        return "all".equalsIgnoreCase(subredditName)
+                || "popular".equalsIgnoreCase(subredditName);
     }
 
     private static String convertUnixTimestamp(long epochTime) {

@@ -1,0 +1,42 @@
+/*
+ * Copyright 2026 brealorg.
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ *
+ * See the included NOTICE file for GPLv3 section 7 terms.
+ */
+
+package app.morphe.patches.reddit.customclients.boostforreddit.fix.refresh
+
+import app.morphe.patcher.Fingerprint
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patches.reddit.customclients.AppCompatibility
+import app.morphe.patches.reddit.customclients.ExtensionPatches
+import app.morphe.patches.reddit.customclients.boostforreddit.misc.settings.boostMorpheSettingsSkeletonPatch
+
+private const val ADAPTIVE_REFRESH_RATE_EXTENSION_DESCRIPTOR =
+    "Lapp/morphe/extension/boost/utils/AdaptiveRefreshRate;"
+
+private val boostApplicationOnCreateFingerprint = Fingerprint(
+    definingClass = "Lcom/rubenmayayo/reddit/MyApplication;",
+    name = "onCreate",
+)
+
+@Suppress("unused")
+val preferHighRefreshRatePatch = bytecodePatch(
+    name = "Prefer high refresh rate",
+    description = "Requests a high display refresh rate for Boost on adaptive-refresh devices.",
+    default = false,
+) {
+    dependsOn(ExtensionPatches.Boost, boostMorpheSettingsSkeletonPatch)
+    compatibleWith(*AppCompatibility.Boost)
+
+    execute {
+        boostApplicationOnCreateFingerprint.method.addInstructions(
+            1,
+            """
+                invoke-static {p0}, $ADAPTIVE_REFRESH_RATE_EXTENSION_DESCRIPTOR->install(Landroid/app/Application;)V
+            """.trimIndent(),
+        )
+    }
+}

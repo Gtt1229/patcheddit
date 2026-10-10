@@ -3,6 +3,8 @@
  * https://github.com/wchill/patcheddit
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
+ * Modifications Copyright 2026 Speedy2662.
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
  */
 
 package app.morphe.extension.boost.http;
@@ -15,6 +17,7 @@ import app.morphe.extension.boost.http.reddit.RedditFixAudioInDownloadsIntercept
 import app.morphe.extension.boost.http.reddit.RedditMediaUndeleteInterceptor;
 import app.morphe.extension.boost.http.reddit.RedditSubmissionUndeleteInterceptor;
 import app.morphe.extension.boost.http.reddit.RedditSubredditUndeleteInterceptor;
+import app.morphe.extension.boost.http.redgifs.RedgifsUrlSanitizerInterceptor;
 import app.morphe.extension.boost.http.wayback.WaybackThrottlingInterceptor;
 import app.morphe.extension.shared.fixes.feed.RAllPatch;
 import app.morphe.extension.shared.requests.BaseOkHttpRequestHook;
@@ -37,6 +40,7 @@ public class OkHttpRequestHook extends BaseOkHttpRequestHook {
     @Override
     protected List<Interceptor> getInterceptors() {
         return List.of(
+                new RedgifsUrlSanitizerInterceptor(),
                 new RedditMediaUndeleteInterceptor(),
                 new RedditSubmissionUndeleteInterceptor(),
                 new RedditSubredditUndeleteInterceptor(),
