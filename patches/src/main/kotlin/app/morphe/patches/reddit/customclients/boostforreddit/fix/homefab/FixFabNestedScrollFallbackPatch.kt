@@ -2,7 +2,7 @@
  * Modifications Copyright 2026 brealorg.
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.homefab
@@ -19,6 +19,7 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val FAB_NESTED_SCROLL_FALLBACK_MARKER =
     "MORPHE_BOOST_FAB_NESTED_SCROLL_FALLBACK_ISSUE97_V1"
@@ -55,9 +56,10 @@ private data class ScrollAwareTarget(
 val fixFabNestedScrollFallbackPatch = bytecodePatch(
     name = "Fix Boost FAB nested scroll",
     description =
-        "Synchronizes Boost FAB hide/show with collapsing-header and nested-scroll motion.",
+        "Hides and shows the floating action button in step with scrolling, also on pages with a collapsing header.",
     default = true,
 ) {
+    category(PatchCategory.NAVIGATION)
     compatibleWith(*AppCompatibility.Boost)
 
     execute {

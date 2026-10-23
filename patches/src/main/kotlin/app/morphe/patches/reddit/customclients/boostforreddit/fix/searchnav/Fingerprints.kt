@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -73,5 +73,15 @@ internal val searchAbstractSubredditsErrorCallbackFingerprint = Fingerprint(
         classDef.type ==
             "Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity\$e;" &&
             method.name == "a"
+    },
+)
+
+internal val emptyRecyclerViewBottomNavigationPaddingFingerprint = Fingerprint(
+    returnType = "V",
+    parameters = emptyList(),
+    custom = { method, classDef ->
+        classDef.type ==
+            "Lcom/rubenmayayo/reddit/ui/customviews/EmptyRecyclerView;" &&
+            method.name == "F1"
     },
 )

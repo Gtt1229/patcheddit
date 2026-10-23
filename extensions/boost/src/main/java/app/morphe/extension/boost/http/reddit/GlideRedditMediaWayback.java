@@ -4,7 +4,7 @@
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
  * Modifications Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.extension.boost.http.reddit;
@@ -63,6 +63,7 @@ public final class GlideRedditMediaWayback {
 
             Response response = waybackResponse.getResponse();
             if (response == null || response.body() == null || !response.isSuccessful()) {
+                waybackResponse.close();
                 LoggingUtils.logInfo(true, () -> MARKER + ": unusable Wayback response for " + contentUrl);
                 return null;
             }

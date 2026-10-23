@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -14,13 +14,15 @@ import app.morphe.patches.reddit.customclients.ExtensionPatches
 import app.morphe.util.addInstructionsAtControlFlowLabel
 import app.morphe.util.indexOfFirstInstructionReversedOrThrow
 import com.android.tools.smali.dexlib2.Opcode
+import app.morphe.patches.all.misc.PatchCategory
 
 @Suppress("unused")
 val boostSidebarTrendingTodayPatch = bytecodePatch(
     name = "Restore Boost sidebar Trending today",
-    description = "Uses native trending data when renderable, otherwise supplies HOT post rows and fixes the global community-limit control.",
+    description = "Restores the sidebar's Trending today section, falling back to hot posts, and fixes its community limit setting.",
     default = true,
 ) {
+    category(PatchCategory.FEED)
     dependsOn(ExtensionPatches.Boost)
     compatibleWith(*AppCompatibility.Boost)
 

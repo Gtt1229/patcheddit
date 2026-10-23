@@ -2,7 +2,7 @@
  * Modifications Copyright 2026 brealorg.
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.hide
@@ -18,13 +18,15 @@ import app.morphe.util.indexOfFirstInstructionOrThrow
 import app.morphe.util.indexOfFirstInstructionReversedOrThrow
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import app.morphe.patches.all.misc.PatchCategory
 
 @Suppress("unused")
 val fixHideInvalidIndexPatch = bytecodePatch(
     name = "Fix Hide crash",
-    description = "Stabilizes Boost feed position handling and prevents invalid-index crashes when hiding read posts.",
+    description = "Fixes crashes and jumps in the feed when hiding read posts.",
     default = true
 ) {
+    category(PatchCategory.FEED)
     compatibleWith(*AppCompatibility.Boost)
 
     execute {

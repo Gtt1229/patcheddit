@@ -4,7 +4,8 @@
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
  * Modifications Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
+ * Modified for Breal issue #219: bounded calls and failure cooldown (2026-10-12).
  */
 
 package app.morphe.extension.boost.http.arcticshift;
@@ -15,8 +16,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import app.morphe.extension.boost.http.HttpUtils;
 import app.morphe.extension.boost.utils.EditableObjectNode;
@@ -31,6 +34,22 @@ public class ArcticShift {
 
     private static final String ARCTIC_SHIFT_BASE_URL = "https://arctic-shift.photon-reddit.com/api/";
     private static final String ARCTIC_SHIFT_NULL_DATA_MARKER = "morphe_boost_arcticshift_null_data_fail_open";
+    private static final String ARCTIC_SHIFT_COOLDOWN_MARKER = "morphe_boost_arcticshift_issue219_cooldown";
+
+    /** Arctic Shift rejects ID lookups with more than 500 IDs. */
+    public static final int MAX_IDS_PER_REQUEST = 500;
+
+    static final int COMMENT_TREE_LIMIT = 3000;
+
+    private static final long QUERY_TIMEOUT_RETRY_DELAY_MS = 1_000L;
+
+    // Lookups run inside Boost's own Reddit requests, so a slow archive must not hold them for long.
+    private static final long CALL_TIMEOUT_MS = 10_000L;
+    private static final long COMMENT_TREE_CALL_TIMEOUT_MS = 20_000L;
+
+    // After a failure, skip lookups briefly instead of making every thread wait for the same outage.
+    private static final long FAILURE_COOLDOWN_NANOS = TimeUnit.SECONDS.toNanos(60);
+    private static volatile Long lastFailureNanos;
 
     private static final String[] POSTS_FIELDS = {
             "id", "title", "author", "author_fullname", "author_flair_text", "crosspost_parent",
@@ -44,19 +63,59 @@ public class ArcticShift {
     };
 
     private static JsonNode makeApiCall(String url) throws IOException {
-        LoggingUtils.logInfo(true, () -> String.format("Arctic Shift: %s", url));
-        return HttpUtils.getJson(url);
+        return makeApiCall(url, CALL_TIMEOUT_MS);
     }
 
-    public static ArrayNode getIds(SubmissionType submissionType, Iterable<String> ids) throws IOException {
+    private static JsonNode makeApiCall(String url, long callTimeoutMillis) throws IOException {
+        Long failedAt = lastFailureNanos;
+        if (failedAt != null && System.nanoTime() - failedAt < FAILURE_COOLDOWN_NANOS) {
+            throw new IOException(ARCTIC_SHIFT_COOLDOWN_MARKER + ": skipping lookup after recent failure");
+        }
+        LoggingUtils.logInfo(true, () -> String.format("Arctic Shift: %s", url));
+        try {
+            JsonNode result = HttpUtils.getJson(url, callTimeoutMillis);
+            lastFailureNanos = null;
+            return result;
+        } catch (HttpUtils.HttpStatusException failure) {
+            // A query-level timeout comes back as HTTP 422 with an error body. The service is up,
+            // so hand the body to the caller (which may retry) instead of starting a cooldown.
+            if (failure.code == 422 && failure.body.contains("\"error\"")) {
+                try {
+                    return HttpUtils.getJsonFromString(failure.body);
+                } catch (RuntimeException ignored) {
+                    // Not JSON after all; treat as a failure below.
+                }
+            }
+            lastFailureNanos = System.nanoTime();
+            LoggingUtils.logInfo(false, () -> ARCTIC_SHIFT_COOLDOWN_MARKER
+                    + ": HTTP " + failure.code);
+            throw failure;
+        } catch (IOException failure) {
+            lastFailureNanos = System.nanoTime();
+            LoggingUtils.logInfo(false, () -> ARCTIC_SHIFT_COOLDOWN_MARKER
+                    + ": " + failure.getClass().getSimpleName());
+            throw failure;
+        }
+    }
+
+    public static ArrayNode getIds(SubmissionType submissionType, Collection<String> ids) throws IOException {
+        if (ids.size() > MAX_IDS_PER_REQUEST) {
+            throw new IllegalArgumentException("At most " + MAX_IDS_PER_REQUEST + " IDs per request");
+        }
         String url = ARCTIC_SHIFT_BASE_URL + submissionType.toString().toLowerCase() + "/ids?ids=" + String.join(",", ids);
-        return getArrayDataOrEmpty(makeApiCall(url), submissionType.toString().toLowerCase() + "/ids");
+        JsonNode data = makeApiCall(url).get("data");
+        // Callers cache an empty answer as "not archived", so an error payload must not look empty.
+        if (data == null || !data.isArray()) {
+            throw new IOException(ARCTIC_SHIFT_NULL_DATA_MARKER + ": non-array data for ids lookup");
+        }
+        return (ArrayNode) data;
     }
 
     public static ArrayNode getCommentTree(String linkId) throws IOException {
         //return queryArcticShiftForCommentTree(id, null, null, null, null);
-        String url = ARCTIC_SHIFT_BASE_URL + "comments/tree?limit=25000&link_id=" + linkId;
-        return getArrayDataOrEmpty(makeApiCall(url), "comments/tree");
+        // Enough for any thread Boost renders comfortably; 25000 made deleted megathreads time out.
+        String url = ARCTIC_SHIFT_BASE_URL + "comments/tree?limit=" + COMMENT_TREE_LIMIT + "&link_id=" + linkId;
+        return getArrayDataOrEmpty(makeApiCall(url, COMMENT_TREE_CALL_TIMEOUT_MS), "comments/tree");
     }
 
     public static JsonNode getSubredditInfoById(String id) throws IOException {
@@ -92,7 +151,24 @@ public class ArcticShift {
             url += "&before=" + after;
         }
 
-        return getArrayDataOrEmpty(makeApiCall(url), "posts/search");
+        JsonNode result = makeApiCall(url);
+        if (isQueryTimeout(result)) {
+            // Cold subreddit searches often time out once on Arctic Shift's side and then succeed.
+            try {
+                Thread.sleep(QUERY_TIMEOUT_RETRY_DELAY_MS);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while retrying Arctic Shift search");
+            }
+            result = makeApiCall(url);
+        }
+        return getArrayDataOrEmpty(result, "posts/search");
+    }
+
+    private static boolean isQueryTimeout(JsonNode result) {
+        JsonNode data = result == null ? null : result.get("data");
+        JsonNode error = result == null ? null : result.get("error");
+        return (data == null || data.isNull()) && error != null && error.asText().startsWith("Timeout");
     }
 
     private static ArrayNode getArrayDataOrEmpty(JsonNode rootNode, String context) {

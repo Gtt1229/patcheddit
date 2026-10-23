@@ -4,7 +4,7 @@
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
  * Modifications Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.downloads
@@ -14,6 +14,7 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import app.morphe.patches.reddit.customclients.boostforreddit.http.interceptHttpRequests
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val EXTENSION_CLASS_DESCRIPTOR = "Lapp/morphe/extension/boost/http/reddit/RedditFixAudioInDownloadsInterceptor;"
 
@@ -23,6 +24,7 @@ val fixAudioMissingInDownloadsPatch = bytecodePatch(
     description = "Fixes audio missing in videos downloaded from v.redd.it.",
     default = true
 ) {
+    category(PatchCategory.MEDIA)
     dependsOn(ExtensionPatches.Boost, interceptHttpRequests)
     compatibleWith(*AppCompatibility.Boost)
 

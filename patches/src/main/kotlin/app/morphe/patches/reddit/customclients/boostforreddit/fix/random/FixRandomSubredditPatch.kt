@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -18,6 +18,7 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val RESOLVER =
     "Lapp/morphe/extension/boost/subreddit/RandomSubredditResolver;"
@@ -28,9 +29,10 @@ private const val SUBSCRIPTION_VIEW_MODEL =
 @Suppress("unused")
 val fixRandomSubredditPatch = bytecodePatch(
     name = "Fix Random subreddit",
-    description = "Normalizes Boost\'s broken r/random route by resolving a live non-NSFW subreddit through Reddit search and subscriber-count filtering.",
+    description = "Fixes the Random button by picking an active, non-NSFW subreddit through Reddit search.",
     default = true
 ) {
+    category(PatchCategory.FEED)
     dependsOn(ExtensionPatches.Boost)
     compatibleWith(*AppCompatibility.Boost)
 

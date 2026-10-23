@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -43,12 +43,6 @@ import java.util.WeakHashMap;
  * No Material view is constructed dynamically.
  */
 public final class BoostSearchBottomNavigation {
-    private static final String MARKER =
-            "MORPHE_BOOST_SEARCH_BOTTOM_NAV_V7_XML_HOST";
-    private static final String ALIGNMENT_MARKER =
-            "MORPHE_BOOST_SEARCH_BOTTOM_NAV_V71_INSET_SELECTION";
-    private static final String SYSTEM_SURFACE_MARKER =
-            "MORPHE_BOOST_BOTTOM_NAV_SYSTEM_SURFACE_V72";
     private static final String DECOR_UNDERLAY_MARKER =
             "MORPHE_BOOST_BOTTOM_NAV_DECOR_UNDERLAY_V73";
     private static final String INBOX_PROFILE_LIFECYCLE_MARKER =
@@ -75,26 +69,6 @@ public final class BoostSearchBottomNavigation {
             "MORPHE_BOOST_BOTTOM_NAV_RESELECT_RECOVERY_ISSUE169_V2";
     private static final String FOREIGN_PROFILE_ROUTE_MARKER =
             "MORPHE_BOOST_FOREIGN_PROFILE_TO_OWN_PROFILE_ROUTE_V1";
-    private static volatile String UNIFIED_MATERIAL_MARKER =
-            "MORPHE_BOOST_UNIFIED_MATERIAL_BOTTOM_NAV_V771";
-    private static final String CANONICAL_NAV_BASE_MARKER =
-            "MORPHE_BOOST_CANONICAL_BOTTOM_NAV_V8";
-    private static final String CANONICAL_NAV_SELECTION_MARKER =
-            "MORPHE_BOOST_CANONICAL_BOTTOM_NAV_V10001_HOME_SINGLE_TARGET";
-    private static final String CANONICAL_NAV_FIXED_BLACK_MARKER =
-            "MORPHE_BOOST_CANONICAL_BOTTOM_NAV_V10002_FIXED_BLACK_ICONS";
-    private static final String CANONICAL_NAV_THEME_CONTRAST_MARKER =
-            "MORPHE_BOOST_CANONICAL_BOTTOM_NAV_V10003_THEME_CONTRAST_ICONS";
-    private static final String CANONICAL_NAV_HOME_GUARD_MARKER =
-            "MORPHE_BOOST_CANONICAL_BOTTOM_NAV_V10005_HOME_STATE_UNDERLAY_GUARD";
-    private static final String CANONICAL_NAV_SUBREDDIT_SURFACE_MARKER =
-            "MORPHE_BOOST_CANONICAL_BOTTOM_NAV_V10007_SUBREDDIT_SCOPE_SURFACE";
-    private static final String CANONICAL_NAV_ROUTE_MARKER =
-            "MORPHE_BOOST_CANONICAL_BOTTOM_NAV_V10008_SUBREDDIT_CANONICAL_ROUTES";
-    private static final String CANONICAL_NAV_RENDERED_ICON_MARKER =
-            "MORPHE_BOOST_CANONICAL_BOTTOM_NAV_V10010_RENDERED_ICON_STATE";
-    private static final String CANONICAL_NAV_PREVIOUS_MARKER =
-            "MORPHE_BOOST_CANONICAL_BOTTOM_NAV_V10011_REMOVE_HOME_UNDERLAY_LOOP";
     private static volatile String CANONICAL_NAV_MARKER =
             "MORPHE_BOOST_CANONICAL_BOTTOM_NAV_V10028_STABLE_ROOT_INSET";
     private static final String NATIVE_COORDINATOR_MARKER =
@@ -111,8 +85,6 @@ public final class BoostSearchBottomNavigation {
             "MORPHE_BOOST_SUBREDDIT_BOTTOM_NAV_SELECTION_ISSUE134_V1";
     private static final String CURRENT_SUBREDDIT_SUBSCRIPTIONS_MARKER =
             "MORPHE_BOOST_SUBSCRIPTIONS_CURRENT_SUBREDDIT_ISSUE141_V2_NATIVE_J6";
-    private static final String NAVIGATION_VISIBILITY_STATE_MARKER =
-            "MORPHE_BOOST_CANONICAL_BOTTOM_NAV_VISIBILITY_STATE_V1";
     private static final String ACTIVITY_STACK_STATE_MARKER =
             "MORPHE_BOOST_BOTTOM_NAV_ACTIVITY_STACK_V2_PRESERVE_CALLER";
     private static final String HOME_TASK_ROOT_MARKER =
@@ -120,35 +92,28 @@ public final class BoostSearchBottomNavigation {
     private static final String HOME_RESELECT_TOP_MARKER =
             "MORPHE_BOOST_HOME_RESELECT_FAB_GO_TOP_V2";
     private static final java.util.WeakHashMap<View, Boolean>
-            SUBREDDIT_SURFACE_GUARDS =
-                    new java.util.WeakHashMap<>();
-    private static final java.util.WeakHashMap<View, Boolean>
-            HOME_STABILITY_GUARDS =
-                    new java.util.WeakHashMap<>();
-    private static final java.util.WeakHashMap<View, Boolean>
             MAIN_LANDSCAPE_INSET_GUARDS =
                     new java.util.WeakHashMap<>();
     private static final java.util.WeakHashMap<View, Boolean>
             OWNED_MENU_INSTALLED =
                     new java.util.WeakHashMap<>();
-    private static final WeakValueRegistry<Activity, FrameLayout>
-            DECOR_NAVIGATION_CONTAINERS =
-                    new WeakValueRegistry<>();
-    private static final WeakValueRegistry<Activity, View>
-            DECOR_NAVIGATION_VIEWS =
-                    new WeakValueRegistry<>();
-    private static final java.util.WeakHashMap<Activity, Integer>
-            INBOX_BADGE_COUNTS =
+    /**
+     * Item views that already carry our long-press listener. Every configure
+     * (each onResume and feed switch) schedules the attach again; a rebuilt
+     * menu has new item views and is attached anew.
+     */
+    private static final java.util.WeakHashMap<View, Boolean>
+            LONG_PRESS_ITEMS =
+                    new java.util.WeakHashMap<>();
+    /** Navigation views whose selection listeners are already ours. */
+    private static final java.util.WeakHashMap<View, Boolean>
+            LISTENERS_ATTACHED =
                     new java.util.WeakHashMap<>();
     private static final String SHARED_INBOX_BADGE_MARKER =
             "MORPHE_BOOST_INBOX_BADGE_SHARED_STATE_V4D";
     private static volatile Integer SHARED_INBOX_BADGE_COUNT;
-    private static final String ALL_ACTIVITY_SELECTION_GUARD_MARKER =
-            "MORPHE_BOOST_BOTTOM_NAV_ALL_ACTIVITY_SELECTION_GUARD_V6";
     private static final String SOURCE_SELECTION_RETAINED_MARKER =
             "MORPHE_BOOST_BOTTOM_NAV_SOURCE_SELECTION_RETAINED_ISSUE117_V2";
-    private static final String SHOW_PREFERENCE_STABILITY_GUARD_MARKER =
-            "MORPHE_BOOST_BOTTOM_NAV_SHOW_PREFERENCE_STABILITY_GUARD_ISSUE97_V1";
     private static final String PERSISTED_INBOX_BADGE_MARKER =
             "MORPHE_BOOST_INBOX_BADGE_COLD_START_PERSISTENCE_V6";
     private static final String PERSISTED_INBOX_BADGE_PREFERENCES =
@@ -207,13 +172,18 @@ public final class BoostSearchBottomNavigation {
             "com.rubenmayayo.reddit.ui.activities.e";
     private static final String ACCOUNT_MANAGER = "xb.l";
 
-    private static final WeakHashMap<Activity, Boolean> INSTALLED =
-            new WeakHashMap<>();
     private static final WeakHashMap<Activity, Boolean>
             NATIVE_NAVIGATION_VISIBILITY_REQUESTS =
                     new WeakHashMap<>();
+    /**
+     * Boost's own last p3() decision per activity, before the preference
+     * gate. SubmissionsActivity forces false while the swipe post viewer is
+     * shown; onResume must not override that.
+     */
+    private static final WeakHashMap<Activity, Boolean>
+            RUNTIME_VISIBILITY_REQUESTS =
+                    new WeakHashMap<>();
 
-    private static volatile ColorStateList CANONICAL_ITEM_TINT;
 
     private BoostSearchBottomNavigation() {
     }
@@ -235,11 +205,22 @@ public final class BoostSearchBottomNavigation {
                 fallbackIndex
         );
 
-        synchronized (INSTALLED) {
-            INSTALLED.put(
-                    activity,
-                    Boolean.TRUE
-            );
+        /*
+         * Search and Go To do not extend Boost's DrawerActivity, so p3() never
+         * runs there and the host XML's HideBottomViewOnScrollBehavior applied
+         * regardless of "Hide on scroll". Apply the preference here and keep
+         * the list clear of a bar that no longer hides.
+         */
+        View navigation = findNativeMaterialNavigation(activity);
+
+        if (navigation != null) {
+            lockOwnedNavigationHost(navigation, false);
+        }
+
+        View list = findViewByResourceName(activity, "recyclerview");
+
+        if (list != null) {
+            BoostNavContentClearance.apply(list);
         }
     }
 
@@ -799,10 +780,53 @@ public final class BoostSearchBottomNavigation {
                 : 0;
     }
 
+    /**
+     * The color the bar actually renders. Material's MaterialShapeDrawable adds
+     * an elevation overlay in dark themes when it draws, so its fill color is
+     * darker than the bar and the strip under it showed as a second band.
+     * Draw one pixel of the background near the bar's bottom edge instead.
+     */
+    private static Integer renderedBackgroundColor(View navigation) {
+        Drawable background = navigation.getBackground();
+        int width = navigation.getWidth();
+        int height = navigation.getHeight();
+
+        if (background == null || width <= 0 || height <= 0) {
+            return null;
+        }
+
+        try {
+            android.graphics.Bitmap pixel =
+                    android.graphics.Bitmap.createBitmap(
+                            1,
+                            1,
+                            android.graphics.Bitmap.Config.ARGB_8888
+                    );
+            android.graphics.Canvas canvas =
+                    new android.graphics.Canvas(pixel);
+            canvas.translate(-(width / 2f), -(height - 2f));
+            background.draw(canvas);
+            int color = pixel.getPixel(0, 0);
+            pixel.recycle();
+
+            return android.graphics.Color.alpha(color) == 0xFF
+                    ? color
+                    : null;
+        } catch (Throwable error) {
+            return null;
+        }
+    }
+
     private static Integer resolveNavigationSurfaceColor(
             Activity activity,
             View navigation
     ) {
+        Integer rendered = renderedBackgroundColor(navigation);
+
+        if (rendered != null) {
+            return rendered;
+        }
+
         try {
             ColorStateList tint =
                     navigation.getBackgroundTintList();
@@ -1016,22 +1040,7 @@ public final class BoostSearchBottomNavigation {
                         + normalizedCount
         );
 
-        synchronized (INBOX_BADGE_COUNTS) {
-            INBOX_BADGE_COUNTS.put(
-                    activity,
-                    normalizedCount
-            );
-        }
-
-        View navigation;
-
-        synchronized (DECOR_NAVIGATION_VIEWS) {
-            navigation = DECOR_NAVIGATION_VIEWS.get(activity);
-        }
-
-        if (navigation == null) {
-            navigation = findNativeMaterialNavigation(activity);
-        }
+        View navigation = findNativeMaterialNavigation(activity);
 
         if (navigation == null) {
             Log.i(
@@ -1066,12 +1075,7 @@ public final class BoostSearchBottomNavigation {
             Activity activity,
             View navigation
     ) {
-        Integer count;
-
-        synchronized (INBOX_BADGE_COUNTS) {
-            count = INBOX_BADGE_COUNTS.get(activity);
-        }
-
+        Integer count = null;
         Integer sharedCount = SHARED_INBOX_BADGE_COUNT;
 
         if (sharedCount == null) {
@@ -1445,6 +1449,15 @@ public final class BoostSearchBottomNavigation {
             Activity activity,
             boolean runtimeVisible
     ) {
+        if (activity != null) {
+            synchronized (RUNTIME_VISIBILITY_REQUESTS) {
+                RUNTIME_VISIBILITY_REQUESTS.put(
+                        activity,
+                        runtimeVisible
+                );
+            }
+        }
+
         boolean preferenceEnabled =
                 isBottomNavigationPreferenceEnabled(activity);
         boolean visible =
@@ -1464,15 +1477,28 @@ public final class BoostSearchBottomNavigation {
 
         enforceMaterialOnlyVisibility(
                 activity,
-                visible
+                visible,
+                true
         );
     }
 
     public static void refreshMaterialNavigationPreference(
             Activity activity
     ) {
+        boolean runtimeVisible = true;
+
+        synchronized (RUNTIME_VISIBILITY_REQUESTS) {
+            Boolean requested =
+                    RUNTIME_VISIBILITY_REQUESTS.get(activity);
+
+            if (requested != null) {
+                runtimeVisible = requested;
+            }
+        }
+
         boolean visible =
-                isBottomNavigationPreferenceEnabled(activity);
+                runtimeVisible
+                        && isBottomNavigationPreferenceEnabled(activity);
 
         enforceMaterialOnlyVisibility(
                 activity,
@@ -1600,26 +1626,6 @@ public final class BoostSearchBottomNavigation {
                 nativeMaterial
         );
 
-        FrameLayout obsoleteContainer;
-
-        synchronized (DECOR_NAVIGATION_CONTAINERS) {
-            obsoleteContainer =
-                    DECOR_NAVIGATION_CONTAINERS.remove(activity);
-            DECOR_NAVIGATION_VIEWS.put(
-                    activity,
-                    nativeMaterial
-            );
-        }
-
-        if (
-                obsoleteContainer != null
-                        && obsoleteContainer.getParent()
-                            instanceof ViewGroup
-        ) {
-            ((ViewGroup) obsoleteContainer.getParent())
-                    .removeView(obsoleteContainer);
-        }
-
         nativeMaterial.setVisibility(
                 visible
                         ? View.VISIBLE
@@ -1669,6 +1675,23 @@ public final class BoostSearchBottomNavigation {
             Activity activity,
             boolean visible
     ) {
+        enforceMaterialOnlyVisibility(
+                activity,
+                visible,
+                false
+        );
+    }
+
+    /**
+     * @param revealScrolledBar Boost calls p3(true) when a feed is shown
+     *         (All, Popular, a subreddit). Bring back a bar that
+     *         hide-on-scroll moved off screen in the previous feed.
+     */
+    private static void enforceMaterialOnlyVisibility(
+            Activity activity,
+            boolean visible,
+            boolean revealScrolledBar
+    ) {
         if (activity == null) {
             return;
         }
@@ -1705,7 +1728,10 @@ public final class BoostSearchBottomNavigation {
                             appliedVisible
                     );
 
-            lockOwnedNavigationHost(navigation);
+            lockOwnedNavigationHost(
+                    navigation,
+                    revealScrolledBar && appliedVisible
+            );
 
             if (appliedVisible) {
                 syncSystemNavigationBar(activity);
@@ -1736,8 +1762,17 @@ public final class BoostSearchBottomNavigation {
         }
     }
 
+    /**
+     * Brings back a bar that hide-on-scroll moved off screen, with a fresh
+     * behavior so the next downward scroll hides it again.
+     */
+    public static void revealScrolledNavigation(View navigation) {
+        lockOwnedNavigationHost(navigation, true);
+    }
+
     private static void lockOwnedNavigationHost(
-            View navigation
+            View navigation,
+            boolean revealScrolledBar
     ) {
         if (navigation == null) {
             return;
@@ -1850,6 +1885,18 @@ public final class BoostSearchBottomNavigation {
             Object behaviorAfter = behaviorBefore;
 
             if (hideOnScroll) {
+                boolean scrolledAway =
+                        navigation.getTranslationY() != 0.0f;
+
+                if (revealScrolledBar && scrolledAway) {
+                    // A fresh behavior starts in the scrolled-up state, so the
+                    // next downward scroll hides the bar again.
+                    navigation.clearAnimation();
+                    navigation.animate().cancel();
+                    navigation.setTranslationY(0.0f);
+                    behaviorBefore = null;
+                }
+
                 if (!hideBehaviorClass.isInstance(behaviorBefore)) {
                     Constructor<?> constructor =
                             hideBehaviorClass.getDeclaredConstructor();
@@ -2432,6 +2479,18 @@ public final class BoostSearchBottomNavigation {
         }
     }
 
+    private static boolean hasLongPress(View item) {
+        synchronized (LONG_PRESS_ITEMS) {
+            return LONG_PRESS_ITEMS.containsKey(item);
+        }
+    }
+
+    private static void rememberLongPress(View item) {
+        synchronized (LONG_PRESS_ITEMS) {
+            LONG_PRESS_ITEMS.put(item, Boolean.TRUE);
+        }
+    }
+
     private static void scheduleNativeProfileLongPress(
             final Activity activity,
             final View navigation
@@ -2468,6 +2527,10 @@ public final class BoostSearchBottomNavigation {
 
                 final View profileItem =
                         navigation.findViewById(profileId);
+
+                if (profileItem != null && hasLongPress(profileItem)) {
+                    return;
+                }
 
                 if (profileItem == null) {
                     if (
@@ -2509,6 +2572,7 @@ public final class BoostSearchBottomNavigation {
                                 }
                         );
                         profileItem.setLongClickable(true);
+                        rememberLongPress(profileItem);
 
                         Log.i(
                                 TAG,
@@ -2580,6 +2644,7 @@ public final class BoostSearchBottomNavigation {
                             }
                     );
                     profileItem.setLongClickable(true);
+                    rememberLongPress(profileItem);
 
                     Log.i(
                             TAG,
@@ -2639,6 +2704,10 @@ public final class BoostSearchBottomNavigation {
                 final View subscriptionsItem =
                         navigation.findViewById(subscriptionsId);
 
+                if (subscriptionsItem != null && hasLongPress(subscriptionsItem)) {
+                    return;
+                }
+
                 if (subscriptionsItem == null) {
                     if (
                             attempts
@@ -2679,6 +2748,7 @@ public final class BoostSearchBottomNavigation {
                                 }
                         );
                         subscriptionsItem.setLongClickable(true);
+                        rememberLongPress(subscriptionsItem);
 
                         Log.i(
                                 TAG,
@@ -2750,6 +2820,7 @@ public final class BoostSearchBottomNavigation {
                             }
                     );
                     subscriptionsItem.setLongClickable(true);
+                    rememberLongPress(subscriptionsItem);
 
                     Log.i(
                             TAG,
@@ -2895,12 +2966,7 @@ public final class BoostSearchBottomNavigation {
         applyCanonicalTint(navigation);
 
         String listeners =
-                attachSelectedListener(
-                        activity,
-                        navigation
-                )
-                + "+"
-                + attachReselectedListener(
+                attachSelectionListenersOnce(
                         activity,
                         navigation
                 );
@@ -3075,18 +3141,9 @@ public final class BoostSearchBottomNavigation {
                     selectedItemId
             );
             applyCanonicalTint(navigation);
-            attachSelectedListener(
+            attachSelectionListenersOnce(
                     activity,
                     navigation
-            );
-            attachReselectedListener(
-                    activity,
-                    navigation
-            );
-            attachHomeStabilityGuard(
-                    activity,
-                    navigation,
-                    selectedItemId
             );
             applyStoredInboxBadge(
                     activity,
@@ -3300,296 +3357,9 @@ public final class BoostSearchBottomNavigation {
         );
     }
 
-    private static void attachHomeStabilityGuard(
-            final Activity activity,
-            final View navigation,
-            final int selectedItemId
-    ) {
-        if (
-                activity == null
-                        || navigation == null
-        ) {
-            return;
-        }
 
-        synchronized (HOME_STABILITY_GUARDS) {
-            if (
-                    Boolean.TRUE.equals(
-                            HOME_STABILITY_GUARDS.get(navigation)
-                    )
-            ) {
-                return;
-            }
 
-            HOME_STABILITY_GUARDS.put(
-                    navigation,
-                    Boolean.TRUE
-            );
-        }
 
-        Log.i(
-                TAG,
-                "all-activity selection guard attached marker="
-                        + ALL_ACTIVITY_SELECTION_GUARD_MARKER
-                        + " activity="
-                        + activity.getClass().getName()
-                        + " selectedItemId="
-                        + selectedItemId
-        );
-
-        final android.view.ViewTreeObserver observer =
-                navigation.getViewTreeObserver();
-
-        final android.view.ViewTreeObserver.OnPreDrawListener[]
-                listenerHolder =
-                        new android.view.ViewTreeObserver
-                                .OnPreDrawListener[1];
-
-        listenerHolder[0] =
-                new android.view.ViewTreeObserver
-                        .OnPreDrawListener() {
-                    private boolean repairing;
-
-                    @Override
-                    public boolean onPreDraw() {
-                        if (
-                                repairing
-                                        || activity.isFinishing()
-                                        || activity.isDestroyed()
-                                        || !navigation
-                                            .isAttachedToWindow()
-                        ) {
-                            return true;
-                        }
-
-                        boolean navigationStateMismatch =
-                                navigation.getVisibility()
-                                        != View.VISIBLE
-                                        || navigation.getAlpha()
-                                            != 1.0f
-                                        || !navigation.isEnabled();
-
-                        // Respect explicit hides such as Boost's p3(false)
-                        // for the swipe post view.
-                        boolean navigationMismatch =
-                                navigationStateMismatch
-                                        && isBottomNavigationPreferenceEnabled(
-                                            activity
-                                        )
-                                        && isNavigationRequestedVisible(
-                                            activity
-                                        );
-
-                        boolean selectionMismatch =
-                                !canonicalSelectionMatches(
-                                        navigation,
-                                        selectedItemId
-                                );
-
-                        boolean tintMismatch =
-                                !canonicalTintMatches(navigation);
-
-                        if (
-                                !navigationMismatch
-                                        && !selectionMismatch
-                                        && !tintMismatch
-                        ) {
-                            return true;
-                        }
-
-                        repairing = true;
-
-                        try {
-                            repairHomeCanonicalState(
-                                    activity,
-                                    navigation,
-                                    selectedItemId,
-                                    navigationMismatch,
-                                    selectionMismatch,
-                                    tintMismatch
-                            );
-                        } finally {
-                            repairing = false;
-                        }
-
-                        return true;
-                    }
-                };
-
-        if (observer.isAlive()) {
-            observer.addOnPreDrawListener(
-                    listenerHolder[0]
-            );
-        }
-
-        navigation.addOnAttachStateChangeListener(
-                new View.OnAttachStateChangeListener() {
-                    @Override
-                    public void onViewAttachedToWindow(
-                            View view
-                    ) {
-                    }
-
-                    @Override
-                    public void onViewDetachedFromWindow(
-                            View view
-                    ) {
-                        try {
-                            if (observer.isAlive()) {
-                                observer.removeOnPreDrawListener(
-                                        listenerHolder[0]
-                                );
-                            }
-                        } catch (Throwable ignored) {
-                        }
-
-                        synchronized (HOME_STABILITY_GUARDS) {
-                            HOME_STABILITY_GUARDS.remove(view);
-                        }
-
-                        view.removeOnAttachStateChangeListener(this);
-                    }
-                }
-        );
-
-        navigation.post(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        repairHomeCanonicalState(
-                                activity,
-                                navigation,
-                                selectedItemId,
-                                false,
-                                !canonicalSelectionMatches(
-                                        navigation,
-                                        selectedItemId
-                                ),
-                                !canonicalTintMatches(navigation)
-                        );
-                    }
-                }
-        );
-
-        Log.i(
-                TAG,
-                "Home stability guard attached marker="
-                        + CANONICAL_NAV_MARKER
-                        + " activity="
-                        + activity.getClass().getName()
-                        + " selectedItemId="
-                        + selectedItemId
-        );
-    }
-
-    private static boolean isNavigationRequestedVisible(
-            Activity activity
-    ) {
-        synchronized (NATIVE_NAVIGATION_VISIBILITY_REQUESTS) {
-            Boolean requested =
-                    NATIVE_NAVIGATION_VISIBILITY_REQUESTS.get(activity);
-            return requested == null || requested;
-        }
-    }
-
-    private static void repairHomeCanonicalState(
-            Activity activity,
-            View navigation,
-            int selectedItemId,
-            boolean navigationMismatch,
-            boolean selectionMismatch,
-            boolean tintMismatch
-    ) {
-        try {
-            boolean navigationRepairAllowed =
-                    navigationMismatch
-                            && isBottomNavigationPreferenceEnabled(
-                                activity
-                            );
-
-            if (navigationRepairAllowed) {
-                navigation.setVisibility(View.VISIBLE);
-                navigation.setAlpha(1.0f);
-                navigation.setEnabled(true);
-            }
-
-            if (selectionMismatch) {
-                setCheckedItem(
-                        navigation,
-                        selectedItemId
-                );
-            }
-
-            if (tintMismatch) {
-                applyCanonicalTint(navigation);
-            }
-
-            if (
-                    navigationRepairAllowed
-                            || selectionMismatch
-                            || tintMismatch
-            ) {
-                navigation.bringToFront();
-                navigation.invalidate();
-
-                Log.w(
-                        TAG,
-                        "Home stability guard repaired marker="
-                                + CANONICAL_NAV_MARKER
-                                + " navigation="
-                                + navigationRepairAllowed
-                                + " selection="
-                                + selectionMismatch
-                                + " tint="
-                                + tintMismatch
-                                + " activity="
-                                + activity.getClass().getName()
-                );
-            }
-        } catch (Throwable error) {
-            Log.e(
-                    TAG,
-                    "Home stability guard repair failed marker="
-                            + CANONICAL_NAV_MARKER,
-                    error
-            );
-        }
-    }
-
-    private static boolean canonicalSelectionMatches(
-            View navigation,
-            int selectedItemId
-    ) {
-        try {
-            Method getMenu = findMethod(
-                    navigation.getClass(),
-                    "getMenu"
-            );
-
-            if (getMenu == null) {
-                return false;
-            }
-
-            getMenu.setAccessible(true);
-
-            Object menuObject =
-                    getMenu.invoke(navigation);
-
-            if (!(menuObject instanceof Menu)) {
-                return false;
-            }
-
-            MenuItem selectedItem =
-                    ((Menu) menuObject).findItem(
-                            selectedItemId
-                    );
-
-            return selectedItem != null
-                    && selectedItem.isChecked();
-        } catch (Throwable ignored) {
-            return false;
-        }
-    }
 
     private static int applyRenderedItemIconAppearance(
             View navigation,
@@ -3727,208 +3497,8 @@ public final class BoostSearchBottomNavigation {
         return count;
     }
 
-    private static boolean canonicalRenderedItemIconsMatch(
-            View navigation,
-            int expectedColor
-    ) {
-        try {
-            Method getMenu = findMethod(
-                    navigation.getClass(),
-                    "getMenu"
-            );
 
-            if (getMenu == null) {
-                return false;
-            }
 
-            getMenu.setAccessible(true);
-
-            Object menuObject =
-                    getMenu.invoke(navigation);
-
-            if (!(menuObject instanceof Menu)) {
-                return false;
-            }
-
-            Menu menu = (Menu) menuObject;
-            int matchedItems = 0;
-
-            for (
-                    int index = 0;
-                    index < menu.size();
-                    index++
-            ) {
-                MenuItem item = menu.getItem(index);
-
-                if (item == null) {
-                    return false;
-                }
-
-                View itemView =
-                        navigation.findViewById(
-                                item.getItemId()
-                        );
-
-                if (
-                        itemView == null
-                                || itemView.getAlpha() != 1.0f
-                ) {
-                    return false;
-                }
-
-                int[] imageCount = new int[]{0};
-
-                if (
-                        !renderedImagesMatchRecursively(
-                                itemView,
-                                itemView,
-                                expectedColor,
-                                imageCount
-                        )
-                                || imageCount[0] == 0
-                ) {
-                    return false;
-                }
-
-                matchedItems++;
-            }
-
-            return matchedItems == menu.size()
-                    && matchedItems == 5;
-        } catch (Throwable ignored) {
-            return false;
-        }
-    }
-
-    private static boolean renderedImagesMatchRecursively(
-            View root,
-            View itemRoot,
-            int expectedColor,
-            int[] imageCount
-    ) {
-        if (root instanceof android.widget.ImageView) {
-            android.widget.ImageView imageView =
-                    (android.widget.ImageView) root;
-
-            imageCount[0]++;
-
-            if (imageView.getAlpha() != 1.0f) {
-                return false;
-            }
-
-            android.content.res.ColorStateList tint =
-                    imageView.getImageTintList();
-
-            if (
-                    tint == null
-                            || tint.getDefaultColor()
-                                != expectedColor
-            ) {
-                return false;
-            }
-
-            android.view.ViewParent parent =
-                    imageView.getParent();
-
-            while (
-                    parent instanceof View
-                            && parent != itemRoot
-            ) {
-                if (((View) parent).getAlpha() != 1.0f) {
-                    return false;
-                }
-
-                parent = parent.getParent();
-            }
-        }
-
-        if (root instanceof ViewGroup) {
-            ViewGroup group = (ViewGroup) root;
-
-            for (
-                    int index = 0;
-                    index < group.getChildCount();
-                    index++
-            ) {
-                if (
-                        !renderedImagesMatchRecursively(
-                                group.getChildAt(index),
-                                itemRoot,
-                                expectedColor,
-                                imageCount
-                        )
-                ) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    private static boolean canonicalTintMatches(
-            View navigation
-    ) {
-        try {
-            Method getItemIconTintList = findMethod(
-                    navigation.getClass(),
-                    "getItemIconTintList"
-            );
-
-            if (getItemIconTintList == null) {
-                return false;
-            }
-
-            getItemIconTintList.setAccessible(true);
-
-            Object tintObject =
-                    getItemIconTintList.invoke(navigation);
-
-            if (
-                    !(tintObject
-                            instanceof android.content.res
-                                    .ColorStateList)
-            ) {
-                return false;
-            }
-
-            android.content.res.ColorStateList tint =
-                    (android.content.res.ColorStateList)
-                            tintObject;
-
-            int expectedColor =
-                    canonicalIconColor(navigation);
-
-            int checkedColor =
-                    tint.getColorForState(
-                            new int[]{
-                                android.R.attr.state_checked
-                            },
-                            tint.getDefaultColor()
-                    );
-
-            int uncheckedColor =
-                    tint.getColorForState(
-                            new int[]{
-                                -android.R.attr.state_checked
-                            },
-                            tint.getDefaultColor()
-                    );
-
-            boolean parentTintMatches =
-                    tint.getDefaultColor() == expectedColor
-                            && checkedColor == expectedColor
-                            && uncheckedColor == expectedColor;
-
-            return parentTintMatches
-                    && canonicalRenderedItemIconsMatch(
-                            navigation,
-                            expectedColor
-                    );
-        } catch (Throwable ignored) {
-            return false;
-        }
-    }
 
     private static int canonicalIconColor(
             View navigation
@@ -4037,6 +3607,39 @@ public final class BoostSearchBottomNavigation {
                     error
             );
         }
+    }
+
+    /**
+     * Boost sets its own listeners once in g3, before our hook; ours replace
+     * them and only capture this activity and view. Re-creating the proxies on
+     * every configure added nothing.
+     */
+    private static String attachSelectionListenersOnce(
+            Activity activity,
+            View navigation
+    ) throws Exception {
+        synchronized (LISTENERS_ATTACHED) {
+            if (LISTENERS_ATTACHED.containsKey(navigation)) {
+                return "already-attached";
+            }
+        }
+
+        String listeners =
+                attachSelectedListener(
+                        activity,
+                        navigation
+                )
+                + "+"
+                + attachReselectedListener(
+                        activity,
+                        navigation
+                );
+
+        synchronized (LISTENERS_ATTACHED) {
+            LISTENERS_ATTACHED.put(navigation, Boolean.TRUE);
+        }
+
+        return listeners;
     }
 
     private static String attachSelectedListener(

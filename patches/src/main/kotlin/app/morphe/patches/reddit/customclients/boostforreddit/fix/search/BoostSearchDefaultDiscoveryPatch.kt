@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -14,13 +14,15 @@ import app.morphe.patches.reddit.customclients.ExtensionPatches
 import app.morphe.util.getReference
 import app.morphe.util.indexOfFirstInstructionReversedOrThrow
 import com.android.tools.smali.dexlib2.Opcode
+import app.morphe.patches.all.misc.PatchCategory
 
 @Suppress("unused")
 val boostSearchDefaultDiscoveryPatch = bytecodePatch(
     name = "Boost search default discovery",
-    description = "Starts Boost search on an instant cached active-subreddit landing with Reddit-native labels.",
+    description = "Opens Search right away on a list of active subreddits.",
     default = true,
 ) {
+    category(PatchCategory.FEED)
     dependsOn(ExtensionPatches.Boost)
     compatibleWith(*AppCompatibility.Boost)
 

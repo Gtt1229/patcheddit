@@ -4,7 +4,7 @@
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
  * Modifications Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.ads
@@ -20,6 +20,7 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import org.w3c.dom.Element
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val MAX_AD_PLACER_SETTINGS_DESCRIPTOR =
     "Lcom/applovin/mediation/nativeAds/adPlacer/MaxAdPlacerSettings;"
@@ -58,8 +59,10 @@ private val removeBoostAdInitProvidersPatch = resourcePatch(
 @Suppress("unused")
 val disableAdsPatch = bytecodePatch(
     name = "Disable ads",
+    description = "Removes ads from feeds and comments and keeps the ad SDKs from starting.",
     default = true
 ) {
+    category(PatchCategory.ADS)
     dependsOn(removeBoostAdInitProvidersPatch)
     compatibleWith(*AppCompatibility.Boost)
 

@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -40,6 +40,8 @@ import androidx.fragment.app.Fragment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import app.morphe.extension.boost.utils.BoostUndeleteSettings;
 
 /** Platform-only global search for the hidden Settings V5 tree. */
 final class MorpheSettingsV5Search {
@@ -276,6 +278,16 @@ final class MorpheSettingsV5Search {
         List<SearchEntry> result = new ArrayList<>();
         for (MorpheSettingsV5Registry.V5PageSpec page
                 : MorpheSettingsV5Registry.allPages()) {
+            int searchableKeys = 0;
+            for (String key : page.keys) {
+                if (BoostUndeleteSettings.isTogglePatchApplied(context, key)) {
+                    searchableKeys++;
+                }
+            }
+            // A page whose only settings belong to patches that were not applied is not shown.
+            if (page.keys.length > 0 && searchableKeys == 0) {
+                continue;
+            }
             if (!MorpheSettingsV5Registry.DEFAULT_PAGE_ID.equals(page.pageId)) {
                 result.add(new SearchEntry(
                         MorpheSettingsV5Registry.titleFor(page.pageId),
@@ -285,6 +297,9 @@ final class MorpheSettingsV5Search {
                 ));
             }
             for (String key : page.keys) {
+                if (!BoostUndeleteSettings.isTogglePatchApplied(context, key)) {
+                    continue;
+                }
                 result.add(new SearchEntry(
                         titleForKey(context, page.pageId, key),
                         summaryForKey(context, page.pageId, key),

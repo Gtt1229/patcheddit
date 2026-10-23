@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -35,6 +35,26 @@ public final class BoostUndeleteSettings {
 
     public static boolean isImgurUndeleteEnabled() {
         return getBoolean(PREF_IMGUR_UNDELETE_ENABLED, DEFAULT_IMGUR_UNDELETE_ENABLED);
+    }
+
+    /**
+     * Whether the patch behind a toggle was applied. Each undelete patch adds a string resource;
+     * the settings skeleton lists both toggles regardless. Unknown keys count as applied.
+     */
+    public static boolean isTogglePatchApplied(Context context, String key) {
+        String marker;
+        if (PREF_REDDIT_UNDELETE_ENABLED.equals(key)) {
+            marker = "morphe_boost_undelete_reddit_applied";
+        } else if (PREF_IMGUR_UNDELETE_ENABLED.equals(key)) {
+            marker = "morphe_boost_undelete_imgur_applied";
+        } else {
+            return true;
+        }
+        try {
+            return context.getResources().getIdentifier(marker, "string", context.getPackageName()) != 0;
+        } catch (Throwable ignored) {
+            return true;
+        }
     }
 
     private static boolean getBoolean(String key, boolean fallback) {

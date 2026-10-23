@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -12,6 +12,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+
+import app.morphe.extension.boost.utils.BoostUndeleteSettings;
 
 /** Complete hidden Notifications & account leaves for Settings V5. */
 public final class MorpheSettingsV5NotificationsAccountLeafFragment
@@ -55,7 +57,9 @@ public final class MorpheSettingsV5NotificationsAccountLeafFragment
 
     @Override
     protected boolean includeControl(String resourceName, String key) {
-        return page != null && page.containsKey(key);
+        return page != null && page.containsKey(key)
+                && (getContext() == null
+                || BoostUndeleteSettings.isTogglePatchApplied(getContext(), key));
     }
 
     @Override

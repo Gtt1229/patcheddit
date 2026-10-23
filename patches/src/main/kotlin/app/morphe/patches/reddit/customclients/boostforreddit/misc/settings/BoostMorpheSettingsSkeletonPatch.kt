@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -18,28 +18,13 @@ import app.morphe.util.getReference
 import app.morphe.util.indexOfFirstInstructionOrThrow
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
-
-private const val SETTINGS_LAYOUT_EXTENSION_DESCRIPTOR =
-    "Lapp/morphe/extension/boost/settings/MorpheSettingsLayout;"
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val SETTINGS_V4_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/settings/MorpheSettingsV4;"
 
-private const val SET_PREFERENCES_FROM_RESOURCE_REFERENCE =
-    "Landroidx/preference/PreferenceFragmentCompat;->setPreferencesFromResource(ILjava/lang/String;)V"
-
 private const val GET_INTENT_REFERENCE =
     "Landroid/app/Activity;->getIntent()Landroid/content/Intent;"
-
-private val settingsHeaderOnCreatePreferencesFingerprint = Fingerprint(
-    returnType = "V",
-    parameters = listOf("Landroid/os/Bundle;", "Ljava/lang/String;"),
-    custom = { method, classDef ->
-        classDef.type ==
-            "Lcom/rubenmayayo/reddit/ui/preferences/v2/SettingsActivityCompat\$HeaderFragment;" &&
-            method.name == "onCreatePreferences"
-    },
-)
 
 private val settingsActivityOnCreateFingerprint = Fingerprint(
     returnType = "V",
@@ -168,13 +153,13 @@ private val boostMorpheSettingsResourcesPatch = resourcePatch(
                         <CheckBoxPreference
                             android:key="morphe_boost_reddit_undelete_enabled"
                             android:title="Automatically undelete Reddit content"
-                            android:summary="Try to restore supported deleted Reddit posts/comments from archive sources. Disabled by default to keep normal browsing stable."
+                            android:summary="Restore removed Reddit posts and comments from Arctic Shift and the Wayback Machine. When a thread has removed content, its post and comment IDs are sent to these third-party archives. Off by default."
                             android:defaultValue="false" />
 
                         <CheckBoxPreference
                             android:key="morphe_boost_imgur_undelete_enabled"
                             android:title="Automatically undelete Imgur images"
-                            android:summary="Try to restore supported missing Imgur media from archive sources. Disabled by default."
+                            android:summary="Restore missing Imgur images and albums from the Wayback Machine. Links to missing Imgur media you open are sent to this third-party archive. Off by default."
                             android:defaultValue="false" />
                     </PreferenceCategory>
                     <PreferenceCategory android:title="Settings">
@@ -266,286 +251,20 @@ private val boostMorpheSettingsResourcesPatch = resourcePatch(
                 """.trimIndent()
             )
         }
-
-        mapOf(
-            "morphe_boost_settings_layout_v2" to
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <PreferenceScreen
-                  xmlns:android="http://schemas.android.com/apk/res/android"
-                  xmlns:app="http://schemas.android.com/apk/res-auto">
-                    <Preference
-                        android:icon="@drawable/ic_puzzle_24dp"
-                        android:key="morphe_boost_settings_entry"
-                        android:title="Morphe"
-                        android:summary="Features added by Morphe patches"
-                        android:fragment="app.morphe.extension.boost.settings.MorpheSettingsFragment"
-                        app:allowDividerBelow="true" />
-                    <Preference
-                        android:icon="@drawable/ic_color_lens_24dp"
-                        android:key="morphe_boost_settings_v2_appearance_layout"
-                        android:title="Appearance &amp; layout"
-                        android:summary="Theme, post layout, and fonts"
-                        android:fragment="app.morphe.extension.boost.settings.MorpheSettingsHubFragment"
-                        app:allowDividerAbove="true">
-                        <extra
-                            android:name="morphe_boost_settings_hub_resource"
-                            android:value="morphe_boost_settings_hub_appearance_layout" />
-                    </Preference>
-                    <Preference
-                        android:icon="@drawable/ic_post_24dp"
-                        android:key="morphe_boost_settings_v2_posts_comments"
-                        android:title="Posts &amp; comments"
-                        android:summary="Post and comment behavior"
-                        android:fragment="app.morphe.extension.boost.settings.MorpheSettingsHubFragment">
-                        <extra
-                            android:name="morphe_boost_settings_hub_resource"
-                            android:value="morphe_boost_settings_hub_posts_comments" />
-                    </Preference>
-                    <Preference
-                        android:icon="@drawable/ic_menu_24dp"
-                        android:key="morphe_boost_settings_v2_navigation"
-                        android:title="Navigation"
-                        android:summary="Toolbar, bottom navigation, and drawer"
-                        android:fragment="app.morphe.extension.boost.settings.MorpheSettingsHubFragment">
-                        <extra
-                            android:name="morphe_boost_settings_hub_resource"
-                            android:value="morphe_boost_settings_hub_navigation" />
-                    </Preference>
-                    <Preference
-                        android:icon="@drawable/ic_photo_outline_24dp"
-                        android:key="morphe_boost_settings_v2_media_links"
-                        android:title="Media &amp; links"
-                        android:summary="Viewers, players, and link handling"
-                        android:fragment="app.morphe.extension.boost.settings.MorpheSettingsHubFragment">
-                        <extra
-                            android:name="morphe_boost_settings_hub_resource"
-                            android:value="morphe_boost_settings_hub_media_links" />
-                    </Preference>
-                    <Preference
-                        android:icon="@drawable/ic_search_color_24dp"
-                        android:key="morphe_boost_settings_v2_search_filters"
-                        android:title="Search &amp; filters"
-                        android:summary="Search behavior and content filters"
-                        android:fragment="app.morphe.extension.boost.settings.MorpheSettingsHubFragment">
-                        <extra
-                            android:name="morphe_boost_settings_hub_resource"
-                            android:value="morphe_boost_settings_hub_search_filters" />
-                    </Preference>
-                    <Preference
-                        android:icon="@drawable/ic_notifications_black_24dp"
-                        android:key="morphe_boost_settings_v2_notifications"
-                        android:title="@string/pref_header_messages"
-                        android:summary="@string/pref_header_messages_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentMessagesCompat" />
-                    <Preference
-                        android:icon="@drawable/outline_data_usage_24"
-                        android:key="morphe_boost_settings_v2_data_storage"
-                        android:title="Data &amp; storage"
-                        android:summary="Bandwidth, cache, downloads, and backup"
-                        android:fragment="app.morphe.extension.boost.settings.MorpheSettingsHubFragment">
-                        <extra
-                            android:name="morphe_boost_settings_hub_resource"
-                            android:value="morphe_boost_settings_hub_data_storage" />
-                    </Preference>
-                    <Preference
-                        android:icon="@drawable/ic_person_24dp"
-                        android:key="morphe_boost_settings_v2_account_privacy"
-                        android:title="Account &amp; privacy"
-                        android:summary="Reddit preferences, history, and privacy"
-                        android:fragment="app.morphe.extension.boost.settings.MorpheSettingsHubFragment">
-                        <extra
-                            android:name="morphe_boost_settings_hub_resource"
-                            android:value="morphe_boost_settings_hub_account_privacy" />
-                    </Preference>
-                    <Preference
-                        android:icon="@drawable/ic_settings_24dp"
-                        android:key="morphe_boost_settings_v2_app_legacy"
-                        android:title="App behavior &amp; legacy"
-                        android:summary="General and old features"
-                        android:fragment="app.morphe.extension.boost.settings.MorpheSettingsHubFragment">
-                        <extra
-                            android:name="morphe_boost_settings_hub_resource"
-                            android:value="morphe_boost_settings_hub_app_legacy" />
-                    </Preference>
-                    <Preference
-                        android:icon="@drawable/ic_help_24dp"
-                        android:key="morphe_boost_settings_v2_about"
-                        android:title="@string/pref_header_about"
-                        android:summary="@string/pref_header_about_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentAboutCompat" />
-                </PreferenceScreen>
-                """,
-            "morphe_boost_settings_hub_appearance_layout" to
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-                    <Preference
-                        android:icon="@drawable/ic_color_lens_24dp"
-                        android:title="@string/theme"
-                        android:summary="Theme, dark mode, and app icon"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentAppearanceCompat" />
-                    <Preference
-                        android:icon="@drawable/ic_view_carousel_24dp"
-                        android:title="@string/view_settings"
-                        android:summary="@string/view_settings_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentViewsCompat" />
-                    <Preference
-                        android:icon="@drawable/ic_format_size_24dp"
-                        android:title="@string/pref_appearance_category_fonts"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentFontsCompat" />
-                </PreferenceScreen>
-                """,
-            "morphe_boost_settings_hub_posts_comments" to
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-                    <Preference
-                        android:icon="@drawable/ic_post_24dp"
-                        android:title="@string/pref_header_posts"
-                        android:summary="@string/pref_header_posts_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentPostsCompat" />
-                    <Preference
-                        android:icon="@drawable/ic_comment_outline_white_24dp"
-                        android:title="@string/pref_header_comments"
-                        android:summary="@string/pref_header_comments_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentCommentsCompat" />
-                </PreferenceScreen>
-                """,
-            "morphe_boost_settings_hub_navigation" to
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-                    <Preference
-                        android:icon="@drawable/ic_toolbar_24dp"
-                        android:title="@string/toolbar"
-                        android:summary="@string/pref_toolbar_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentToolbarCompat" />
-                    <Preference
-                        android:icon="@drawable/ic_bottomnav_24dp"
-                        android:title="@string/pref_bottom_navigation_title"
-                        android:summary="@string/pref_bottom_navigation_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentBottomNavigationCompat" />
-                    <Preference
-                        android:icon="@drawable/ic_dock_left_24dp"
-                        android:title="@string/pref_drawer_items"
-                        android:summary="@string/pref_header_drawer_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentDrawerCompat" />
-                </PreferenceScreen>
-                """,
-            "morphe_boost_settings_hub_media_links" to
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-                    <Preference
-                        android:icon="@drawable/ic_photo_outline_24dp"
-                        android:title="@string/pref_media_viewer_title"
-                        android:summary="@string/pref_header_media_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentMediaCompat" />
-                    <Preference
-                        android:icon="@drawable/ic_link_24dp"
-                        android:title="@string/pref_header_links"
-                        android:summary="@string/pref_header_links_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentLinksCompat" />
-                </PreferenceScreen>
-                """,
-            "morphe_boost_settings_hub_search_filters" to
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-                    <Preference
-                        android:icon="@drawable/ic_search_color_24dp"
-                        android:title="@string/search"
-                        android:summary="@string/search_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentSearchCompat" />
-                    <Preference
-                        android:icon="@drawable/ic_filter_list_24dp"
-                        android:title="@string/content_filters"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentFiltersCompat" />
-                </PreferenceScreen>
-                """,
-            "morphe_boost_settings_hub_data_storage" to
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-                    <Preference
-                        android:icon="@drawable/outline_data_usage_24"
-                        android:title="@string/pref_category_data_usage"
-                        android:summary="@string/pref_header_bandwidth_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentDataSavingCompat" />
-                    <Preference
-                        android:icon="@drawable/ic_save_24dp"
-                        android:key="morphe_boost_settings_backup"
-                        android:title="@string/pref_header_backup"
-                        android:summary="@string/pref_header_backup_summary" />
-                </PreferenceScreen>
-                """,
-            "morphe_boost_settings_hub_account_privacy" to
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-                    <Preference
-                        android:icon="@drawable/ic_subreddit_24dp"
-                        android:title="@string/pref_header_account"
-                        android:summary="@string/pref_header_account_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentAccountCompat" />
-                    <Preference
-                        android:icon="@drawable/ic_restore_black_24dp"
-                        android:title="@string/history"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentPrivacyCompat" />
-                </PreferenceScreen>
-                """,
-            "morphe_boost_settings_hub_app_legacy" to
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-                    <Preference
-                        android:icon="@drawable/ic_settings_24dp"
-                        android:title="@string/pref_header_general"
-                        android:summary="@string/pref_header_general_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentGeneralCompat" />
-                    <Preference
-                        android:icon="@drawable/ic_restore_black_24dp"
-                        android:title="@string/pref_header_legacy"
-                        android:summary="@string/pref_header_legacy_summary"
-                        android:fragment="com.rubenmayayo.reddit.ui.preferences.v2.PreferenceFragmentMiscCompat" />
-                </PreferenceScreen>
-                """,
-        ).forEach { (resourceName, xml) ->
-            get("res/xml/$resourceName.xml").utf8Writer().use { writer ->
-                writer.write(xml.trimIndent())
-            }
-        }
     }
 }
 
 @Suppress("unused")
 val boostMorpheSettingsSkeletonPatch = bytecodePatch(
     name = "Boost Morphe settings",
-    description = "Adds dedicated Morphe settings and task-based Material Settings V5 navigation with global search and a classic fallback.",
+    description = "Adds a Morphe section and a reorganized settings screen with search. The classic settings stay available.",
     default = false,
 ) {
+    category(PatchCategory.INTERFACE)
     dependsOn(ExtensionPatches.Boost, boostMorpheSettingsResourcesPatch)
     compatibleWith(*AppCompatibility.Boost)
 
     execute {
-        settingsHeaderOnCreatePreferencesFingerprint.method.apply {
-            val loadPreferencesIndex = indexOfFirstInstructionOrThrow {
-                opcode == Opcode.INVOKE_VIRTUAL &&
-                    getReference<MethodReference>()?.toString() ==
-                    SET_PREFERENCES_FROM_RESOURCE_REFERENCE
-            }
-
-            addInstructions(
-                loadPreferencesIndex,
-                """
-                    invoke-static {p0, p1}, $SETTINGS_LAYOUT_EXTENSION_DESCRIPTOR->resolveRootResource(Landroidx/preference/PreferenceFragmentCompat;I)I
-
-                    move-result p1
-                """.trimIndent(),
-            )
-        }
-
         settingsActivityOnCreateFingerprint.method.apply {
             val getIntentIndex = indexOfFirstInstructionOrThrow {
                 opcode == Opcode.INVOKE_VIRTUAL &&
@@ -560,6 +279,5 @@ val boostMorpheSettingsSkeletonPatch = bytecodePatch(
                 """.trimIndent(),
             )
         }
-
     }
 }

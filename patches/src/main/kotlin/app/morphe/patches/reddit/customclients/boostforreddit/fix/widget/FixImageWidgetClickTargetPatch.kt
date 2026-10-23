@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -14,6 +14,7 @@ import app.morphe.util.getReference
 import app.morphe.util.indexOfFirstInstructionOrThrow
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val PENDING_INTENT_GET_ACTIVITY_REFERENCE =
     "Landroid/app/PendingIntent;->getActivity(Landroid/content/Context;ILandroid/content/Intent;I)Landroid/app/PendingIntent;"
@@ -24,9 +25,10 @@ private const val BOOST_PENDING_INTENT_FLAGS_REFERENCE =
 @Suppress("unused")
 val fixImageWidgetClickTargetPatch = bytecodePatch(
     name = "Fix Boost image widget click target",
-    description = "Prevents Boost's image widget from opening a stale post by making the CommentsActivity PendingIntent data unique per widget update.",
+    description = "Makes the image widget open the post it shows instead of an older one.",
     default = true,
 ) {
+    category(PatchCategory.INTERFACE)
     compatibleWith(*AppCompatibility.Boost)
 
     execute {

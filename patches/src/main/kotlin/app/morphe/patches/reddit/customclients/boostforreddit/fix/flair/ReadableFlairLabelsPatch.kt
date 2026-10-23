@@ -2,7 +2,7 @@
  * Modifications Copyright 2026 brealorg.
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.flair
@@ -14,6 +14,7 @@ import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import app.morphe.util.indexOfFirstInstructionReversedOrThrow
 import com.android.tools.smali.dexlib2.Opcode
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val FLAIR_CONTRAST_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostFlairContrast;"
@@ -41,6 +42,7 @@ val readableFlairLabelsPatch = bytecodePatch(
         "Uses black or white flair text when Reddit's flair text color is unreadable on its background.",
     default = true,
 ) {
+    category(PatchCategory.FEED)
     dependsOn(ExtensionPatches.Boost)
     compatibleWith(*AppCompatibility.Boost)
 

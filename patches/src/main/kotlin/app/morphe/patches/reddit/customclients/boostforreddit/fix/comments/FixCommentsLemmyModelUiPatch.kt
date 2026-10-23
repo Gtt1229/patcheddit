@@ -2,7 +2,7 @@
  * Modifications Copyright 2026 brealorg.
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.comments
@@ -11,6 +11,7 @@ import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import org.w3c.dom.Document
 import org.w3c.dom.Element
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val COMMENTS_SLIDR_NO_TITLE_MARKER =
     "morphe_boost_comments_slidrtheme_notitle_noactionbar_v12"
@@ -34,9 +35,10 @@ private fun Element.setOrAppendItem(document: Document, itemName: String, itemVa
 @Suppress("unused")
 val fixCommentsLemmyModelUiPatch = resourcePatch(
     name = "Fix Boost comments Lemmy-style toolbar UI",
-    description = "Removes the duplicate native comments title by disabling the SlidrTheme window title/actionbar layer while preserving Boost's selected light/dark theme, toolbar title, and dynamic sort subtitle.",
+    description = "Removes the duplicate title above comments, keeping Boost's theme, toolbar title and sort label.",
     default = true
 ) {
+    category(PatchCategory.COMMENTS)
     compatibleWith(*AppCompatibility.Boost)
 
     execute {

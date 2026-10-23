@@ -3,6 +3,8 @@
  * https://github.com/wchill/patcheddit
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
+ * Modifications Copyright 2026 brealorg.
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.http.archive
@@ -14,6 +16,7 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
+import app.morphe.patches.all.misc.PatchCategory
 
 
 internal val SETTINGS_UTILS_EXTENSION_CLASS_DESCRIPTOR = "Lapp/morphe/extension/boost/utils/SettingsUtils;"
@@ -21,9 +24,11 @@ internal val SETTINGS_UTILS_EXTENSION_CLASS_DESCRIPTOR = "Lapp/morphe/extension/
 
 @Suppress("unused")
 val addArchiveLinks = bytecodePatch(
-    name="Add archive links to context menu",
+    name = "Add archive links to context menu",
+    description = "Adds 'Open with Wayback Machine' and 'Open with Archive.is' to the link context menu.",
     default = true
 ) {
+    category(PatchCategory.LINKS)
     dependsOn(ExtensionPatches.Boost)
     compatibleWith(*AppCompatibility.Boost)
     execute {

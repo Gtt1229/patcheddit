@@ -2,7 +2,7 @@
  * Modifications Copyright 2026 brealorg.
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.downloads
@@ -17,6 +17,7 @@ import app.morphe.util.indexOfFirstInstructionReversedOrThrow
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val DOWNLOAD_CHANNEL_ID = "80_downloads_channel"
 private const val COMPLETED_DOWNLOAD_CHANNEL_ID = "81_downloads_completed_channel"
@@ -30,9 +31,10 @@ private const val IMPORTANCE_DEFAULT = "0x3"
 @Suppress("unused")
 val fixDownloadCompletedNotificationVisibilityPatch = bytecodePatch(
     name = "Fix download completed notification visibility",
-    description = "Moves completed download notifications to a separate default-importance channel so download completion is visible while progress notifications remain low-priority.",
+    description = "Shows a visible notification when a download finishes, while progress notifications stay quiet.",
     default = true
 ) {
+    category(PatchCategory.MEDIA)
     compatibleWith(*AppCompatibility.Boost)
 
     execute {

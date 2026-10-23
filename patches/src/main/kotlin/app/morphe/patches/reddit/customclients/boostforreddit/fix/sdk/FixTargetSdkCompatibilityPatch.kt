@@ -2,7 +2,7 @@
  * Modifications Copyright 2026 brealorg.
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.sdk
@@ -17,6 +17,7 @@ import app.morphe.util.indexOfFirstInstructionOrThrow
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import org.w3c.dom.Element
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val TARGET_SDK_VERSION = "35"
 private const val POST_NOTIFICATIONS_PERMISSION = "android.permission.POST_NOTIFICATIONS"
@@ -78,9 +79,10 @@ private val setBoostTargetSdk35Patch = resourcePatch(
 @Suppress("unused")
 val fixTargetSdk35CompatibilityPatch = bytecodePatch(
     name = "Fix Boost target SDK 35 compatibility",
-    description = "Sets Boost for Reddit's target SDK to 35 and fixes BillingClient receiver registration for newer Android versions.",
+    description = "Makes Boost target Android 15 (SDK 35) and fixes billing setup on newer Android versions.",
     default = false
 ) {
+    category(PatchCategory.ADVANCED)
     dependsOn(setBoostTargetSdk35Patch, ExtensionPatches.Boost)
     compatibleWith(*AppCompatibility.Boost)
 

@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -15,6 +15,7 @@ import app.morphe.patches.reddit.customclients.ExtensionPatches
 import app.morphe.util.getReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import org.w3c.dom.Element
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val MATERIAL_BOTTOM_NAVIGATION =
     "com.google.android.material.bottomnavigation.BottomNavigationView"
@@ -99,6 +100,7 @@ val boostSearchBottomNavigationPatch = bytecodePatch(
     description = "Shows Boost's native Home, Search, Subscriptions, Inbox and Profile menu in Search and Go To.",
     default = true,
 ) {
+    category(PatchCategory.NAVIGATION)
     compatibleWith(*AppCompatibility.Boost)
     dependsOn(addSearchBottomNavigationHostPatch, ExtensionPatches.Boost)
 

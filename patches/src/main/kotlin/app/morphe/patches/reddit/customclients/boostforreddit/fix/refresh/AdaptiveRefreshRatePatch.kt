@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -13,6 +13,7 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import app.morphe.patches.reddit.customclients.boostforreddit.misc.settings.boostMorpheSettingsSkeletonPatch
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val ADAPTIVE_REFRESH_RATE_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/AdaptiveRefreshRate;"
@@ -28,6 +29,7 @@ val preferHighRefreshRatePatch = bytecodePatch(
     description = "Requests a high display refresh rate for Boost on adaptive-refresh devices.",
     default = false,
 ) {
+    category(PatchCategory.INTERFACE)
     dependsOn(ExtensionPatches.Boost, boostMorpheSettingsSkeletonPatch)
     compatibleWith(*AppCompatibility.Boost)
 

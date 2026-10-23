@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -12,6 +12,7 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import com.android.tools.smali.dexlib2.Opcode
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val SUBREDDIT_NAV_EXTENSION =
     "Lapp/morphe/extension/boost/utils/BoostSearchBottomNavigation;"
@@ -19,9 +20,10 @@ private const val SUBREDDIT_NAV_EXTENSION =
 @Suppress("unused")
 val boostSubredditBottomNavigationSurfacePatch = bytecodePatch(
     name = "Stabilize Boost subreddit bottom navigation surface",
-    description = "Applies theme contrast and gesture-inset surface handling to SubredditActivity while preserving native selection and routes.",
+    description = "Gives the bottom navigation in subreddits proper contrast and room for gesture navigation.",
     default = true,
 ) {
+    category(PatchCategory.NAVIGATION)
     compatibleWith(*AppCompatibility.Boost)
     dependsOn(ExtensionPatches.Boost)
 

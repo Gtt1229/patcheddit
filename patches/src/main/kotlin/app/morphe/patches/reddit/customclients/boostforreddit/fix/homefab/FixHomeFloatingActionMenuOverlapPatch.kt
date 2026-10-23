@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -11,6 +11,7 @@ import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import org.w3c.dom.Document
 import org.w3c.dom.Element
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val MAIN_CONTENT_LAYOUT =
     "res/layout/content_main.xml"
@@ -168,10 +169,10 @@ private fun Document.raiseDirectFabs(
 val fixBoostHomeFloatingActionMenuOverlapPatch = resourcePatch(
     name = "Standardize Boost bottom-navigation FAB clearance",
     description =
-        "Keeps Home/Subreddit, Random, Inbox and Profile FABs " +
-            "16 dp above native canonical navigation.",
+        "Keeps the floating action buttons on Home, subreddits, Random, Inbox and Profile clear of the bottom navigation.",
     default = true,
 ) {
+    category(PatchCategory.NAVIGATION)
     compatibleWith(*AppCompatibility.Boost)
 
     dependsOn(fixFabDependencyClearancePatch)

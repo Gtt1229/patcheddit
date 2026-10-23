@@ -4,7 +4,7 @@
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
  * Modifications Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.giphy
@@ -17,6 +17,7 @@ import app.morphe.util.addInstructionsAtControlFlowLabel
 import app.morphe.util.getReference
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val COMMENT_VIEW_HOLDER_DESCRIPTOR =
     "Lcom/rubenmayayo/reddit/ui/adapters/CommentViewHolder;"
@@ -36,6 +37,7 @@ val inlineGiphyCommentPreviewPatch = bytecodePatch(
     description = "Adds inline media previews below Boost comment text for Giphy links and direct static image URLs.",
     default = true
 ) {
+    category(PatchCategory.COMMENTS)
     dependsOn(ExtensionPatches.Boost)
     compatibleWith(*AppCompatibility.Boost)
 

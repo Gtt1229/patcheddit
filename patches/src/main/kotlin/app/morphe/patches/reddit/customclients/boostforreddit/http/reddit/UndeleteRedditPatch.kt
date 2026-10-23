@@ -4,7 +4,7 @@
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
  * Modifications Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.http.reddit
@@ -22,6 +22,8 @@ import app.morphe.patcher.util.smali.toInstructions
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import app.morphe.patches.reddit.customclients.boostforreddit.http.interceptHttpRequests
+import app.morphe.patches.reddit.customclients.boostforreddit.http.REDDIT_UNDELETE_APPLIED_RESOURCE
+import app.morphe.patches.reddit.customclients.boostforreddit.http.undeleteAppliedMarkerPatch
 import app.morphe.util.addInstructionsAtControlFlowLabel
 import app.morphe.util.getReference
 import app.morphe.util.indexOfFirstInstruction
@@ -35,6 +37,7 @@ import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21t
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableField
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
+import app.morphe.patches.all.misc.PatchCategory
 
 
 internal const val OKHTTP_EXTENSION_CLASS_DESCRIPTOR = "Lapp/morphe/extension/boost/http/OkHttpRequestHook;"
@@ -46,9 +49,11 @@ internal const val EXTRA_EMOJI_GETTER = "getExtraEmoji"
 @Suppress("unused")
 val undeleteRedditPatch = bytecodePatch(
     name = "Automatically undelete Reddit content",
+    description = "Restores deleted and removed posts and comments from Arctic Shift, and their media from the Wayback Machine.",
     default = false
 ) {
-    dependsOn(ExtensionPatches.Boost, interceptHttpRequests)
+    category(PatchCategory.UNDELETE)
+    dependsOn(ExtensionPatches.Boost, interceptHttpRequests, undeleteAppliedMarkerPatch(REDDIT_UNDELETE_APPLIED_RESOURCE))
     compatibleWith(*AppCompatibility.Boost)
 
     execute {
@@ -267,10 +272,12 @@ val undeleteRedditPatch = bytecodePatch(
                 }
             }
         }
-        StateSubmissionViewHasValidRemovalReasonFingerprint.method.let {
-            StateSubmissionViewGetSummaryFingerprint.stringMatches.forEach { match ->
-                val index = it.indexOfFirstInstructionReversed(Opcode.CONST_4)
-                it.addInstructionsWithLabels(
+        StateSubmissionViewHasValidRemovalReasonFingerprint.let { fingerprint ->
+            // Match indices must come from this method, not the summary method.
+            val match = fingerprint.stringMatches.single { it.string == "reddit" }
+            fingerprint.method.apply {
+                val returnTrueIndex = indexOfFirstInstructionReversedOrThrow(Opcode.CONST_4)
+                addInstructionsWithLabels(
                     match.index,
                     """
                     const-string        v0, "content_takedown"
@@ -278,7 +285,7 @@ val undeleteRedditPatch = bytecodePatch(
                     move-result         v0
                     if-nez              v0, :matched
                     """,
-                    ExternalLabel("matched", it.getInstruction(index))
+                    ExternalLabel("matched", getInstruction(returnTrueIndex))
                 )
             }
         }

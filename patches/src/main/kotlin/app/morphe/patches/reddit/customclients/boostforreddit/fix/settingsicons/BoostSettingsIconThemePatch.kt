@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -10,6 +10,7 @@ package app.morphe.patches.reddit.customclients.boostforreddit.fix.settingsicons
 import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import org.w3c.dom.Element
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val SETTINGS_ICON_THEME_MARKER =
     "MORPHE_BOOST_SETTINGS_ICON_THEME_V1"
@@ -25,9 +26,10 @@ private val preferenceLayouts = listOf(
 @Suppress("unused")
 val boostSettingsIconThemePatch = resourcePatch(
     name = "Theme Boost settings icons",
-    description = "Uses the active theme primary text color for Boost preference icons.",
+    description = "Colors the settings icons to match the active theme.",
     default = true,
 ) {
+    category(PatchCategory.INTERFACE)
     compatibleWith(*AppCompatibility.Boost)
 
     execute {

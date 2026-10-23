@@ -4,7 +4,8 @@
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
  * Modifications Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
+ * Modified for Breal undelete audit: fail-open recovery, correct album cache URL (2026-10-12).
  */
 
 package app.morphe.extension.boost.http.imgur;
@@ -33,11 +34,13 @@ import app.morphe.extension.boost.http.wayback.WaybackMachine;
 import app.morphe.extension.boost.http.wayback.WaybackResponse;
 import app.morphe.extension.shared.requests.PatchedditInterceptor;
 import app.morphe.extension.boost.utils.BoostUndeleteSettings;
+import app.morphe.extension.boost.utils.LoggingUtils;
 import okhttp3.Response;
 import okhttp3.Request;
 
 public class ImgurUndeleteInterceptor extends PatchedditInterceptor {
     private static final AutoSavingCache imgurCache = new AutoSavingCache("Imgur", 100);
+    private static final String FAIL_OPEN_MARKER = "morphe_boost_undelete_imgur_fail_open";
 
     @Override
     public boolean isPatchIncluded() {
@@ -71,6 +74,10 @@ public class ImgurUndeleteInterceptor extends PatchedditInterceptor {
         }
     }
 
+    private static void logRecoveryFailure(Throwable failure) {
+        LoggingUtils.logInfo(false, () -> FAIL_OPEN_MARKER + ": " + failure.getClass().getSimpleName());
+    }
+
     private Response handleApiCall(Chain chain) throws IOException {
         Request request = chain.request();
         String url = request.url().toString();
@@ -78,8 +85,13 @@ public class ImgurUndeleteInterceptor extends PatchedditInterceptor {
 
         Optional<String> cachedUrl = imgurCache.get(imgurId);
         if (cachedUrl.isPresent()) {
-            Response cachedResponse = HttpUtils.get(cachedUrl.get());
-            return emulateAlbumApiResponse(cachedResponse, imgurId);
+            try {
+                return emulateAlbumApiResponse(
+                        HttpUtils.get(cachedUrl.get(), WaybackMachine.CONTENT_TIMEOUT_MS), imgurId);
+            } catch (Throwable failure) {
+                // Fall back to the live request rather than failing on a bad cache entry.
+                logRecoveryFailure(failure);
+            }
         }
 
         Response response = chain.proceed(request);
@@ -87,16 +99,22 @@ public class ImgurUndeleteInterceptor extends PatchedditInterceptor {
 
         if (response.code() != HttpURLConnection.HTTP_NOT_FOUND) {
             return response;
-        } else {
-            response.close();
         }
 
-        WaybackResponse waybackResponse = WaybackMachine.getFromWayback(request, getAlbumUrl(imgurId));
-        if (waybackResponse.found()) {
-            imgurCache.put(imgurId, response.request().url().toString());
-            return emulateAlbumApiResponse(waybackResponse.getResponse(), imgurId);
+        try {
+            WaybackResponse waybackResponse = WaybackMachine.getFromWayback(request, getAlbumUrl(imgurId));
+            if (waybackResponse.found()) {
+                // Cache the Wayback page, not the Imgur API URL: the cached path parses a Wayback timestamp.
+                String waybackUrl = waybackResponse.getResponse().request().url().toString();
+                Response restored = emulateAlbumApiResponse(waybackResponse.getResponse(), imgurId);
+                imgurCache.put(imgurId, waybackUrl);
+                response.close();
+                return restored;
+            }
+        } catch (Throwable failure) {
+            logRecoveryFailure(failure);
         }
-        return HttpUtils.create404(response.request());
+        return response;
     }
 
     private Response handleImageCall(Chain chain) throws IOException {
@@ -111,7 +129,15 @@ public class ImgurUndeleteInterceptor extends PatchedditInterceptor {
 
         Optional<String> cachedUrl = imgurCache.get(imgurId + "." + ext);
         if (cachedUrl.isPresent()) {
-            return HttpUtils.get(cachedUrl.get());
+            try {
+                Response cached = HttpUtils.get(cachedUrl.get(), WaybackMachine.CONTENT_TIMEOUT_MS);
+                if (cached.isSuccessful()) {
+                    return cached;
+                }
+                cached.close();
+            } catch (Throwable failure) {
+                logRecoveryFailure(failure);
+            }
         }
 
         Response response = chain.proceed(request);
@@ -120,19 +146,23 @@ public class ImgurUndeleteInterceptor extends PatchedditInterceptor {
                 return response;
             }
         }
-        response.close();
 
-        Optional<WaybackResponse> cachedResponse = WaybackMachine.fetchUrlFromCache(request, url);
-        if (cachedResponse.isPresent()) {
-            return cachedResponse.get().getResponse();
+        try {
+            WaybackResponse waybackResponse = WaybackMachine.getFromWayback(request, url);
+            if (waybackResponse.found()) {
+                Response archived = waybackResponse.getResponse();
+                if (archived.isSuccessful()) {
+                    imgurCache.put(imgurId + "." + ext, archived.request().url().toString());
+                    response.close();
+                    return archived;
+                }
+                archived.close();
+            }
+        } catch (Throwable failure) {
+            logRecoveryFailure(failure);
         }
-
-        WaybackResponse waybackResponse = WaybackMachine.getFromWayback(request, url);
-        if (waybackResponse.found()) {
-            imgurCache.put(imgurId + "." + ext, waybackResponse.getContentUrl().get());
-            return waybackResponse.getResponse();
-        }
-        return HttpUtils.create404(request);
+        // Imgur's own answer (404 or the removed.png redirect) is better than a synthetic error.
+        return response;
     }
 
     private String getImgurId(String url) {

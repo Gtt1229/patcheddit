@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -12,16 +12,20 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import com.android.tools.smali.dexlib2.Opcode
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val SYSTEM_SURFACE_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostSearchBottomNavigation;"
+private const val CONTENT_CLEARANCE_EXTENSION_DESCRIPTOR =
+    "Lapp/morphe/extension/boost/utils/BoostNavContentClearance;"
 
 @Suppress("unused")
 val boostBottomNavigationSystemSurfacePatch = bytecodePatch(
     name = "Standardize Boost bottom navigation",
-    description = "Applies one destination, listener, selection, tint, and system-surface contract to Boost's Material bottom navigation.",
+    description = "Makes the bottom navigation look and behave the same on every screen.",
     default = true,
 ) {
+    category(PatchCategory.NAVIGATION)
     compatibleWith(*AppCompatibility.Boost)
     dependsOn(ExtensionPatches.Boost)
 
@@ -93,5 +97,14 @@ val boostBottomNavigationSystemSurfacePatch = bytecodePatch(
             }
         }
 
+        // Stock F1() pads lists by a fixed 56dp only while "Hide on scroll" is
+        // off, once per list. Let the extension track the bar's real height.
+        emptyRecyclerViewBottomNavigationPaddingFingerprint.method.addInstructions(
+            0,
+            """
+                invoke-static {p0}, $CONTENT_CLEARANCE_EXTENSION_DESCRIPTOR->apply(Landroid/view/View;)V
+                return-void
+            """.trimIndent(),
+        )
     }
 }

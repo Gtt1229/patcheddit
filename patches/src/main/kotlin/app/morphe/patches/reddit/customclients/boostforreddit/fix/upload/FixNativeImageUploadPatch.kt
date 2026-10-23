@@ -2,7 +2,7 @@
  * Modifications Copyright 2026 brealorg.
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.upload
@@ -18,6 +18,7 @@ import app.morphe.util.indexOfFirstInstructionOrThrow
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val REDDIT_UPLOAD_PROVIDER = "reddit"
 
@@ -40,12 +41,10 @@ private const val IMAGE_HOST_POLICY_MARKER =
 val fixNativeImageUploadPatch = bytecodePatch(
     name = "Fix Boost native image upload",
     description =
-        "Keeps Boost image posts and galleries on Reddit's native uploader " +
-            "and routes images inserted into comments or text posts through " +
-            "Imgur by default, with ImgBB as a manually selected alternative. " +
-            "GIF and video upload behavior is unchanged.",
+        "Uploads image posts and galleries to Reddit, and images in comments or text posts to Imgur, or ImgBB if you choose it. GIF and video uploads are unchanged.",
     default = false
 ) {
+    category(PatchCategory.COMMENTS)
     dependsOn(ExtensionPatches.Boost, boostMorpheSettingsSkeletonPatch)
     compatibleWith(*AppCompatibility.Boost)
 

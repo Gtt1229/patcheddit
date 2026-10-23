@@ -2,7 +2,7 @@
  * Modifications Copyright 2026 brealorg.
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.youtube
@@ -10,6 +10,7 @@ package app.morphe.patches.reddit.customclients.boostforreddit.fix.youtube
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
+import app.morphe.patches.all.misc.PatchCategory
 
 @Suppress("unused")
 val fixYouTubeExternalFallbackPatch = bytecodePatch(
@@ -18,6 +19,7 @@ val fixYouTubeExternalFallbackPatch = bytecodePatch(
         "Opens the original YouTube link externally when Boost's legacy embedded YouTube player is unavailable.",
     default = true,
 ) {
+    category(PatchCategory.MEDIA)
     compatibleWith(*AppCompatibility.Boost)
 
     execute {

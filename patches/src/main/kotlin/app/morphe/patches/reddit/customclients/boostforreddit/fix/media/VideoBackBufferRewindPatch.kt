@@ -2,7 +2,7 @@
  * Modifications Copyright 2026 brealorg.
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.media
@@ -14,6 +14,7 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val CONTRACT_MARKER =
     "MORPHE_BOOST_VIDEO_REWIND_BACKBUFFER_ISSUE188_V2"
@@ -33,9 +34,10 @@ private val backBufferDurationUsFingerprint = Fingerprint(
 val fixBoostVideoRewindBackBufferPatch = bytecodePatch(
     name = "Fix Boost video rewind back buffer",
     description =
-        "Retains 30 seconds of recently played video in ExoPlayer so backward seeks can reuse buffered media instead of reloading it.",
+        "Keeps the last 30 seconds of a video, so rewinding plays right away instead of reloading.",
     default = true,
 ) {
+    category(PatchCategory.MEDIA)
     compatibleWith(*AppCompatibility.Boost)
 
     execute {

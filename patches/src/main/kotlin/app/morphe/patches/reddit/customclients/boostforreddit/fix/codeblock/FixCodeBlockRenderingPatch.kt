@@ -2,7 +2,7 @@
  * Copyright 2026 brealorg.
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.codeblock
@@ -11,6 +11,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val CODEBLOCK_NORMALIZER_DESCRIPTOR =
     "Lapp/morphe/extension/boost/codeblock/CodeBlockHtmlNormalizer;"
@@ -18,9 +19,10 @@ private const val CODEBLOCK_NORMALIZER_DESCRIPTOR =
 @Suppress("unused")
 val fixCodeBlockRenderingPatch = bytecodePatch(
     name = "Fix Boost code block rendering",
-    description = "Preserves Reddit code blocks and repairs malformed legacy HTML links with parenthesized URLs before Boost renders them.",
+    description = "Shows Reddit code blocks correctly and fixes links whose URL contains parentheses.",
     default = true
 ) {
+    category(PatchCategory.COMMENTS)
     dependsOn(ExtensionPatches.Boost)
     compatibleWith(*AppCompatibility.Boost)
 

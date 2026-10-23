@@ -2,7 +2,7 @@
  * Modifications Copyright 2026 brealorg.
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.homefab
@@ -14,6 +14,7 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val SNACKBAR_ANCHOR_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostSnackbarAnchor;"
@@ -56,6 +57,7 @@ val anchorSnackbarAboveNavigationPatch = bytecodePatch(
         "Shows Boost Snackbars above the visible bottom navigation instead of covering it.",
     default = true,
 ) {
+    category(PatchCategory.NAVIGATION)
     dependsOn(ExtensionPatches.Boost)
     compatibleWith(*AppCompatibility.Boost)
 

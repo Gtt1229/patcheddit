@@ -2,7 +2,7 @@
  * Modifications Copyright 2026 brealorg.
  *
  * See the included NOTICE file for GPLv3 §7(b) and §7(c) terms that apply to this code.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.media
@@ -15,6 +15,7 @@ import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val EXTENSION_CLASS_DESCRIPTOR =
     "Lapp/morphe/extension/boost/media/ImageDismissTuning;"
@@ -59,9 +60,10 @@ private val imageModelFragmentOnCreateViewFingerprint = Fingerprint(
 val imageDismissTuningPatch = bytecodePatch(
     name = "Tune Boost image dismissal",
     description =
-        "Adds image-viewer-only quick-flick dismissal with a moderate distance option without changing GIF, video, or general navigation gestures.",
+        "Lets you close the image viewer with a quick flick, without changing GIF, video or other gestures.",
     default = true,
 ) {
+    category(PatchCategory.MEDIA)
     dependsOn(ExtensionPatches.Boost)
     compatibleWith(*AppCompatibility.Boost)
 

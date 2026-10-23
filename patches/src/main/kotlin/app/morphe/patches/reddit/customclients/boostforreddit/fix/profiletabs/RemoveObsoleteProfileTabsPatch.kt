@@ -1,6 +1,6 @@
 /*
  * Copyright 2026 brealorg.
- * Adapted from https://github.com/brealorg/breal-morphe-patches (82d70f7).
+ * Adapted from https://github.com/brealorg/breal-morphe-patches (0226c2e).
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -13,6 +13,7 @@ import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import app.morphe.patches.all.misc.PatchCategory
 
 private const val EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/RemoveObsoleteProfileTabsPatch;"
@@ -23,6 +24,7 @@ val removeObsoleteProfileTabsPatch = bytecodePatch(
     description = "Removes the legacy Gilded and Friends tabs from Boost profiles.",
     default = true,
 ) {
+    category(PatchCategory.INTERFACE)
     compatibleWith(*AppCompatibility.Boost)
     dependsOn(ExtensionPatches.Boost)
 
