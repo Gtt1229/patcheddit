@@ -1,3 +1,16 @@
+# [1.5.0-dev.1](https://github.com/wchill/patcheddit/compare/v1.4.1-dev.1...v1.5.0-dev.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* Remove Continuum and Relay patches ([b4ac952](https://github.com/wchill/patcheddit/commit/b4ac952ea9efc06577b22db6c8b573308236b63c))
+
+
+### Features
+
+* **boost:** port patch changes from brealorg ([e1ad2bf](https://github.com/wchill/patcheddit/commit/e1ad2bf6bf7e45b59e8ccce8fffa6906d8859aa2))
+* **boost:** sync upstream patches for Morphe 2.0 ([625f6d6](https://github.com/wchill/patcheddit/commit/625f6d66c7c093fe76b73d19ce6820604dea20d8))
+
 ## [1.4.1-dev.1](https://github.com/wchill/patcheddit/compare/v1.4.0...v1.4.1-dev.1) (2026-04-09)
 
 
