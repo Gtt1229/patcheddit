@@ -12,7 +12,7 @@ import app.morphe.patcher.Fingerprint
 internal const val LEGACY_SYNCCIT_API_URL =
     "https://api.synccit.com/api.php"
 
-private const val SYNCCIT_CLIENT_CLASS = "Lzd/a;"
+private const val SYNCCIT_CLIENT_CLASS = "Lo63;"
 
 internal val synccitUpdateFingerprint = Fingerprint(
     returnType = "V",
@@ -22,7 +22,7 @@ internal val synccitUpdateFingerprint = Fingerprint(
     strings = listOf(LEGACY_SYNCCIT_API_URL),
     custom = { method, classDef ->
         classDef.type == SYNCCIT_CLIENT_CLASS &&
-            method.name == "d"
+            method.name == "c"
     },
 )
 
@@ -42,28 +42,21 @@ internal val synccitAddFingerprint = Fingerprint(
 )
 
 internal val synccitAuthenticateFingerprint = Fingerprint(
-    returnType =
-        "Lcom/rubenmayayo/reddit/models/synccit/AddModel;",
-    parameters = listOf(
-        "Ljava/lang/String;",
-        "Ljava/lang/String;",
-        "Ljava/lang/String;",
-    ),
-    strings = listOf(LEGACY_SYNCCIT_API_URL),
-    custom = { method, classDef ->
-        classDef.type == SYNCCIT_CLIENT_CLASS &&
-            method.name == "b"
-    },
+    definingClass = "Lcom/rubenmayayo/reddit/ui/synccit/SynccitCreateActivity\$a;",
+    name = "doInBackground",
+    returnType = "Ljava/lang/Object;",
+    parameters = listOf("[Ljava/lang/Object;"),
+    strings = listOf(LEGACY_SYNCCIT_API_URL, "create"),
 )
 
 internal val synccitReadFingerprint = Fingerprint(
     returnType = "Ljava/util/List;",
     parameters = listOf(
-        "Ljava/util/List;",
+        "Ljava/util/ArrayList;",
     ),
     strings = listOf(LEGACY_SYNCCIT_API_URL),
     custom = { method, classDef ->
         classDef.type == SYNCCIT_CLIENT_CLASS &&
-            method.name == "c"
+            method.name == "b"
     },
 )

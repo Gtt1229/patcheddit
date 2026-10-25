@@ -10,13 +10,14 @@ package app.morphe.patches.reddit.customclients.boostforreddit.debug
 import app.morphe.patcher.Fingerprint
 
 internal object ExceptionHandlerFingerprint : Fingerprint(
-    custom = { method, _ ->
-        method.definingClass == "Lhe/h0;" && method.name == "j0"
-    }
+    definingClass = "Lr93;",
+    name = "d",
+    parameters = listOf("Ljava/lang/Throwable;"),
+    returnType = "V",
 )
 
 internal object TimberFingerprint : Fingerprint(
     custom = { method, _ ->
-        method.definingClass == "Lch/a;" && method.name == "a"
+        method.definingClass == "Lr93;" && method.name == "a"
     }
 )

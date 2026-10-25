@@ -10,13 +10,16 @@
 package app.morphe.patches.reddit.customclients.boostforreddit.http.archive
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import app.morphe.patches.all.misc.PatchCategory
+import app.morphe.patches.reddit.customclients.boostforreddit.wrapHook
+import app.morphe.util.getReference
+import app.morphe.util.indexOfFirstInstructionOrThrow
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 
 internal val SETTINGS_UTILS_EXTENSION_CLASS_DESCRIPTOR = "Lapp/morphe/extension/boost/utils/SettingsUtils;"
@@ -33,43 +36,47 @@ val addArchiveLinks = bytecodePatch(
     compatibleWith(*AppCompatibility.Boost)
     execute {
         LinkBuildContextMenuFingerprint.method.apply {
-            val index = LinkBuildContextMenuFingerprint.instructionMatches.last().index
+            val index = indexOfFirstInstructionOrThrow {
+                getReference<MethodReference>()?.toString() ==
+                    "Lcom/rubenmayayo/reddit/ui/customviews/menu/MenuView;->setMenuOptions(Ljava/util/List;)V"
+            }
+            val listRegister = getInstruction<FiveRegisterInstruction>(index).registerD
             addInstructions(
                 index,
                 """
-                invoke-static       {v0}, $SETTINGS_UTILS_EXTENSION_CLASS_DESCRIPTOR->addMenuOptions(Ljava/util/List;)V
+                invoke-static {v$listRegister}, $SETTINGS_UTILS_EXTENSION_CLASS_DESCRIPTOR->addMenuOptions(Ljava/util/List;)V
                 """
             )
         }
 
-        OnClickContextMenuFingerprint.method.apply {
-            val index = OnClickContextMenuFingerprint.instructionMatches.last().index
-            val openLinkDialogName = "Lcom/rubenmayayo/reddit/ui/customviews/t;"
-            val navigationName = "Lcom/rubenmayayo/reddit/ui/activities/i;"
-            val openUriName = "d0"
-            addInstructionsWithLabels(
-                index,
-                """
-                const/16            v1, 101
-                if-eq               v0, v1, :wayback
-                const/16            v1, 102
-                if-eq               v0, v1, :archive
-                goto                :continue
-                :wayback
-                const-string        v0, "https://web.archive.org/web/"
-                goto                :action
-                :archive
-                const-string        v0, "https://archive.is/"
-                :action
-                iget-object         p1, p0, $openLinkDialogName->a:Landroid/content/Context;
-                iget-object         v1, p0, $openLinkDialogName->c:Ljava/lang/String;
-                invoke-virtual      {v0, v1}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
-                move-result-object  v0
-                invoke-static       {p1, v0}, $navigationName->$openUriName(Landroid/content/Context;Ljava/lang/String;)V
+        OnClickContextMenuFingerprint.wrapHook(
+            before = """
+                iget v0, p1, Lcom/rubenmayayo/reddit/ui/customviews/menu/MenuOption;->a:I
+                const/16 v1, 101
+                if-eq v0, v1, :morphe_wayback
+                const/16 v1, 102
+                if-eq v0, v1, :morphe_archive
+                goto :morphe_native_context_menu
+                :morphe_wayback
+                const-string v2, "https://web.archive.org/web/"
+                goto :morphe_open_archive
+                :morphe_archive
+                const-string v2, "https://archive.is/"
+                :morphe_open_archive
+                iget-object v0, p0, Lj32${'$'}a;->a:Lj32;
+                iget-object v1, v0, Lj32;->a:Landroid/content/Context;
+                iget-object v0, v0, Lj32;->c:Ljava/lang/String;
+                invoke-virtual {v2, v0}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
+                move-result-object v0
+                invoke-static {v1, v0}, Lxy1;->t(Landroid/content/Context;Ljava/lang/String;)V
+                iget-object v0, p0, Lj32${'$'}a;->a:Lj32;
+                iget-object v0, v0, Lj32;->b:Ldp1;
+                if-eqz v0, :morphe_archive_menu_closed
+                invoke-virtual {v0}, Ldp1;->dismiss()V
+                :morphe_archive_menu_closed
                 return-void
-                """,
-                ExternalLabel("continue", getInstruction(index))
-            )
-        }
+                :morphe_native_context_menu
+            """,
+        )
     }
 }

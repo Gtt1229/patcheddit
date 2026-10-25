@@ -31,7 +31,6 @@ import androidx.fragment.app.Fragment;
 
 import app.morphe.extension.boost.utils.BoostSystemBarInsetsFix;
 
-import java.lang.reflect.Field;
 
 /**
  * Morphe-native pilot for Boost's toolbar preferences.
@@ -385,13 +384,13 @@ public final class MorpheSettingsV4ToolbarFragment extends Fragment {
         if (KEY_MAIN_ACTION.equals(key)) {
             requireValue(MAIN_ACTION_VALUES, value, key);
             preferences.edit().putString(key, value).apply();
-            setBoostStaticBoolean("i");
+            setBoostStaticBoolean("h");
             return;
         }
         if (KEY_HEADER_TYPE.equals(key)) {
             requireValue(HEADER_TYPE_VALUES, value, key);
             preferences.edit().putString(key, value).apply();
-            setBoostStaticBoolean("e");
+            setBoostStaticBoolean("d");
             return;
         }
         throw new IllegalArgumentException("unsupported toolbar choice " + key);
@@ -404,7 +403,7 @@ public final class MorpheSettingsV4ToolbarFragment extends Fragment {
             throw new IllegalArgumentException("unsupported toolbar boolean " + key);
         }
         preferences.edit().putBoolean(key, value).apply();
-        setBoostStaticBoolean("e");
+        setBoostStaticBoolean("d");
     }
 
     private void updateSummaries() {
@@ -479,13 +478,7 @@ public final class MorpheSettingsV4ToolbarFragment extends Fragment {
     }
 
     private static void setBoostStaticBoolean(String fieldName) {
-        try {
-            Class<?> settings = Class.forName("id.b");
-            Field field = settings.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.setBoolean(null, true);
-        } catch (Throwable ignored) {
-        }
+        BoostSettingsNative.markDirty(fieldName);
     }
 
     private void styleHost() {

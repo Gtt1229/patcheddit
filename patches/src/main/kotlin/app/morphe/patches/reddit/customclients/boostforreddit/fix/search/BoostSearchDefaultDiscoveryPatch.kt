@@ -11,9 +11,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
-import app.morphe.util.getReference
-import app.morphe.util.indexOfFirstInstructionReversedOrThrow
-import com.android.tools.smali.dexlib2.Opcode
+import app.morphe.patches.reddit.customclients.boostforreddit.wrapHook
 import app.morphe.patches.all.misc.PatchCategory
 
 @Suppress("unused")
@@ -29,19 +27,19 @@ val boostSearchDefaultDiscoveryPatch = bytecodePatch(
     execute {
         /*
          * Normal Boost search opens SearchGenericActivity.
-         * Q1() builds the empty-state "Go to..." section and already adds Random.
+         * s1() builds the empty-state "Go to..." section and already adds Random.
          * v5m keeps Random, displays cached active subreddits instantly, refreshes source-specific popular/HOT posts, and renames the Reddit search filter from Community to Subreddit.
          */
         searchGenericActivityDefaultGoToFingerprint.method.apply {
             /*
-             * Insert at Q1 method entry. The previous tail insertion was still
+             * Insert at method entry. The previous tail insertion was still
              * branch-skippable because Boost's cond label stayed attached to
-             * return-void. Entry injection proves whether Q1 is the active path.
+             * return-void. Entry injection cannot be skipped by a native branch.
              */
             addInstructions(
                 0,
                 """
-                    iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity;->b:Ljava/util/ArrayList;
+                    iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity;->a:Ljava/util/ArrayList;
                     invoke-static {p0, v0}, Lapp/morphe/extension/boost/search/SearchExploreRows;->appendOrRefresh(Landroid/app/Activity;Ljava/util/ArrayList;)V
                 """.trimIndent(),
             )
@@ -51,23 +49,16 @@ val boostSearchDefaultDiscoveryPatch = bytecodePatch(
          * Explore/default state should not open with the keyboard covering half
          * the landing content. Tapping the search field still focuses normally.
          */
-        searchGenericActivityOnCreateFingerprint.method.apply {
-            val returnIndex = indexOfFirstInstructionReversedOrThrow {
-                opcode == Opcode.RETURN_VOID
-            }
-
-            addInstructions(
-                returnIndex,
-                """
-                    invoke-virtual {p0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
-                    move-result-object v0
-                    const/4 v1, 0x3
-                    invoke-virtual {v0, v1}, Landroid/view/Window;->setSoftInputMode(I)V
-                    iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity;->searchEditText:Landroid/widget/EditText;
-                    invoke-virtual {v0}, Landroid/view/View;->clearFocus()V
-                """.trimIndent(),
-            )
-        }
+        searchGenericActivityOnCreateFingerprint.wrapHook(
+            after = """
+                invoke-virtual {p0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
+                move-result-object v0
+                const/4 v1, 0x3
+                invoke-virtual {v0, v1}, Landroid/view/Window;->setSoftInputMode(I)V
+                iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity;->searchEditText:Landroid/widget/EditText;
+                invoke-virtual {v0}, Landroid/view/View;->clearFocus()V
+            """,
+        )
 
     }
 }

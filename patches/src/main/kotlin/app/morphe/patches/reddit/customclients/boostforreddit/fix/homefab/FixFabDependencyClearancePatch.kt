@@ -10,8 +10,6 @@ package app.morphe.patches.reddit.customclients.boostforreddit.fix.homefab
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.ExtensionPatches
-import app.morphe.util.indexOfFirstInstructionOrThrow
-import com.android.tools.smali.dexlib2.Opcode
 
 private const val FAB_CLEARANCE_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostFabClearance;"
@@ -48,12 +46,9 @@ internal val fixFabDependencyClearancePatch = bytecodePatch {
             fabBottomNavigationDependentViewRemovedFingerprint,
         ).forEach { fingerprint ->
             fingerprint.method.apply {
-                // Keep the native super call, then replace the translation reset.
-                val superIndex = indexOfFirstInstructionOrThrow {
-                    opcode == Opcode.INVOKE_SUPER
-                }
+                // R8 removed the no-op super callback in 1.14.0.
                 addInstructions(
-                    superIndex + 1,
+                    0,
                     """
                         invoke-static {p1, p2, p3}, $FAB_CLEARANCE_EXTENSION_DESCRIPTOR->onDependentViewRemoved(Landroid/view/ViewGroup;Landroid/view/View;Landroid/view/View;)V
                         return-void

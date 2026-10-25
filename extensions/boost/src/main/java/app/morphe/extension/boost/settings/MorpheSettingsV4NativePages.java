@@ -42,15 +42,15 @@ import androidx.fragment.app.Fragment;
 
 import app.morphe.extension.boost.utils.BoostSystemBarInsetsFix;
 
+import com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel;
+
 import org.xmlpull.v1.XmlPullParser;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -575,12 +575,11 @@ public final class MorpheSettingsV4NativePages {
         private SharedPreferences preferences;
         private EditText synccitUsernameInput;
         private EditText synccitAuthInput;
-        private Object savedSearchObserver;
+        private BoostSettingsNative.SearchObservation savedSearchObserver;
         private FrameLayout pageHost;
         private View settingsPage;
         private final List<EditorPage> editorPages = new ArrayList<>();
-        private Object editorFragmentManager;
-        private Object editorBackStackListener;
+        private BoostSettingsNative.EditorBackStack editorBackStack;
         private int editorBackStackBaseCount = -1;
         private int editorBackStackSequence;
 
@@ -678,12 +677,17 @@ public final class MorpheSettingsV4NativePages {
             controlsByKey.clear();
             synccitUsernameInput = null;
             synccitAuthInput = null;
-            savedSearchObserver = null;
+            if (savedSearchObserver != null) {
+                savedSearchObserver.close();
+                savedSearchObserver = null;
+            }
+            if (editorBackStack != null) {
+                editorBackStack.close();
+                editorBackStack = null;
+            }
             editorPages.clear();
             pageHost = null;
             settingsPage = null;
-            editorFragmentManager = null;
-            editorBackStackListener = null;
             editorBackStackBaseCount = -1;
             super.onDestroyView();
         }
@@ -1116,7 +1120,11 @@ public final class MorpheSettingsV4NativePages {
                 return;
             }
             if ("RevokeGDPRConsentPreference".equals(control.tag)) {
-                openClassic("PreferenceFragmentAboutCompat");
+                Toast.makeText(
+                        requireContext(),
+                        "Boost 1.14.0 does not include a GDPR revocation action.",
+                        Toast.LENGTH_LONG
+                ).show();
                 return;
             }
 
@@ -1136,39 +1144,27 @@ public final class MorpheSettingsV4NativePages {
             } else if ("pref_notifications_configure".equals(key)) {
                 openNotificationSettings();
             } else if ("pref_edit_subscriptions".equals(key)) {
-                invokeActivityHelper("t0", Activity.class, hostActivity());
+                runNativeAction(() -> BoostSettingsNative.openSubscriptions(hostActivity()));
             } else if ("pref_manage_drafts".equals(key)) {
-                invokeActivityHelper("P", Context.class, requireContext());
+                runNativeAction(() -> BoostSettingsNative.openDrafts(requireContext()));
             } else if ("pref_imgur_uploads".equals(key)) {
-                invokeActivityHelper("n0", Context.class, requireContext());
+                runNativeAction(() -> BoostSettingsNative.openUploads(requireContext()));
             } else if ("reset_tips".equals(key)) {
                 resetTips();
             } else if ("support_launch".equals(key)) {
-                invokeActivityHelper("c1", Context.class, requireContext());
+                runNativeAction(() -> BoostSettingsNative.openSupport(requireContext()));
             } else if ("rate_app".equals(key)) {
-                invokeActivityHelper("u1", Context.class, requireContext());
+                runNativeAction(() -> BoostSettingsNative.rateApp(hostActivity()));
             } else if ("about_subreddit".equals(key)) {
-                invokeActivityHelper(
-                        "Y0",
-                        new Class<?>[]{Activity.class, String.class},
-                        new Object[]{hostActivity(), "BoostForReddit"}
-                );
+                runNativeAction(() -> BoostSettingsNative.openCommunity(hostActivity(), "BoostForReddit"));
             } else if ("about_faq".equals(key)) {
-                invokeActivityHelper(
-                        "m1",
-                        new Class<?>[]{Activity.class, String.class, String.class},
-                        new Object[]{hostActivity(), "boostforreddit", "index"}
-                );
+                runNativeAction(() -> BoostSettingsNative.openWiki(hostActivity(), "boostforreddit", "index"));
             } else if ("licenses_preference".equals(key)) {
-                invokeActivityHelper("i0", Context.class, requireContext());
+                runNativeAction(() -> BoostSettingsNative.openLicenses(requireContext()));
             } else if ("privacy_policy".equals(key)) {
                 openUrl("https://www.iubenda.com/privacy-policy/7976518");
             } else if ("about_reddit".equals(key)) {
-                invokeActivityHelper(
-                        "y0",
-                        new Class<?>[]{Context.class, String.class},
-                        new Object[]{requireContext(), "rmayayo"}
-                );
+                runNativeAction(() -> BoostSettingsNative.openUser(requireContext(), "rmayayo"));
             } else if ("about_twitter".equals(key)) {
                 openUrl("https://twitter.com/rmayayo");
             } else if ("contact_dev_key".equals(key)) {
@@ -1280,34 +1276,15 @@ public final class MorpheSettingsV4NativePages {
             }
         }
 
-        @SuppressWarnings("unchecked")
         private List<String> loadFilters(String key) {
-            try {
-                Object settingsObject = invokeStatic("id.b", "v0");
-                Method method = settingsObject.getClass().getMethod(
-                        "j0",
-                        String.class
-                );
-                Object value = method.invoke(settingsObject, key);
-                if (value instanceof List) {
-                    return new ArrayList<>((List<String>) value);
-                }
-            } catch (Throwable ignored) {
-            }
-            return new ArrayList<>();
+            return new ArrayList<>(BoostSettingsNative.loadFilters(key));
         }
 
         private void persistFilters(String key, List<String> values) {
             try {
-                Object settingsObject = invokeStatic("id.b", "v0");
-                Method method = settingsObject.getClass().getMethod(
-                        "d6",
-                        String.class,
-                        List.class
-                );
-                method.invoke(settingsObject, key, new ArrayList<>(values));
+                BoostSettingsNative.saveFilters(key, values);
                 applySideEffects(key);
-            } catch (Throwable throwable) {
+            } catch (RuntimeException exception) {
                 showUnavailable();
             }
         }
@@ -1370,18 +1347,13 @@ public final class MorpheSettingsV4NativePages {
                 }
                 row.addView(preview, wrapParams());
                 row.setOnClickListener(view -> {
-                    Object settingsObject = invokeStatic("id.b", "v0");
-                    Object result = invokeInstance(
-                            settingsObject,
-                            "x6",
-                            new Class<?>[]{int[].class},
-                            new Object[]{colors}
-                    );
-                    if (result == InvocationFailure.INSTANCE) {
+                    try {
+                        BoostSettingsNative.setColorPattern(colors);
+                    } catch (RuntimeException exception) {
                         showUnavailable();
                         return;
                     }
-                    setBoostStaticBoolean("j");
+                    setBoostStaticBoolean("i");
                     page.dismiss();
                 });
                 addGroupedRow(group, row);
@@ -1393,61 +1365,36 @@ public final class MorpheSettingsV4NativePages {
             }
         }
 
-        private Object frontpageSubscription() {
-            return invokeStatic(
-                    "com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel",
-                    "m"
-            );
+        private SubscriptionViewModel frontpageSubscription() {
+            return BoostSettingsNative.frontpageSubscription();
         }
 
-        private Object emptySubscription() {
-            return newInstance(
-                    "com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel",
-                    new Class<?>[]{String.class},
-                    new Object[]{""}
-            );
+        private SubscriptionViewModel emptySubscription() {
+            return BoostSettingsNative.emptySubscription();
         }
 
-        @SuppressWarnings("unchecked")
         private void showSortEditor(
                 boolean defaultSort,
-                Object subscription,
+                SubscriptionViewModel subscription,
                 Runnable afterSelection
         ) {
-            if (subscription == InvocationFailure.INSTANCE
-                    || subscription == null) {
+            if (subscription == null) {
                 showUnavailable();
                 return;
             }
             try {
-                Class<?> subscriptionType = Class.forName(
-                        "com.rubenmayayo.reddit.models.reddit."
-                                + "SubscriptionViewModel"
-                );
-                Object rawOptions = invokeStatic(
-                        "qc.a",
-                        "j",
-                        new Class<?>[]{subscriptionType},
-                        new Object[]{subscription}
-                );
-                if (!(rawOptions instanceof List)) {
-                    showUnavailable();
-                    return;
-                }
-                List<Object> options = (List<Object>) rawOptions;
+                List<BoostSettingsNative.SortOption> options =
+                        BoostSettingsNative.sortOptions(requireContext(), subscription);
                 List<Integer> optionIds = new ArrayList<>();
                 List<CharSequence> optionLabels = new ArrayList<>();
-                for (Object option : options) {
-                    int id = intResult(invokeInstance(option, "q"), -1);
-                    String title = menuOptionTitle(option);
+                for (BoostSettingsNative.SortOption option : options) {
+                    int id = option.id;
+                    String title = option.title;
                     if (TextUtils.isEmpty(title) || id < 0) {
                         continue;
                     }
-                    String supporting = stringResult(invokeInstance(option, "t"));
                     optionIds.add(id);
-                    optionLabels.add(TextUtils.isEmpty(supporting)
-                            ? title
-                            : title + " — " + supporting);
+                    optionLabels.add(title);
                 }
                 if (optionIds.isEmpty()) {
                     showUnavailable();
@@ -1523,14 +1470,14 @@ public final class MorpheSettingsV4NativePages {
                     });
                     page.content.addView(reset, wrapParams());
                 }
-            } catch (Throwable throwable) {
+            } catch (RuntimeException exception) {
                 showUnavailable();
             }
         }
 
         private int selectedSortIndex(
                 boolean defaultSort,
-                Object subscription,
+                SubscriptionViewModel subscription,
                 List<Integer> optionIds
         ) {
             Integer selectedId = currentSortOptionId(
@@ -1542,81 +1489,14 @@ public final class MorpheSettingsV4NativePages {
 
         private Integer currentSortOptionId(
                 boolean defaultSort,
-                Object subscription
+                SubscriptionViewModel subscription
         ) {
             try {
-                Object sorting;
-                Object period;
-                if (defaultSort) {
-                    Object settingsObject = invokeStatic("id.b", "v0");
-                    sorting = invokeInstance(settingsObject, "Y1");
-                    period = invokeInstance(settingsObject, "V1");
-                } else {
-                    Class<?> subscriptionType = Class.forName(
-                            "com.rubenmayayo.reddit.models.reddit."
-                                    + "SubscriptionViewModel"
-                    );
-                    Object manager = invokeStatic("he.c0", "e");
-                    Object saved = invokeInstance(
-                            manager,
-                            "j",
-                            new Class<?>[]{subscriptionType},
-                            new Object[]{subscription}
-                    );
-                    if (saved == null || saved == InvocationFailure.INSTANCE) {
-                        return 100;
-                    }
-                    sorting = invokeInstance(saved, "a");
-                    period = invokeInstance(saved, "b");
-                }
-                if (sorting == InvocationFailure.INSTANCE
-                        || sorting == null
-                        || period == InvocationFailure.INSTANCE) {
-                    return null;
-                }
-                String sortingName = enumName(sorting);
-                if ("HOT".equals(sortingName)) {
-                    return 0;
-                }
-                if ("NEW".equals(sortingName)) {
-                    return 1;
-                }
-                if ("RISING".equals(sortingName)) {
-                    return 2;
-                }
-                if ("GILDED".equals(sortingName)) {
-                    return 5;
-                }
-                int periodIndex = timePeriodIndex(enumName(period));
-                if (periodIndex < 0) {
-                    return null;
-                }
-                if ("TOP".equals(sortingName)) {
-                    return 30 + periodIndex;
-                }
-                if ("CONTROVERSIAL".equals(sortingName)) {
-                    return 40 + periodIndex;
-                }
-                return null;
-            } catch (Throwable throwable) {
+                return BoostSettingsNative.currentSortOptionId(defaultSort, subscription);
+            } catch (RuntimeException exception) {
+                showUnavailable();
                 return null;
             }
-        }
-
-        private String enumName(Object value) {
-            return value instanceof Enum
-                    ? ((Enum<?>) value).name()
-                    : "";
-        }
-
-        private int timePeriodIndex(String name) {
-            String[] names = {"HOUR", "DAY", "WEEK", "MONTH", "YEAR", "ALL"};
-            for (int index = 0; index < names.length; index++) {
-                if (names[index].equals(name)) {
-                    return index;
-                }
-            }
-            return -1;
         }
 
         private boolean saveDefaultSort(int id) {
@@ -1634,67 +1514,24 @@ public final class MorpheSettingsV4NativePages {
             if (sort == null) {
                 return false;
             }
-            Object settingsObject = invokeStatic("id.b", "v0");
-            if (invokeInstance(
-                    settingsObject,
-                    "B6",
-                    new Class<?>[]{String.class},
-                    new Object[]{sort}
-            ) == InvocationFailure.INSTANCE) {
-                return false;
-            }
-            return period == null || invokeInstance(
-                    settingsObject,
-                    "A6",
-                    new Class<?>[]{String.class},
-                    new Object[]{period}
-            ) != InvocationFailure.INSTANCE;
-        }
-
-        private boolean saveSubscriptionSort(Object subscription, int id) {
             try {
-                Class<?> subscriptionType = Class.forName(
-                        "com.rubenmayayo.reddit.models.reddit."
-                                + "SubscriptionViewModel"
-                );
-                Object manager = invokeStatic("he.c0", "e");
-                String method = id == 100 ? "a" : "m";
-                Class<?>[] types = id == 100
-                        ? new Class<?>[]{subscriptionType}
-                        : new Class<?>[]{subscriptionType, int.class};
-                Object[] values = id == 100
-                        ? new Object[]{subscription}
-                        : new Object[]{subscription, id};
-                return invokeInstance(manager, method, types, values)
-                        != InvocationFailure.INSTANCE;
-            } catch (Throwable throwable) {
+                BoostSettingsNative.saveDefaultSort(sort, period);
+                return true;
+            } catch (RuntimeException exception) {
                 return false;
             }
         }
 
-        private String menuOptionTitle(Object option) {
-            String title = stringResult(invokeInstance(option, "v"));
-            if (!TextUtils.isEmpty(title)) {
-                return title;
-            }
-            int resourceId = intResult(invokeInstance(option, "x"), 0);
-            if (resourceId == 0) {
-                return "";
-            }
+        private boolean saveSubscriptionSort(SubscriptionViewModel subscription, int id) {
             try {
-                return requireContext().getString(resourceId);
-            } catch (Resources.NotFoundException ignored) {
-                return "";
+                BoostSettingsNative.saveSubscriptionSort(subscription, id);
+                return true;
+            } catch (RuntimeException exception) {
+                return false;
             }
         }
 
-        @SuppressWarnings("unchecked")
         private void showSavedSortsEditor() {
-            Object manager = invokeStatic("he.c0", "e");
-            if (manager == InvocationFailure.INSTANCE) {
-                showUnavailable();
-                return;
-            }
             EditorPage page = openEditorPage("Manage saved sorts");
             LinearLayout content = page.content;
             LinearLayout list = new LinearLayout(materialContext());
@@ -1704,8 +1541,8 @@ public final class MorpheSettingsV4NativePages {
             Runnable[] render = new Runnable[1];
             render[0] = () -> {
                 list.removeAllViews();
-                Object raw = invokeInstance(manager, "k");
-                if (!(raw instanceof List) || ((List<?>) raw).isEmpty()) {
+                List<SubscriptionViewModel> subscriptions = BoostSettingsNative.savedSortSubscriptions();
+                if (subscriptions.isEmpty()) {
                     TextView empty = textView(
                             "No community-specific sorts yet.",
                             15,
@@ -1716,10 +1553,8 @@ public final class MorpheSettingsV4NativePages {
                     return;
                 }
                 LinearLayout group = addGroup(list);
-                for (Object subscription : (List<Object>) raw) {
-                    String name = stringResult(
-                            invokeInstance(subscription, "z")
-                    );
+                for (SubscriptionViewModel subscription : subscriptions) {
+                    String name = BoostSettingsNative.subscriptionName(requireContext(), subscription);
                     if (TextUtils.isEmpty(name)) {
                         name = "Community";
                     }
@@ -1727,8 +1562,11 @@ public final class MorpheSettingsV4NativePages {
                     addLabels(row, name, "Tap to change its saved sort");
                     TextView remove = actionLabel("Remove", false);
                     remove.setOnClickListener(view -> {
-                        saveSubscriptionSort(subscription, 100);
-                        render[0].run();
+                        if (saveSubscriptionSort(subscription, 100)) {
+                            render[0].run();
+                        } else {
+                            showUnavailable();
+                        }
                     });
                     row.addView(remove, wrapParams());
                     row.setOnClickListener(view -> showSortEditor(
@@ -1748,7 +1586,7 @@ public final class MorpheSettingsV4NativePages {
                     "Community-specific sort choices will be removed.",
                     "Clear",
                     () -> {
-                        invokeInstance(manager, "c");
+                        BoostSettingsNative.clearSavedSorts();
                         render[0].run();
                     }
             ));
@@ -1757,8 +1595,8 @@ public final class MorpheSettingsV4NativePages {
         }
 
         private void showSavedSearchesEditor() {
-            Object model = savedSearchesViewModel();
-            if (model == InvocationFailure.INSTANCE) {
+            BoostSettingsNative.SavedSearches model = savedSearchesViewModel();
+            if (model == null) {
                 showUnavailable();
                 return;
             }
@@ -1775,14 +1613,25 @@ public final class MorpheSettingsV4NativePages {
                 }
                 renderSavedSearches(list, model, values);
             };
-            Object liveData = invokeInstance(model, "g");
-            Object current = invokeInstance(liveData, "e");
-            if (current instanceof List) {
-                renderer.render((List<?>) current);
-            } else {
-                renderer.render(Collections.emptyList());
+            try {
+                renderer.render(model.current());
+                if (savedSearchObserver != null) {
+                    savedSearchObserver.close();
+                }
+                BoostSettingsNative.SearchObservation observer =
+                        model.observe(this, renderer::render);
+                savedSearchObserver = observer;
+                page.onDismiss = () -> {
+                    observer.close();
+                    if (savedSearchObserver == observer) {
+                        savedSearchObserver = null;
+                    }
+                };
+            } catch (RuntimeException exception) {
+                page.dismiss();
+                showUnavailable();
+                return;
             }
-            observeSavedSearches(liveData, renderer);
 
             LinearLayout actions = endAlignedActions();
             TextView add = actionLabel("Add saved search", true);
@@ -1794,78 +1643,22 @@ public final class MorpheSettingsV4NativePages {
             content.addView(actions, matchWrapParams());
         }
 
-        private Object savedSearchesViewModel() {
+        private BoostSettingsNative.SavedSearches savedSearchesViewModel() {
             Activity activity = hostActivity();
             if (activity == null) {
-                return InvocationFailure.INSTANCE;
+                return null;
             }
             try {
-                Object factory = invokeStatic(
-                        "hc.d",
-                        "e",
-                        new Class<?>[]{Context.class},
-                        new Object[]{activity}
-                );
-                if (factory == InvocationFailure.INSTANCE) {
-                    return InvocationFailure.INSTANCE;
-                }
-                Class<?> ownerType = Class.forName("androidx.lifecycle.r0");
-                Class<?> factoryType = Class.forName("androidx.lifecycle.n0$b");
-                Class<?> providerType = Class.forName("androidx.lifecycle.n0");
-                Object provider = providerType
-                        .getConstructor(ownerType, factoryType)
-                        .newInstance(activity, factory);
-                Method get = providerType.getMethod("a", Class.class);
-                return get.invoke(provider, Class.forName("hc.i"));
-            } catch (Throwable throwable) {
-                return InvocationFailure.INSTANCE;
-            }
-        }
-
-        private void observeSavedSearches(
-                Object liveData,
-                SavedSearchRenderer renderer
-        ) {
-            Activity activity = hostActivity();
-            if (activity == null || liveData == InvocationFailure.INSTANCE) {
-                return;
-            }
-            try {
-                Class<?> ownerType = Class.forName("androidx.lifecycle.q");
-                Class<?> observerType = Class.forName("androidx.lifecycle.y");
-                savedSearchObserver = Proxy.newProxyInstance(
-                        observerType.getClassLoader(),
-                        new Class<?>[]{observerType},
-                        (proxy, method, arguments) -> {
-                            if ("a".equals(method.getName())
-                                    && arguments != null
-                                    && arguments.length == 1
-                                    && arguments[0] instanceof List) {
-                                List<?> values = new ArrayList<>(
-                                        (List<?>) arguments[0]
-                                );
-                                activity.runOnUiThread(
-                                        () -> renderer.render(values)
-                                );
-                            }
-                            return null;
-                        }
-                );
-                Method observe = liveData.getClass().getMethod(
-                        "h",
-                        ownerType,
-                        observerType
-                );
-                observe.invoke(liveData, activity, savedSearchObserver);
-            } catch (Throwable ignored) {
-                savedSearchObserver = null;
+                return BoostSettingsNative.savedSearches(activity);
+            } catch (RuntimeException exception) {
+                return null;
             }
         }
 
         private void renderSavedSearches(
                 LinearLayout list,
-                Object model,
-                List<?> values
+                BoostSettingsNative.SavedSearches model,
+                List<BoostSettingsNative.SavedSearch> values
         ) {
             list.removeAllViews();
             if (values.isEmpty()) {
@@ -1879,13 +1672,13 @@ public final class MorpheSettingsV4NativePages {
                 return;
             }
             LinearLayout group = addGroup(list);
-            for (Object entity : values) {
-                String name = stringField(entity, "b");
-                String query = stringField(entity, "e");
+            for (BoostSettingsNative.SavedSearch entity : values) {
+                String name = entity.name;
+                String query = entity.query;
                 if (TextUtils.isEmpty(name)) {
                     name = query;
                 }
-                String scope = stringField(entity, "c");
+                String scope = entity.community;
                 String summary = TextUtils.isEmpty(scope)
                         ? query
                         : query + "  ·  r/" + scope;
@@ -1905,23 +1698,25 @@ public final class MorpheSettingsV4NativePages {
             }
         }
 
-        private void deleteSavedSearch(Object model, Object entity) {
+        private void deleteSavedSearch(
+                BoostSettingsNative.SavedSearches model,
+                BoostSettingsNative.SavedSearch entity
+        ) {
             try {
-                Class<?> entityType = Class.forName("hc.e");
-                if (invokeInstance(
-                        model,
-                        "f",
-                        new Class<?>[]{entityType},
-                        new Object[]{entity}
-                ) == InvocationFailure.INSTANCE) {
-                    showUnavailable();
-                }
-            } catch (Throwable throwable) {
+                model.delete(entity, success -> {
+                    if (!success && isAdded()) {
+                        showUnavailable();
+                    }
+                });
+            } catch (RuntimeException exception) {
                 showUnavailable();
             }
         }
 
-        private void showSavedSearchEditor(Object model, Object existing) {
+        private void showSavedSearchEditor(
+                BoostSettingsNative.SavedSearches model,
+                BoostSettingsNative.SavedSearch existing
+        ) {
             SearchDraft draft = searchDraft(existing);
             EditorPage page = openEditorPage(
                     existing == null ? "Add saved search" : "Edit saved search"
@@ -2007,16 +1802,23 @@ public final class MorpheSettingsV4NativePages {
                     query.setError("A search query is required");
                     return;
                 }
-                if (saveSavedSearch(model, existing, draft)) {
-                    page.dismiss();
-                } else {
-                    showUnavailable();
-                }
+                save.setEnabled(false);
+                saveSavedSearch(model, existing, draft, success -> {
+                    if (!isAdded() || !page.isShowing()) {
+                        return;
+                    }
+                    save.setEnabled(true);
+                    if (success) {
+                        page.dismiss();
+                    } else {
+                        showUnavailable();
+                    }
+                });
             });
             content.addView(actions, matchWrapParams());
         }
 
-        private SearchDraft searchDraft(Object entity) {
+        private SearchDraft searchDraft(BoostSettingsNative.SavedSearch entity) {
             SearchDraft draft = new SearchDraft();
             if (entity == null) {
                 int sortIndex = integerPreference(
@@ -2037,13 +1839,13 @@ public final class MorpheSettingsV4NativePages {
                 draft.period = periods[Math.max(0, Math.min(periodIndex, 5))];
                 return draft;
             }
-            draft.id = intField(entity, "a", 0);
-            draft.name = stringField(entity, "b");
-            draft.community = stringField(entity, "c");
-            draft.scopeId = stringField(entity, "d");
-            draft.query = stringField(entity, "e");
-            draft.sort = stringField(entity, "f");
-            draft.period = stringField(entity, "g");
+            draft.id = entity.id;
+            draft.name = entity.name;
+            draft.community = entity.community;
+            draft.scopeId = entity.scopeId;
+            draft.query = entity.query;
+            draft.sort = entity.sort;
+            draft.period = entity.period;
             if (TextUtils.isEmpty(draft.sort)) {
                 draft.sort = "relevance";
             }
@@ -2053,34 +1855,25 @@ public final class MorpheSettingsV4NativePages {
             return draft;
         }
 
-        private boolean saveSavedSearch(
-                Object model,
-                Object existing,
-                SearchDraft draft
+        private void saveSavedSearch(
+                BoostSettingsNative.SavedSearches model,
+                BoostSettingsNative.SavedSearch existing,
+                SearchDraft draft,
+                BoostSettingsNative.SearchCompletion completion
         ) {
             try {
-                Class<?> entityType = Class.forName("hc.e");
-                Object entity = entityType.getConstructor().newInstance();
-                setField(entity, "a", draft.id);
-                setField(
-                        entity,
-                        "b",
-                        TextUtils.isEmpty(draft.name) ? draft.query : draft.name
+                BoostSettingsNative.SavedSearch entity = new BoostSettingsNative.SavedSearch(
+                        draft.id,
+                        TextUtils.isEmpty(draft.name) ? draft.query : draft.name,
+                        draft.community,
+                        draft.scopeId,
+                        draft.query,
+                        draft.sort.toLowerCase(Locale.ROOT),
+                        draft.period.toLowerCase(Locale.ROOT)
                 );
-                setField(entity, "c", draft.community);
-                setField(entity, "d", draft.scopeId);
-                setField(entity, "e", draft.query);
-                setField(entity, "f", draft.sort.toLowerCase());
-                setField(entity, "g", draft.period.toLowerCase());
-                String method = existing == null ? "h" : "i";
-                return invokeInstance(
-                        model,
-                        method,
-                        new Class<?>[]{entityType},
-                        new Object[]{entity}
-                ) != InvocationFailure.INSTANCE;
-            } catch (Throwable throwable) {
-                return false;
+                model.save(entity, existing != null, completion);
+            } catch (RuntimeException exception) {
+                completion.onComplete(false);
             }
         }
 
@@ -2151,13 +1944,13 @@ public final class MorpheSettingsV4NativePages {
             synccitUsernameInput = addEditorInput(
                     content,
                     "Synccit username",
-                    settingsString("k4"),
+                    BoostSettingsNative.synccitUsername(),
                     14
             );
             synccitAuthInput = addEditorInput(
                     content,
                     "Device auth token",
-                    settingsString("i4"),
+                    BoostSettingsNative.synccitAuth(),
                     12
             );
 
@@ -2215,47 +2008,26 @@ public final class MorpheSettingsV4NativePages {
 
         private void startSynccitCreate(boolean accountMode) {
             try {
-                Class<?> type = Class.forName(
-                        "com.rubenmayayo.reddit.ui.synccit."
-                                + "SynccitCreateActivity"
-                );
-                Intent intent = new Intent(requireContext(), type);
+                Intent intent = BoostSettingsNative.synccitIntent(requireContext());
                 int requestCode;
                 if (accountMode) {
                     intent.putExtra("account_mode", true);
                     requestCode = REQUEST_SYNCCIT_ACCOUNT;
                 } else {
                     String username = synccitUsernameInput == null
-                            ? settingsString("k4")
+                            ? BoostSettingsNative.synccitUsername()
                             : synccitUsernameInput.getText().toString().trim();
                     intent.putExtra("username", username);
                     requestCode = REQUEST_SYNCCIT_DEVICE;
                 }
                 startActivityForResult(intent, requestCode);
-            } catch (Throwable throwable) {
+            } catch (RuntimeException exception) {
                 showUnavailable();
             }
         }
 
         private void saveSynccitCredentials(String username, String auth) {
-            Object settingsObject = invokeStatic("id.b", "v0");
-            invokeInstance(
-                    settingsObject,
-                    "y7",
-                    new Class<?>[]{String.class},
-                    new Object[]{username}
-            );
-            invokeInstance(
-                    settingsObject,
-                    "x7",
-                    new Class<?>[]{String.class},
-                    new Object[]{auth}
-            );
-        }
-
-        private String settingsString(String method) {
-            Object settingsObject = invokeStatic("id.b", "v0");
-            return stringResult(invokeInstance(settingsObject, method));
+            BoostSettingsNative.saveSynccitCredentials(username, auth);
         }
 
         private void showFieldSearchHelp() {
@@ -2338,29 +2110,24 @@ public final class MorpheSettingsV4NativePages {
                     "Delete the selected local history data?",
                     "Delete",
                     () -> {
-                        deleteForKey(control.key);
-                        Toast.makeText(
-                                requireContext(),
-                                "Deleted",
-                                Toast.LENGTH_SHORT
-                        ).show();
+                        if (deleteForKey(control.key)) {
+                            Toast.makeText(
+                                    requireContext(),
+                                    "Deleted",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                        }
                     }
             );
         }
 
-        private void deleteForKey(String key) {
-            if ("pref_history_delete_read".equals(key)) {
-                factoryCall("he.a0", "b", "a");
-            } else if ("pref_recent_posts_delete".equals(key)) {
-                factoryCall("he.z", "e", "c");
-            } else if ("pref_history_delete".equals(key)) {
-                factoryCall("he.d0", "d", "c");
-            } else if ("pref_searches_delete".equals(key)) {
-                factoryCall("ld.c", "a", "clear");
-            } else if ("pref_all_delete".equals(key)) {
-                factoryCall("he.z", "e", "c");
-                factoryCall("he.d0", "d", "c");
-                factoryCall("ld.c", "a", "clear");
+        private boolean deleteForKey(String key) {
+            try {
+                BoostSettingsNative.deleteHistory(key);
+                return true;
+            } catch (RuntimeException exception) {
+                showUnavailable();
+                return false;
             }
         }
 
@@ -2368,47 +2135,30 @@ public final class MorpheSettingsV4NativePages {
             // These are Boost's existing invalidation flags. Setting a broader
             // superset is safe and keeps changes visible without a hidden
             // PreferenceFragment listener.
+            setBoostStaticBoolean("d");
             setBoostStaticBoolean("e");
             setBoostStaticBoolean("f");
+            setBoostStaticBoolean("g");
             setBoostStaticBoolean("h");
             setBoostStaticBoolean("i");
-            setBoostStaticBoolean("j");
 
             if ("pref_subscriptions_drawer".equals(key)
                     || "pref_subscriptions_drawer_show_icon".equals(key)
                     || "pref_subscriptions_only_casual".equals(key)) {
-                invokeStatic(
-                        "he.h0",
-                        "m0",
-                        new Class<?>[]{Context.class},
-                        new Object[]{requireContext()}
-                );
+                runNativeAction(() -> BoostSettingsNative.subscriptionsChanged(requireContext()));
             }
             if ("pref_check_messages".equals(key)) {
-                String method = preferences.getBoolean(key, true) ? "b" : "c";
-                invokeStatic(
-                        "pe.b",
-                        method,
-                        new Class<?>[]{Context.class},
-                        new Object[]{requireContext()}
-                );
+                runNativeAction(() -> BoostSettingsNative.updateNotifications(
+                        hostActivity(), preferences.getBoolean(key, true)));
             } else if ("pref_check_messages_interval".equals(key)) {
-                invokeStatic(
-                        "pe.b",
-                        "b",
-                        new Class<?>[]{Context.class},
-                        new Object[]{requireContext()}
-                );
+                runNativeAction(() -> BoostSettingsNative.updateNotifications(hostActivity(), true));
             } else if ("pref_check_messages_push".equals(key)) {
                 reconcileNotificationAccess();
             } else if ("pref_search_show_trending_searches".equals(key)
                     && preferences.getBoolean(key, false)) {
-                invokeStatic(
-                        "com.rubenmayayo.reddit.work.trending.TrendingWorker",
-                        "a",
-                        new Class<?>[]{Context.class, int.class},
-                        new Object[]{requireContext(), 2}
-                );
+                runNativeAction(() -> BoostSettingsNative.updateTrending(requireContext()));
+            } else if ("pref_cache_max_size".equals(key)) {
+                runNativeAction(() -> BoostSettingsNative.resizeMediaCache(requireContext()));
             }
         }
 
@@ -2633,7 +2383,12 @@ public final class MorpheSettingsV4NativePages {
         }
 
         private void resetTips() {
-            factoryCall("he.f", "b", "f");
+            try {
+                BoostSettingsNative.resetTips();
+            } catch (RuntimeException exception) {
+                showUnavailable();
+                return;
+            }
             Toast.makeText(
                     requireContext(),
                     "Tips reset",
@@ -2641,156 +2396,16 @@ public final class MorpheSettingsV4NativePages {
             ).show();
         }
 
-        private void invokeActivityHelper(
-                String method,
-                Class<?> parameterType,
-                Object value
-        ) {
-            invokeActivityHelper(
-                    method,
-                    new Class<?>[]{parameterType},
-                    new Object[]{value}
-            );
-        }
-
-        private void invokeActivityHelper(
-                String method,
-                Class<?>[] parameterTypes,
-                Object[] values
-        ) {
-            Object result = invokeStatic(
-                    "com.rubenmayayo.reddit.ui.activities.i",
-                    method,
-                    parameterTypes,
-                    values
-            );
-            if (result == InvocationFailure.INSTANCE) {
+        private void runNativeAction(Runnable action) {
+            try {
+                action.run();
+            } catch (RuntimeException exception) {
                 showUnavailable();
             }
-        }
-
-        private void factoryCall(
-                String className,
-                String factory,
-                String method
-        ) {
-            try {
-                Object target = invokeStatic(className, factory);
-                Method action = target.getClass().getMethod(method);
-                action.invoke(target);
-            } catch (Throwable throwable) {
-                showUnavailable();
-            }
-        }
-
-        private Object invokeStatic(String className, String method) {
-            return invokeStatic(className, method, new Class<?>[0], new Object[0]);
-        }
-
-        private Object invokeStatic(
-                String className,
-                String method,
-                Class<?>[] parameterTypes,
-                Object[] values
-        ) {
-            try {
-                Class<?> type = Class.forName(className);
-                Method target = type.getMethod(method, parameterTypes);
-                return target.invoke(null, values);
-            } catch (Throwable throwable) {
-                return InvocationFailure.INSTANCE;
-            }
-        }
-
-        private Object invokeInstance(Object target, String method) {
-            return invokeInstance(
-                    target,
-                    method,
-                    new Class<?>[0],
-                    new Object[0]
-            );
-        }
-
-        private Object invokeInstance(
-                Object target,
-                String method,
-                Class<?>[] parameterTypes,
-                Object[] values
-        ) {
-            if (target == null || target == InvocationFailure.INSTANCE) {
-                return InvocationFailure.INSTANCE;
-            }
-            try {
-                Method action = target.getClass().getMethod(
-                        method,
-                        parameterTypes
-                );
-                return action.invoke(target, values);
-            } catch (Throwable throwable) {
-                return InvocationFailure.INSTANCE;
-            }
-        }
-
-        private Object newInstance(
-                String className,
-                Class<?>[] parameterTypes,
-                Object[] values
-        ) {
-            try {
-                Class<?> type = Class.forName(className);
-                return type.getConstructor(parameterTypes).newInstance(values);
-            } catch (Throwable throwable) {
-                return InvocationFailure.INSTANCE;
-            }
-        }
-
-        private String stringResult(Object value) {
-            return value instanceof String ? (String) value : "";
-        }
-
-        private int intResult(Object value, int fallback) {
-            return value instanceof Number
-                    ? ((Number) value).intValue()
-                    : fallback;
-        }
-
-        private String stringField(Object target, String name) {
-            Object value = fieldValue(target, name);
-            return value instanceof String ? (String) value : "";
-        }
-
-        private int intField(Object target, String name, int fallback) {
-            return intResult(fieldValue(target, name), fallback);
-        }
-
-        private Object fieldValue(Object target, String name) {
-            if (target == null) {
-                return null;
-            }
-            try {
-                Field field = target.getClass().getDeclaredField(name);
-                field.setAccessible(true);
-                return field.get(target);
-            } catch (Throwable throwable) {
-                return null;
-            }
-        }
-
-        private void setField(Object target, String name, Object value)
-                throws ReflectiveOperationException {
-            Field field = target.getClass().getDeclaredField(name);
-            field.setAccessible(true);
-            field.set(target, value);
         }
 
         private void setBoostStaticBoolean(String fieldName) {
-            try {
-                Class<?> settingsClass = Class.forName("id.b");
-                Field field = settingsClass.getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.setBoolean(null, true);
-            } catch (Throwable ignored) {
-            }
+            BoostSettingsNative.markDirty(fieldName);
         }
 
         private void styleHost() {
@@ -2969,6 +2584,9 @@ public final class MorpheSettingsV4NativePages {
                 return;
             }
             EditorPage page = editorPages.remove(editorPages.size() - 1);
+            if (page.onDismiss != null) {
+                page.onDismiss.run();
+            }
             if (pageHost != null) {
                 pageHost.removeView(page.view);
             }
@@ -2985,196 +2603,47 @@ public final class MorpheSettingsV4NativePages {
             styleHost();
         }
 
-        private void ensureEditorBackStackBridge() throws Exception {
-            if (editorFragmentManager != null
-                    && editorBackStackListener != null) {
+        private void ensureEditorBackStackBridge() {
+            if (editorBackStack != null) {
                 return;
             }
-            editorFragmentManager = getParentFragmentManager();
+            editorBackStack = BoostSettingsNative.editorBackStack(this, this::syncEditorPagesWithBackStack);
             editorBackStackBaseCount = editorBackStackCount();
-
-            Method addListener = findBackStackListenerMethod();
-            Class<?> listenerType = addListener.getParameterTypes()[0];
-            if (!listenerType.isInterface()) {
-                throw new NoSuchMethodException(
-                        "Boost FragmentManager listener ABI unavailable"
-                );
-            }
-            editorBackStackListener = Proxy.newProxyInstance(
-                    listenerType.getClassLoader(),
-                    new Class<?>[]{listenerType},
-                    (proxy, method, args) -> {
-                        if (method.getDeclaringClass() == Object.class) {
-                            if ("hashCode".equals(method.getName())) {
-                                return System.identityHashCode(proxy);
-                            }
-                            if ("equals".equals(method.getName())) {
-                                return proxy == args[0];
-                            }
-                            if ("toString".equals(method.getName())) {
-                                return EDITOR_BACK_STACK_MARKER;
-                            }
-                        }
-                        if ("onBackStackChanged".equals(method.getName())) {
-                            syncEditorPagesWithBackStack();
-                        }
-                        return null;
-                    }
-            );
-            addListener.invoke(editorFragmentManager, editorBackStackListener);
         }
 
-        private Method findBackStackListenerMethod()
-                throws NoSuchMethodException {
-            for (Method method
-                    : editorFragmentManager.getClass().getMethods()) {
-                if (("addOnBackStackChangedListener".equals(method.getName())
-                        || "i".equals(method.getName()))
-                        && method.getParameterTypes().length == 1
-                        && method.getParameterTypes()[0].isInterface()) {
-                    for (Method callback
-                            : method.getParameterTypes()[0].getMethods()) {
-                        if ("onBackStackChanged".equals(callback.getName())
-                                && callback.getParameterTypes().length == 0) {
-                            method.setAccessible(true);
-                            return method;
-                        }
-                    }
-                }
-            }
-            throw new NoSuchMethodException(
-                    "Boost FragmentManager back-stack listener unavailable"
-            );
-        }
-
-        private void pushEditorBackStackEntry() throws Exception {
+        private void pushEditorBackStackEntry() {
             ensureEditorBackStackBridge();
-            Object transaction = invokeRuntimeMethod(
-                    editorFragmentManager,
-                    "beginTransaction",
-                    "n",
-                    new Class<?>[0],
-                    new Object[0]
-            );
             String name = "morphe-v13-editor-" + (++editorBackStackSequence);
-            invokeRuntimeMethod(
-                    transaction,
-                    "addToBackStack",
-                    "g",
-                    new Class<?>[]{String.class},
-                    new Object[]{name}
-            );
-            invokeRuntimeMethod(
-                    transaction,
-                    "commit",
-                    "i",
-                    new Class<?>[0],
-                    new Object[0]
-            );
+            editorBackStack.push(name);
         }
 
         private boolean popEditorBackStackEntry() {
-            if (editorFragmentManager == null) {
+            if (editorBackStack == null) {
                 return false;
             }
             try {
-                Object result = invokeRuntimeMethod(
-                        editorFragmentManager,
-                        "popBackStackImmediate",
-                        "Z0",
-                        new Class<?>[0],
-                        new Object[0]
-                );
-                return Boolean.TRUE.equals(result);
-            } catch (Throwable throwable) {
+                return editorBackStack.pop();
+            } catch (RuntimeException exception) {
                 return false;
             }
         }
 
         private void syncEditorPagesWithBackStack() {
-            if (editorFragmentManager == null
+            if (editorBackStack == null
                     || editorBackStackBaseCount < 0) {
                 return;
             }
-            try {
-                int depth = Math.max(
-                        0,
-                        editorBackStackCount() - editorBackStackBaseCount
-                );
-                while (editorPages.size() > depth) {
-                    removeTopEditorView();
-                }
-            } catch (Throwable ignored) {
+            int depth = Math.max(
+                    0,
+                    editorBackStackCount() - editorBackStackBaseCount
+            );
+            while (editorPages.size() > depth) {
+                removeTopEditorView();
             }
         }
 
-        private int editorBackStackCount() throws Exception {
-            Object value = invokeRuntimeMethod(
-                    editorFragmentManager,
-                    "getBackStackEntryCount",
-                    "n0",
-                    new Class<?>[0],
-                    new Object[0]
-            );
-            if (!(value instanceof Number)) {
-                throw new IllegalStateException(
-                        "Boost FragmentManager back-stack count unavailable"
-                );
-            }
-            return ((Number) value).intValue();
-        }
-
-        private Object invokeRuntimeMethod(
-                Object target,
-                String canonicalName,
-                String boostName,
-                Class<?>[] parameterTypes,
-                Object[] values
-        ) throws Exception {
-            Method method = findRuntimeMethod(
-                    target,
-                    canonicalName,
-                    boostName,
-                    parameterTypes.length,
-                    parameterTypes
-            );
-            return method.invoke(target, values);
-        }
-
-        private Method findRuntimeMethod(
-                Object target,
-                String canonicalName,
-                String boostName,
-                int parameterCount,
-                Class<?>[] parameterTypes
-        ) throws NoSuchMethodException {
-            for (Method method : target.getClass().getMethods()) {
-                if ((!canonicalName.equals(method.getName())
-                        && !boostName.equals(method.getName()))
-                        || method.getParameterTypes().length != parameterCount) {
-                    continue;
-                }
-                if (parameterTypes != null) {
-                    Class<?>[] actual = method.getParameterTypes();
-                    boolean matches = true;
-                    for (int index = 0; index < actual.length; index++) {
-                        if (actual[index] != parameterTypes[index]) {
-                            matches = false;
-                            break;
-                        }
-                    }
-                    if (!matches) {
-                        continue;
-                    }
-                }
-                method.setAccessible(true);
-                return method;
-            }
-            throw new NoSuchMethodException(
-                    target.getClass().getName()
-                            + "." + canonicalName
-                            + "/" + boostName
-            );
+        private int editorBackStackCount() {
+            return editorBackStack.count();
         }
 
         private EditText addEditorInput(
@@ -3252,6 +2721,7 @@ public final class MorpheSettingsV4NativePages {
             final String title;
             final View view;
             final LinearLayout content;
+            Runnable onDismiss;
 
             EditorPage(String title, View view, LinearLayout content) {
                 this.title = title;
@@ -3447,15 +2917,12 @@ public final class MorpheSettingsV4NativePages {
         }
 
         private interface SavedSearchRenderer {
-            void render(List<?> values);
+            void render(List<BoostSettingsNative.SavedSearch> values);
         }
 
         private interface ValueConsumer {
             void accept(String value);
         }
 
-        private enum InvocationFailure {
-            INSTANCE
-        }
     }
 }

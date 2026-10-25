@@ -8,36 +8,18 @@
 package app.morphe.patches.reddit.customclients.boostforreddit.http.archive
 
 import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.OpcodesFilter
-import com.android.tools.smali.dexlib2.Opcode
 
 internal object LinkBuildContextMenuFingerprint : Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/customviews/t;",
-    name = "f",
+    definingClass = "Lj32;",
+    name = "b",
     parameters = listOf("Ljava/lang/String;"),
     returnType = "V",
-    filters = OpcodesFilter.opcodesToFilters(
-        Opcode.INVOKE_INTERFACE,
-        Opcode.NEW_INSTANCE,
-        Opcode.INVOKE_DIRECT,
-        Opcode.INVOKE_VIRTUAL,
-        Opcode.MOVE_RESULT_OBJECT,
-        Opcode.CONST,
-        Opcode.INVOKE_VIRTUAL,
-        Opcode.MOVE_RESULT_OBJECT,
-        Opcode.CONST,
-        Opcode.INVOKE_VIRTUAL,
-        Opcode.MOVE_RESULT_OBJECT,
-        Opcode.INVOKE_INTERFACE,
-        Opcode.NEW_INSTANCE
-    ),
+    strings = listOf("Yandex", "Google", "TinEye"),
 )
 
 internal object OnClickContextMenuFingerprint : Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/customviews/t;",
-    name = "c",
-    filters = OpcodesFilter.opcodesToFilters(
-        Opcode.MOVE_RESULT,
-        Opcode.IF_EQZ
-    ),
+    definingClass = "Lj32\$a;",
+    name = "a",
+    parameters = listOf("Lcom/rubenmayayo/reddit/ui/customviews/menu/MenuOption;"),
+    returnType = "V",
 )

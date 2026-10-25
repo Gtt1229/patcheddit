@@ -8,16 +8,13 @@
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.upload
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
-import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import app.morphe.patches.reddit.customclients.boostforreddit.misc.settings.boostMorpheSettingsSkeletonPatch
-import app.morphe.util.getReference
-import app.morphe.util.indexOfFirstInstructionOrThrow
-import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
-import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import app.morphe.patches.all.misc.PatchCategory
 
 private const val REDDIT_UPLOAD_PROVIDER = "reddit"
@@ -53,44 +50,59 @@ val fixNativeImageUploadPatch = bytecodePatch(
         check(EXTERNAL_IMAGE_HOST_MARKER.endsWith("ISSUE66_V1"))
         check(IMAGE_HOST_POLICY_MARKER.endsWith("ISSUE66_V3"))
 
-        nativeRedditUploaderFormatFingerprint.method.addInstructions(
-            0,
-            """
-                invoke-static {}, $UPLOAD_SETTINGS_DESCRIPTOR->getEditorProvider()Ljava/lang/String;
-                move-result-object v0
-                return-object v0
-            """.trimIndent(),
-        )
-
-        arrayOf(
-            nativeRedditUploaderSubmitFingerprint,
-            nativeRedditUploaderSubmitMultipleFingerprint,
-        ).forEach { fingerprint ->
-            fingerprint.method.addInstructions(
+        // The provider-specific getters were inlined into the editor and submit
+        // callers. Override only these keys in their shared, surviving getter.
+        remoteConfigStringFingerprint.method.apply {
+            addInstructionsWithLabels(
                 0,
                 """
+                    const-string v0, "uploader_format"
+                    invoke-virtual {v0, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                    move-result v0
+                    if-eqz v0, :morphe_check_submit_provider
+                    invoke-static {}, $UPLOAD_SETTINGS_DESCRIPTOR->getEditorProvider()Ljava/lang/String;
+                    move-result-object v0
+                    return-object v0
+                    :morphe_check_submit_provider
+                    const-string v0, "uploader_submit"
+                    invoke-virtual {v0, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                    move-result v0
+                    if-nez v0, :morphe_reddit_provider
+                    const-string v0, "uploader_submit_multiple"
+                    invoke-virtual {v0, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                    move-result v0
+                    if-eqz v0, :morphe_native_remote_string
+                    :morphe_reddit_provider
                     const-string v0, "$REDDIT_UPLOAD_PROVIDER"
                     return-object v0
-                """.trimIndent(),
+                """,
+                ExternalLabel("morphe_native_remote_string", getInstruction(0)),
             )
         }
 
         mediaUploaderFactoryFingerprint.method.addInstructions(
             0,
             """
-                invoke-static {p0}, $UPLOAD_FACTORY_DESCRIPTOR->create(Ljava/lang/String;)Lde/b;
+                invoke-static {p0}, $UPLOAD_FACTORY_DESCRIPTOR->create(Ljava/lang/String;)Lcs1;
                 move-result-object v0
                 return-object v0
             """.trimIndent(),
         )
 
-        nativeRedditSubmitAsImageKindFingerprint.method.addInstructions(
-            0,
-            """
-                const/4 v0, 0x1
-                return v0
-            """.trimIndent(),
-        )
+        remoteConfigBooleanFingerprint.method.apply {
+            addInstructionsWithLabels(
+                0,
+                """
+                    const-string v0, "submit_reddit_as_image_kind"
+                    invoke-virtual {v0, p0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                    move-result v0
+                    if-eqz v0, :morphe_native_remote_boolean
+                    const/4 v0, 0x1
+                    return v0
+                """,
+                ExternalLabel("morphe_native_remote_boolean", getInstruction(0)),
+            )
+        }
 
         editorImagePreviewFormattingBarSetEditTextFingerprint.method.addInstructions(
             0,
@@ -100,24 +112,6 @@ val fixNativeImageUploadPatch = bytecodePatch(
         )
 
         submitGallerySubmissionKindFingerprint.method.apply {
-            val submitAsImageRemoteConfigCallIndex =
-                indexOfFirstInstructionOrThrow {
-                    opcode == Opcode.INVOKE_STATIC &&
-                        getReference<MethodReference>()?.toString() ==
-                        "Lsb/a;->f0()Z"
-                }
-
-            val moveResultIndex = submitAsImageRemoteConfigCallIndex + 1
-            val moveResultInstruction =
-                implementation!!.instructions[moveResultIndex] as
-                    OneRegisterInstruction
-            val moveResultRegister = moveResultInstruction.registerA
-
-            replaceInstruction(
-                moveResultIndex,
-                "const/4 v$moveResultRegister, 0x1"
-            )
-
             addInstructions(
                 0,
                 """

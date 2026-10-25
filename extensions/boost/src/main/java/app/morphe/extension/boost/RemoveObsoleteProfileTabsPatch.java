@@ -10,9 +10,6 @@ package app.morphe.extension.boost;
 import android.util.Log;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
 
 /** Removes profile tabs backed by Reddit features that are no longer usable in Boost. */
 public final class RemoveObsoleteProfileTabsPatch {
@@ -30,32 +27,26 @@ public final class RemoveObsoleteProfileTabsPatch {
 
         try {
             Class<?> activityClass = activity.getClass();
-            Field[] fields = activityClass.getDeclaredFields();
-
-            String[] routes = null;
-            int originalLength = -1;
-
-            for (Field field : fields) {
-                if (Modifier.isStatic(field.getModifiers()) ||
-                        field.getType() != String[].class) {
-                    continue;
-                }
-
-                field.setAccessible(true);
-                String[] values = (String[]) field.get(activity);
-                if (values != null &&
-                        contains(values, "overview") &&
-                        contains(values, "gilded")) {
-                    routes = values;
-                    originalLength = values.length;
-                    break;
-                }
+            Field routesField = activityClass.getField("P");
+            Field titlesField = activityClass.getField("O");
+            Field countField = activityClass.getField("R");
+            if (routesField.getType() != String[].class
+                    || titlesField.getType() != String[].class
+                    || countField.getType() != byte.class) {
+                throw new IllegalStateException("Unexpected Boost 1.14.0 profile tab fields");
             }
 
-            if (routes == null) {
-                return;
+            String[] routes = (String[]) routesField.get(activity);
+            String[] titles = (String[]) titlesField.get(activity);
+            int originalLength = countField.getByte(activity) & 0xff;
+            if (routes == null || titles == null
+                    || routes.length != originalLength
+                    || titles.length != originalLength
+                    || !contains(routes, "overview")) {
+                throw new IllegalStateException("Boost profile tabs are not initialized consistently");
             }
 
+            // 1.14.0 already removed Gilded; Friends remains on the own-profile page.
             boolean[] remove = new boolean[originalLength];
             int removedCount = 0;
             for (int index = 0; index < routes.length; index++) {
@@ -70,44 +61,12 @@ public final class RemoveObsoleteProfileTabsPatch {
                 return;
             }
 
-            List<Field> tabArrayFields = new ArrayList<>();
-            List<String[]> filteredArrays = new ArrayList<>();
-            List<Field> countFields = new ArrayList<>();
-
-            for (Field field : fields) {
-                if (Modifier.isStatic(field.getModifiers())) {
-                    continue;
-                }
-
-                field.setAccessible(true);
-                if (field.getType() == String[].class) {
-                    String[] values = (String[]) field.get(activity);
-                    if (values != null && values.length == originalLength) {
-                        tabArrayFields.add(field);
-                        filteredArrays.add(filter(values, remove, removedCount));
-                    }
-                } else if (field.getType() == int.class &&
-                        field.getInt(activity) == originalLength) {
-                    countFields.add(field);
-                }
-            }
-
-            if (tabArrayFields.size() != 2 || countFields.size() != 1) {
-                Log.e(
-                        LOG_TAG,
-                        MARKER + " refused arrays=" + tabArrayFields.size()
-                                + " counts=" + countFields.size()
-                                + " original=" + originalLength
-                );
-                return;
-            }
-
-            for (int index = 0; index < tabArrayFields.size(); index++) {
-                tabArrayFields.get(index).set(activity, filteredArrays.get(index));
-            }
-
             int newLength = originalLength - removedCount;
-            countFields.get(0).setInt(activity, newLength);
+            String[] filteredRoutes = filter(routes, remove, removedCount);
+            String[] filteredTitles = filter(titles, remove, removedCount);
+            routesField.set(activity, filteredRoutes);
+            titlesField.set(activity, filteredTitles);
+            countField.setByte(activity, (byte) newLength);
 
             Log.d(
                     LOG_TAG,

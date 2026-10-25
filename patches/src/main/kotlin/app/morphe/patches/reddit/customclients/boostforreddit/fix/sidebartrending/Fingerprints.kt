@@ -10,10 +10,10 @@ package app.morphe.patches.reddit.customclients.boostforreddit.fix.sidebartrendi
 import app.morphe.patcher.Fingerprint
 
 internal val trendingTodayAsyncLoaderFingerprint = Fingerprint(
-    returnType = "Ljava/util/List;",
-    parameters = listOf("[Ljava/lang/Void;"),
+    returnType = "Ljava/lang/Object;",
+    parameters = listOf("[Ljava/lang/Object;"),
     custom = { method, classDef ->
-        classDef.type == "Lod/a;" && method.name == "a"
+        classDef.type == "Lrd3;" && method.name == "doInBackground"
     },
 )
 
@@ -29,12 +29,12 @@ internal val trendingTodayFragmentOnViewCreatedFingerprint = Fingerprint(
 internal val trendingTodayViewHolderBindFingerprint = Fingerprint(
     returnType = "V",
     parameters = listOf(
-        "Lcom/rubenmayayo/reddit/models/reddit/m;",
-        "Lcom/bumptech/glide/k;",
+        "Landroidx/recyclerview/widget/RecyclerView\$a0;",
+        "I",
     ),
     custom = { method, classDef ->
         classDef.type ==
-            "Lcom/rubenmayayo/reddit/ui/sidebar/today/TrendingTodayAdapter\$TrendingTodayViewHolder;" &&
-            method.name == "e"
+            "Lcom/rubenmayayo/reddit/ui/sidebar/today/TrendingTodayAdapter;" &&
+            method.name == "onBindViewHolder"
     },
 )

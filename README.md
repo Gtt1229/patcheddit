@@ -12,8 +12,8 @@ In addition, patches for some apps contain additional features that were not pre
 
 ### All clients
 * Client ID, redirect URI and user agent are all patchable.
-    * By default, redirect URI and user agent are set to the values used by RedReader.
-    * See https://github.com/ReVanced/revanced-patches/pull/4551 for context.
+    * By default, `Spoof client` uses RedReader 1.27's client ID, redirect URI and user agent. Leave the OAuth client ID option empty to use its default.
+    * Custom patch options override these defaults. In Boost 1.14.0, saved values in the native API settings override the patch-provided defaults.
 
 ### Boost for Reddit
 * The content of deleted Reddit posts and comments can be loaded from [Project Arctic Shift](https://github.com/ArthurHeitmann/arctic_shift).
@@ -33,7 +33,6 @@ In addition, patches for some apps contain additional features that were not pre
         * Caching is implemented to try and limit the impact of this.
 * Imgur images and albums are automatically loaded from the Wayback Machine if a 404 is detected.
 * The context menu for posts now contains additional options for opening a site in the Wayback Machine or archive.is. This is useful for if the undeleting functionality has issues or you want to bypass a content paywall.
-* Fixes audio in downloaded videos for all videos using a proper MPD parser. The official fix fixes this for new videos but breaks it for older ones.
 
 ### reddit is fun
 * Imgur album URLs are rewritten to use the newer format.
@@ -48,27 +47,21 @@ In addition, patches for some apps contain additional features that were not pre
 4. Get the APK for your preferred, supported 3rd party reddit app. If you don't have it, you can download it from in the app. APKM bundles (aka split APKs) will also work.
    * You should get the last available version for your reddit app, unless you are patching Relay. Relay v10.2.40 should be used instead of the latest.
 5. Select desired patches, then patch.
-   * You will need to have an OAuth client ID from https://www.reddit.com/prefs/apps/, however reddit is no longer issuing new ones without an approval process that usually results in denial. In order to work around this, see the subsection `What if I don't have a client ID?` below.
-   * Make sure that the redirect URI in `Spoof client` options and on https://www.reddit.com/prefs/apps/ match. If you don't know what to set the redirect URI/user agent to, use the values from `What if I don't have a client ID?`
+   * `Spoof client` includes RedReader 1.27 defaults, so you do not need to supply a client ID. See `What if I don't have a client ID?` below.
+   * If you use a custom OAuth client ID, make sure its redirect URI matches the one in `Spoof client` options and on https://www.reddit.com/prefs/apps/.
 6. Once patching is complete, install the app and set it up as usual.
 
 For assistance with patching, please post a thread in [/r/Patcheddit](https://www.reddit.com/r/Patcheddit/) or [/r/MorpheApp](https://www.reddit.com/r/MorpheApp/). Only use the GitHub issue tracker for legitimate bug reports or feature requests.
 
 ### What if I don't have a client ID?
 
-You can use the client ID from other working 3rd party reddit apps (sadly not the official one). I recommend using the one from RedReader, as they have a special deal with reddit to use the API for free due to accessibility reasons. (The same steps can be followed with other apps such as Infinity+, but the developer will pay for the API calls you use and I do not recommend this.)
+Use the [RedReader 1.27](https://github.com/QuantumBadger/RedReader/releases/tag/v1.27) defaults included in `Spoof client`:
 
-1. Install RedReader from the Play Store and login with it.
-2. After you login, you should get an email with the title `You’ve authorized a new app in your Reddit account`. Look for `App ID`: in that email; note the random looking string as it will be used in the next step.
-   * You can uninstall RedReader after this if you want.
-3. In Morphe Manager, make sure you set these values for the `Spoof client` patch. Make sure there are no extra spaces or slashes at the end.
-   * `OAuth client ID` - set this to the random looking string from the email.
-   * `Redirect URI` - set this to `redreader://rr_oauth_redir` (or the appropriate value if you got the client ID from a different app).
-   * `User agent` - set this to `org.quantumbadger.redreader/1.25.1`. Ignore the description that says what the user agent format should be.
-   * Depending on your app, you may not need to set all of these values for it to work, but it is highly recommended that you do so.
-4. Select your other desired patches and patch as normal.
+* Leave `OAuth client ID` empty.
+* Keep `Redirect URI` set to `redreader://rr_oauth_redir`.
+* Keep `User agent` set to `org.quantumbadger.redreader/1.27`.
 
-If you're wondering why I'm asking you to go through these steps instead of just including the client ID in the patch, it's because including the client ID in the patch would make it accessible to web scrapers and would likely result in the client ID being revoked, breaking the patch for everyone.
+For another client's credentials, enter its client ID and matching redirect URI and user agent instead.
 
 ### Resolving login problems
 
@@ -107,7 +100,6 @@ I'm getting 400 Bad Request while logged in
 I get a `null: null` error when I open the app
 
 * Your client ID is incorrect, check that you copied it correctly.
-
 
 
 ## 🧑‍💻 Development
@@ -149,5 +141,7 @@ Patcheddit is licensed under the [GNU General Public License v3.0](LICENSE), wit
   Derivatives must adopt a distinct identity unrelated to "Patcheddit".
 
 The Morphe project (https://github.com/MorpheApp) may use code from this project without displaying the attribution notice.
+
+The Boost for Reddit project (https://github.com/rubenmayayo/boost-for-reddit) is authorized to use any Patcheddit-originated source code under Apache 2.0 license terms.
 
 See the [LICENSE](LICENSE) file for the full GPLv3 terms and the [NOTICE](NOTICE) file for full conditions of GPLv3 Section 7

@@ -23,6 +23,8 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import app.morphe.extension.boost.navigation.BoostNativeListings;
+
 import net.dean.jraw.paginators.Paginator;
 import net.dean.jraw.paginators.Sorting;
 import net.dean.jraw.paginators.SubredditPaginator;
@@ -41,9 +43,8 @@ import java.util.WeakHashMap;
  * finite personalized set (a few hundred posts) and then ends it, while Hot and
  * New keep going.
  *
- * Boost's adapter has no footer, and its obfuscated RecyclerView API cannot be
- * used from here, so the row is a plain view: the list reserves room for it as
- * extra bottom padding after the last post, and the row is placed over that
+ * Boost's adapter has no footer, so the row is a plain view: the list reserves
+ * room for it as extra bottom padding after the last post, and the row is placed over that
  * room in the nearest FrameLayout above the list while the list is scrolled to
  * its end. It stays until the feed is refreshed or replaced.
  */
@@ -273,7 +274,7 @@ public final class BoostFeedEndFooter {
             }
             try {
                 // SwipeRefreshLayout.OnRefreshListener.onRefresh(): reloads the feed from the top.
-                target.getClass().getMethod("onRefresh").invoke(target);
+                BoostNativeListings.refreshFeed(target);
             } catch (Throwable t) {
                 Log.e(TAG, "refresh from end-of-feed footer failed", t);
             }

@@ -7,12 +7,13 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.synccit
 
-import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.stringOption
 import app.morphe.patches.reddit.customclients.AppCompatibility
+import app.morphe.util.getReference
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.reference.StringReference
 import app.morphe.patches.all.misc.PatchCategory
 
 @Suppress("unused")
@@ -59,26 +60,26 @@ val customSynccitUrlPatch = bytecodePatch(
         )
 
         fingerprints.forEach { (operation, fingerprint) ->
-            val matches = fingerprint.stringMatches
-
-            if (matches.size != 1) {
-                throw Exception(
-                    "Expected one Synccit URL in $operation, found ${matches.size}",
-                )
+            val method = fingerprint.method
+            // Fingerprint anchors also include non-URL strings such as "create".
+            val endpoints = method.implementation!!.instructions.withIndex().mapNotNull { (index, instruction) ->
+                if (instruction.getReference<StringReference>()?.string == LEGACY_SYNCCIT_API_URL) {
+                    index to (instruction as OneRegisterInstruction).registerA
+                } else {
+                    null
+                }
             }
 
-            val match = matches.single()
-            val method = fingerprint.method
+            require(endpoints.isNotEmpty()) {
+                "No Synccit endpoint constant found in $operation"
+            }
 
-            val register =
-                method
-                    .getInstruction<OneRegisterInstruction>(match.index)
-                    .registerA
-
-            method.replaceInstruction(
-                match.index,
-                "const-string v$register, \"$replacement\"",
-            )
+            endpoints.asReversed().forEach { (index, register) ->
+                method.replaceInstruction(
+                    index,
+                    "const-string v$register, \"$replacement\"",
+                )
+            }
         }
     }
 }

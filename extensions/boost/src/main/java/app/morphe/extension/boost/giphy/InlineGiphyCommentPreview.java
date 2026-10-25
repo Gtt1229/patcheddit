@@ -15,7 +15,6 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Parcelable;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -24,13 +23,16 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
+import com.rubenmayayo.reddit.models.reddit.SubmissionModel;
+
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.WeakHashMap;
+
+import app.morphe.extension.boost.media.MediaNativeBindings;
 
 public final class InlineGiphyCommentPreview {
     private static final WeakHashMap<View, RelativeLayout.LayoutParams> ORIGINAL_RELATIVE_LAYOUT_PARAMS =
@@ -129,7 +131,7 @@ public final class InlineGiphyCommentPreview {
 
             restoreOriginalCommentHtml(commentModel);
 
-            String originalHtml = callStringMethod(commentModel, "T0");
+            String originalHtml = MediaNativeBindings.commentHtml(commentModel);
             if (originalHtml == null || originalHtml.length() == 0) {
                 PREVIEW_SOURCES.remove(commentModel);
                 ORIGINAL_COMMENT_HTML.remove(commentModel);
@@ -151,12 +153,12 @@ public final class InlineGiphyCommentPreview {
                 ORIGINAL_COMMENT_HTML.put(commentModel, originalHtml);
             }
 
-            // Issue #36: source visibility is resolved before CommentViewHolder.M(String)
-            // calls TableTextView.setTextHtml(String). Do not reintroduce post-render
+            // Issue #36: source visibility is resolved before Boost binds the HTML
+            // with TableTextView.setTextHtml(String). Do not reintroduce post-render
             // TextView/LinkTextView/root-view mutation here.
             String renderedHtml = renderCommentHtml(holder, commentModel, originalHtml);
             if (!stringEquals(originalHtml, renderedHtml)) {
-                boolean updated = setCommentHtml(commentModel, originalHtml, renderedHtml);
+                boolean updated = setCommentHtml(commentModel, renderedHtml);
                 Log.d(LOG_TAG, PRERENDER_SOURCE_POLICY_MARKER
                         + ": set rendered comment html updated=" + updated
                         + " source=" + previewSource.sourceUrl
@@ -230,10 +232,10 @@ public final class InlineGiphyCommentPreview {
             String originalHtml = ORIGINAL_COMMENT_HTML.get(commentModel);
             if (originalHtml == null) return;
 
-            String currentHtml = callStringMethod(commentModel, "T0");
+            String currentHtml = MediaNativeBindings.commentHtml(commentModel);
             if (stringEquals(currentHtml, originalHtml)) return;
 
-            boolean updated = setCommentHtml(commentModel, currentHtml, originalHtml);
+            boolean updated = setCommentHtml(commentModel, originalHtml);
             Log.d(LOG_TAG, PRERENDER_SOURCE_POLICY_MARKER
                     + ": restored original comment html updated=" + updated);
         } catch (Throwable throwable) {
@@ -460,49 +462,11 @@ public final class InlineGiphyCommentPreview {
         return output;
     }
 
-    private static boolean setCommentHtml(Object commentModel, String expectedCurrent, String newValue) {
+    private static boolean setCommentHtml(Object commentModel, String newValue) {
         if (commentModel == null || newValue == null) return false;
 
-        // Boost 1.12.12: CommentModel.T0() returns field K. Try the precise field first.
-        if (setStringField(commentModel, "K", newValue)) {
-            return true;
-        }
-
-        // Fallback: update the String field that currently equals T0().
-        Class<?> cursor = commentModel.getClass();
-        while (cursor != null) {
-            try {
-                Field[] fields = cursor.getDeclaredFields();
-                for (Field field : fields) {
-                    if (field == null || field.getType() != String.class) continue;
-                    field.setAccessible(true);
-                    Object value = field.get(commentModel);
-                    if (value instanceof String && stringEquals((String) value, expectedCurrent)) {
-                        field.set(commentModel, newValue);
-                        return true;
-                    }
-                }
-            } catch (Throwable ignored) {
-            }
-            cursor = cursor.getSuperclass();
-        }
-
-        return false;
-    }
-
-    private static boolean setStringField(Object target, String fieldName, String newValue) {
-        try {
-            if (target == null || fieldName == null || newValue == null) return false;
-
-            Field field = findField(target.getClass(), fieldName);
-            if (field == null || field.getType() != String.class) return false;
-
-            field.setAccessible(true);
-            field.set(target, newValue);
-            return true;
-        } catch (Throwable ignored) {
-            return false;
-        }
+        MediaNativeBindings.setCommentHtml(commentModel, newValue);
+        return true;
     }
 
     private static final String ISSUE120_LINK_SAFETY_MARKER =
@@ -1511,7 +1475,7 @@ public final class InlineGiphyCommentPreview {
     }
 
     private static View getItemView(Object holder) {
-        return getViewField(holder, "itemView");
+        return holder == null ? null : MediaNativeBindings.itemView(holder);
     }
 
     private static void removeExistingPreview(ViewGroup root) {
@@ -1604,8 +1568,7 @@ public final class InlineGiphyCommentPreview {
         if (activity == null || url == null || url.length() == 0) return false;
 
         try {
-            Class<?> submissionClass = Class.forName("com.rubenmayayo.reddit.models.reddit.SubmissionModel");
-            Object submission = submissionClass.getDeclaredConstructor().newInstance();
+            SubmissionModel submission = MediaNativeBindings.createSubmission();
 
             boolean animated = isLikelyAnimatedMediaUrl(url);
             boolean directIRedditGif = isDirectIRedditGif(url);
@@ -1613,7 +1576,7 @@ public final class InlineGiphyCommentPreview {
             boolean staticPreview = !giphyMedia && isStaticPreviewUrl(url);
             String host = hostFromUrl(url);
             if (host != null && host.length() > 0) {
-                callStringSetter(submission, "m2", host);
+                MediaNativeBindings.setSubmissionDomain(submission, host);
             }
             String directIRedditGifTapAction = directIRedditGif
                     ? getDirectRedditGifTapAction(activity)
@@ -1652,45 +1615,29 @@ public final class InlineGiphyCommentPreview {
                 return true;
             }
 
-            // Known from Boost's own GalleryActivity/ImageActivity paths:
-            // K2(4) = static image-ish media
-            // K2(5) = gif/video-ish media
-            callIntSetter(
+            // Boost uses media type 4 for images and 5 for GIF/video previews.
+            MediaNativeBindings.setSubmissionMedia(
                     submission,
-                    "K2",
-                    directIRedditGif ? (forceVideoViewerForDirectGif ? 5 : 4) : (animatedForRouting ? 5 : 4)
+                    directIRedditGif ? (forceVideoViewerForDirectGif ? 5 : 4) : (animatedForRouting ? 5 : 4),
+                    url
             );
-            callStringSetter(submission, "L2", url);
 
             if (directIRedditGif && !forceVideoViewerForDirectGif
-                    && openStaticImageViaBoost(activity, submissionClass, submission, true)) {
+                    && openStaticImageViaBoost(activity, submission, true)) {
                 Log.d(LOG_TAG, COMMENT_DIRECT_GIF_ROUTE_MARKER + ": open direct i.redd.it gif via Boost image viewer: " + url);
                 return true;
             }
 
-            if (!animatedForRouting && openStaticImageViaBoost(activity, submissionClass, submission, false)) {
+            if (!animatedForRouting && openStaticImageViaBoost(activity, submission, false)) {
                 return true;
             }
 
             if (animatedForRouting) {
-                callStringSetter(submission, "u2", url);
+                MediaNativeBindings.setSubmissionVideoUrl(submission, url);
             }
 
-            Class<?> navigationClass = Class.forName("com.rubenmayayo.reddit.ui.activities.i");
-
-            Method[] methods = navigationClass.getMethods();
-            for (Method method : methods) {
-                if (!"U".equals(method.getName())) continue;
-
-                Class<?>[] parameterTypes = method.getParameterTypes();
-                if (parameterTypes.length != 2) continue;
-                if (!parameterTypes[0].isAssignableFrom(activity.getClass())) continue;
-                if (!parameterTypes[1].isAssignableFrom(submissionClass)) continue;
-
-                method.setAccessible(true);
-                method.invoke(null, activity, submission);
-                return true;
-            }
+            MediaNativeBindings.openMedia(activity, submission, animatedForRouting);
+            return true;
         } catch (Throwable throwable) {
             Log.w(LOG_TAG, "openViaBoostRouter failed", throwable);
         }
@@ -1698,8 +1645,8 @@ public final class InlineGiphyCommentPreview {
         return false;
     }
 
-    private static boolean openStaticImageViaBoost(Activity activity, Class<?> submissionClass, Object submission, boolean directRedditGif) {
-        if (activity == null || submissionClass == null || submission == null) return false;
+    private static boolean openStaticImageViaBoost(Activity activity, SubmissionModel submission, boolean directRedditGif) {
+        if (activity == null || submission == null) return false;
 
         /*
          * Issue #60:
@@ -1725,28 +1672,14 @@ public final class InlineGiphyCommentPreview {
         }
 
         try {
-            Class<?> navigationClass =
-                    Class.forName("com.rubenmayayo.reddit.ui.activities.i");
-            Method method = navigationClass.getMethod(
-                    "h",
-                    Context.class,
-                    submissionClass,
-                    boolean.class
+            activity.startActivity(MediaNativeBindings.imageIntent(activity, submission));
+            Log.d(
+                    LOG_TAG,
+                    STATIC_PREVIEW_CANONICAL_ROUTE_MARKER
+                            + ": opened canonical Boost image intent"
+                            + " directRedditGif=" + directRedditGif
             );
-            method.setAccessible(true);
-
-            Object intent = method.invoke(null, activity, submission, true);
-            if (intent instanceof Intent) {
-                activity.startActivity((Intent) intent);
-
-                Log.d(
-                        LOG_TAG,
-                        STATIC_PREVIEW_CANONICAL_ROUTE_MARKER
-                                + ": opened canonical Boost image intent"
-                                + " directRedditGif=" + directRedditGif
-                );
-                return true;
-            }
+            return true;
         } catch (Throwable throwable) {
             Log.w(
                     LOG_TAG,
@@ -1769,44 +1702,17 @@ public final class InlineGiphyCommentPreview {
         return false;
     }
 
-    private static boolean openLegacyImageActivityViaBoost(Activity activity, Object submission, boolean commentMode) {
-        if (activity == null || !(submission instanceof Parcelable)) return false;
+    private static boolean openLegacyImageActivityViaBoost(Activity activity, SubmissionModel submission, boolean commentMode) {
+        if (activity == null || submission == null) return false;
 
         try {
-            Class<?> imageActivityClass = Class.forName("com.rubenmayayo.reddit.ui.activities.ImageActivity");
-            Intent intent = new Intent(activity, imageActivityClass);
-            intent.putExtra("submission", (Parcelable) submission);
-            intent.putExtra("comment", commentMode);
-
-            Integer accentColor = getBoostAccentColor(activity);
-            if (accentColor != null) {
-                intent.putExtra("accent_color", accentColor.intValue());
-            }
-
-            activity.startActivity(intent);
+            activity.startActivity(MediaNativeBindings.legacyImageIntent(activity, submission, commentMode));
             return true;
         } catch (Throwable throwable) {
             Log.w(LOG_TAG, "openLegacyImageActivityViaBoost failed", throwable);
             return false;
         }
     }
-
-    private static Integer getBoostAccentColor(Context context) {
-        if (context == null) return null;
-
-        try {
-            Class<?> colorClass = Class.forName("he.f0");
-            Method method = colorClass.getMethod("f", Context.class);
-            Object value = method.invoke(null, context);
-            if (value instanceof Integer) {
-                return (Integer) value;
-            }
-        } catch (Throwable ignored) {
-        }
-
-        return null;
-    }
-
 
     private static Activity findActivity(Context context) {
         Context current = context;
@@ -1972,60 +1878,6 @@ public final class InlineGiphyCommentPreview {
                 || lower.contains("redgifs.com");
     }
 
-    private static boolean callIntSetter(Object target, String name, int value) {
-        try {
-            Method method = target.getClass().getMethod(name, int.class);
-            method.setAccessible(true);
-            method.invoke(target, value);
-            return true;
-        } catch (Throwable ignored) {
-        }
-
-        try {
-            Method[] methods = target.getClass().getMethods();
-            for (Method method : methods) {
-                if (!name.equals(method.getName())) continue;
-
-                Class<?>[] parameterTypes = method.getParameterTypes();
-                if (parameterTypes.length != 1 || parameterTypes[0] != int.class) continue;
-
-                method.setAccessible(true);
-                method.invoke(target, value);
-                return true;
-            }
-        } catch (Throwable ignored) {
-        }
-
-        return false;
-    }
-
-    private static boolean callStringSetter(Object target, String name, String value) {
-        try {
-            Method method = target.getClass().getMethod(name, String.class);
-            method.setAccessible(true);
-            method.invoke(target, value);
-            return true;
-        } catch (Throwable ignored) {
-        }
-
-        try {
-            Method[] methods = target.getClass().getMethods();
-            for (Method method : methods) {
-                if (!name.equals(method.getName())) continue;
-
-                Class<?>[] parameterTypes = method.getParameterTypes();
-                if (parameterTypes.length != 1 || parameterTypes[0] != String.class) continue;
-
-                method.setAccessible(true);
-                method.invoke(target, value);
-                return true;
-            }
-        } catch (Throwable ignored) {
-        }
-
-        return false;
-    }
-
     private static void loadWithGlide(
             Context context,
             Object glideRequestManager,
@@ -2033,18 +1885,7 @@ public final class InlineGiphyCommentPreview {
             ImageView imageView
     ) {
         try {
-            Object requestManager = glideRequestManager;
-
-            if (requestManager == null) {
-                Class<?> glideClass = Class.forName("com.bumptech.glide.Glide");
-                Method with = glideClass.getMethod("with", Context.class);
-                requestManager = with.invoke(null, context);
-            }
-
-            Object requestBuilder = invokeLoad(requestManager, url);
-            if (requestBuilder == null) return;
-
-            invokeInto(requestBuilder, imageView);
+            MediaNativeBindings.loadImage(glideRequestManager, context, url, imageView);
         } catch (Throwable throwable) {
             Log.w(
                     LOG_TAG,
@@ -2054,64 +1895,11 @@ public final class InlineGiphyCommentPreview {
         }
     }
 
-    private static Object invokeLoad(Object requestManager, String url) {
-        try {
-            try {
-                Method method = requestManager.getClass().getMethod("t", String.class);
-                method.setAccessible(true);
-                Object result = method.invoke(requestManager, url);
-                return result;
-            } catch (Throwable ignored) {
-            }
-
-            Method[] methods = requestManager.getClass().getMethods();
-            for (Method method : methods) {
-                if (!"load".equals(method.getName())) continue;
-                if (method.getParameterTypes().length != 1) continue;
-
-                Class<?> parameter = method.getParameterTypes()[0];
-                if (parameter == String.class || parameter == Object.class || CharSequence.class.isAssignableFrom(parameter)) {
-                    Object result = method.invoke(requestManager, url);
-                    return result;
-                }
-            }
-        } catch (Throwable throwable) {
-        }
-
-        return null;
-    }
-
-    private static void invokeInto(Object requestBuilder, ImageView imageView) {
-        try {
-            try {
-                Method method = requestBuilder.getClass().getMethod("C0", ImageView.class);
-                method.setAccessible(true);
-                method.invoke(requestBuilder, imageView);
-                return;
-            } catch (Throwable ignored) {
-            }
-
-            Method[] methods = requestBuilder.getClass().getMethods();
-            for (Method method : methods) {
-                if (!"into".equals(method.getName())) continue;
-                if (method.getParameterTypes().length != 1) continue;
-
-                Class<?> parameter = method.getParameterTypes()[0];
-                if (parameter.isAssignableFrom(ImageView.class) || parameter == ImageView.class) {
-                    method.invoke(requestBuilder, imageView);
-                    return;
-                }
-            }
-
-        } catch (Throwable throwable) {
-        }
-    }
-
     private static PreviewSource findPreviewSource(Object commentModel) {
-        PreviewSource source = extractPreviewSource(callStringMethod(commentModel, "S0"));
+        PreviewSource source = extractPreviewSource(MediaNativeBindings.commentBody(commentModel));
         if (source != null) return source;
 
-        source = extractPreviewSource(callStringMethod(commentModel, "T0"));
+        source = extractPreviewSource(MediaNativeBindings.commentHtml(commentModel));
         if (source != null) return source;
 
         return findFirstPreviewSourceInStringFields(commentModel);
@@ -2284,33 +2072,6 @@ public final class InlineGiphyCommentPreview {
         }
 
         return value;
-    }
-
-    private static String callStringMethod(Object target, String name) {
-        try {
-            Method method = findMethod(target.getClass(), name);
-            if (method == null) return null;
-
-            method.setAccessible(true);
-            Object value = method.invoke(target);
-            return value instanceof String ? (String) value : null;
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private static Method findMethod(Class<?> cls, String name) {
-        while (cls != null) {
-            try {
-                Method method = cls.getDeclaredMethod(name);
-                method.setAccessible(true);
-                return method;
-            } catch (Throwable ignored) {
-                cls = cls.getSuperclass();
-            }
-        }
-
-        return null;
     }
 
     private static Field findField(Class<?> cls, String name) {

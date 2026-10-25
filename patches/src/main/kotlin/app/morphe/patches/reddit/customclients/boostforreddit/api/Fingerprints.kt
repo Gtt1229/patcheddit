@@ -9,25 +9,16 @@ package app.morphe.patches.reddit.customclients.boostforreddit.api
 
 import app.morphe.patcher.Fingerprint
 
-internal object BuildUserAgentFingerprint : Fingerprint(
-    strings = listOf("%s:%s:%s (by /u/%s)")
-)
-
-internal object GetClientIdFingerprint : Fingerprint(
-    definingClass = "Credentials;",
-    name = "getClientId",
-)
-
-internal object RedirectUriFingerprint : Fingerprint(
-    strings = listOf("http://rubenmayayo.com")
-)
-
-internal object ShouldOverrideUrlLoadingFingerprint : Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/activities/LoginActivity\$a;",
-    name = "shouldOverrideUrlLoading"
+internal object GetApiPreferenceFingerprint : Fingerprint(
+    definingClass = "Lns2;",
+    name = "g",
+    parameters = listOf("Ljava/lang/String;"),
+    returnType = "Ljava/lang/String;",
 )
 
 internal object JrawNewUrlFingerprint : Fingerprint(
-    definingClass = "JrawUtils;",
+    definingClass = "Lnet/dean/jraw/util/JrawUtils;",
     name = "newUrl",
+    parameters = listOf("Ljava/lang/String;"),
+    returnType = "Ljava/net/URL;",
 )

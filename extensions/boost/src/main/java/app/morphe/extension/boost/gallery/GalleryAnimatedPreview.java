@@ -10,11 +10,9 @@ package app.morphe.extension.boost.gallery;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Build;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.TextureView;
@@ -22,14 +20,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.rubenmayayo.reddit.models.generic.ImageModel;
+
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
+
+import app.morphe.extension.boost.media.GalleryPlayback;
+import app.morphe.extension.boost.media.MediaNativeBindings;
 
 /**
  * Coordinates animated Reddit gallery previews around Boost's legacy
@@ -53,7 +54,6 @@ public final class GalleryAnimatedPreview {
     private static final int AUTOPLAY_FOLLOW_GENERAL = 3;
 
     private static final int PLAYER_STATE_READY = 3;
-    private static final int PLAYER_REPEAT_ALL = 2;
     private static final int MEDIA_SOURCE_PROGRESSIVE = 0;
     private static final int MEDIA_SOURCE_DASH = 2;
     private static final int MEDIA_SOURCE_HLS = 3;
@@ -88,7 +88,7 @@ public final class GalleryAnimatedPreview {
         boolean inlinePlayerStarted;
         boolean inlineReady;
 
-        Object inlinePlayer;
+        GalleryPlayback inlinePlayer;
         View inlinePlayerView;
         WeakReference<ViewGroup> inlinePlayerParent = new WeakReference<>(null);
         Runnable readyPoll;
@@ -155,7 +155,7 @@ public final class GalleryAnimatedPreview {
                 oldRoot.removeOnAttachStateChangeListener(page.attachListener);
             }
 
-            Object model = readField(fragment, "f");
+            ImageModel model = MediaNativeBindings.galleryModel(fragment);
             Object photoView = readField(fragment, "photoView");
             if (!(photoView instanceof ImageView) || model == null) {
                 Log.w(LOG_TAG, MARKER + ": bind skipped; model/photoView unavailable");
@@ -179,8 +179,8 @@ public final class GalleryAnimatedPreview {
                 page.playButton = new WeakReference<>(buttonView);
             }
 
-            page.animatedUrl = callString(model, "getMp4");
-            page.eligible = callBoolean(model, "isAnimated")
+            page.animatedUrl = model.getMp4();
+            page.eligible = model.isAnimated()
                     && isSupportedMediaUrl(page.animatedUrl);
             if (shouldHidePlayButton(page)) {
                 hidePlayButton(page);
@@ -294,13 +294,12 @@ public final class GalleryAnimatedPreview {
     }
 
     private static Page recoverPage(Object fragment) {
-        Object activity = callNoArg(fragment, "getActivity");
+        Object activity = MediaNativeBindings.fragmentActivity(fragment);
         if (activity == null) return null;
 
-        Integer position = positionFromTag(callNoArg(fragment, "getTag"));
+        Integer position = positionFromTag(MediaNativeBindings.fragmentTag(fragment));
         if (position == null) {
-            Boolean visible = callBooleanObject(fragment, "getUserVisibleHint");
-            if (Boolean.TRUE.equals(visible)) {
+            if (MediaNativeBindings.fragmentVisible(fragment)) {
                 position = sessionFor(activity).selectedPosition;
             }
         }
@@ -374,7 +373,7 @@ public final class GalleryAnimatedPreview {
         if (!(imageView.getParent() instanceof ViewGroup)) return false;
 
         Object fragment = page.fragment.get();
-        Object activity = callNoArg(fragment, "getActivity");
+        Object activity = fragment == null ? null : MediaNativeBindings.fragmentActivity(fragment);
         Context context = activity instanceof Context
                 ? (Context) activity
                 : imageView.getContext();
@@ -382,34 +381,14 @@ public final class GalleryAnimatedPreview {
 
         try {
             ViewGroup parent = (ViewGroup) imageView.getParent();
-            Class<?> playerViewClass = Class.forName(
-                    "com.google.android.exoplayer2.ui.PlayerView"
-            );
-            Constructor<?> playerViewConstructor = playerViewClass.getConstructor(
-                    Context.class,
-                    AttributeSet.class
-            );
-            Object playerViewObject = playerViewConstructor.newInstance(context, null);
-            if (!(playerViewObject instanceof View)) return false;
-
-            View playerView = (View) playerViewObject;
-            if (!replaceSurfaceViewWithTextureView(playerViewObject, playerViewClass, context)) {
+            View playerView = GalleryPlayback.createView(context);
+            if (!replaceSurfaceViewWithTextureView(playerView, playerView.getClass(), context)) {
                 Log.w(
                         LOG_TAG,
                         MARKER + ": texture surface unavailable position=" + page.position
                 );
                 return false;
             }
-            playerViewClass.getMethod("setUseController", boolean.class)
-                    .invoke(playerViewObject, false);
-            playerViewClass.getMethod("setResizeMode", int.class)
-                    .invoke(playerViewObject, 0);
-            playerViewClass.getMethod("setShutterBackgroundColor", int.class)
-                    .invoke(playerViewObject, Color.TRANSPARENT);
-            playerView.setBackgroundColor(Color.TRANSPARENT);
-            playerView.setClickable(false);
-            playerView.setFocusable(false);
-
             int imageIndex = parent.indexOfChild(imageView);
             if (imageIndex < 0) imageIndex = 0;
             parent.addView(
@@ -424,27 +403,10 @@ public final class GalleryAnimatedPreview {
             page.inlinePlayerView = playerView;
             page.inlinePlayerParent = new WeakReference<>(parent);
 
-            Class<?> playerBuilderClass = Class.forName(
-                    "com.google.android.exoplayer2.k$b"
-            );
-            Object playerBuilder = playerBuilderClass.getConstructor(Context.class)
-                    .newInstance(context);
-            Object player = playerBuilderClass.getMethod("f").invoke(playerBuilder);
+            GalleryPlayback player = GalleryPlayback.create(context);
             page.inlinePlayer = player;
-
-            Class<?> playerInterface = Class.forName("com.google.android.exoplayer2.w1");
-            playerViewClass.getMethod("setPlayer", playerInterface)
-                    .invoke(playerViewObject, player);
-
-            Object mediaSource = buildMediaSource(context, page.animatedUrl);
-            Class<?> exoPlayerInterface = Class.forName("com.google.android.exoplayer2.k");
-            Class<?> mediaSourceInterface = Class.forName("s4.t");
-
-            playerInterface.getMethod("setVolume", float.class).invoke(player, 0.0f);
-            playerInterface.getMethod("S", int.class).invoke(player, PLAYER_REPEAT_ALL);
-            exoPlayerInterface.getMethod("y", mediaSourceInterface).invoke(player, mediaSource);
-            playerInterface.getMethod("f").invoke(player);
-            playerInterface.getMethod("m", boolean.class).invoke(player, true);
+            player.attach(playerView);
+            player.prepare(context, page.animatedUrl, mediaSourceType(page.animatedUrl));
 
             int generation = ++page.playerGeneration;
             scheduleReadyPoll(page, generation);
@@ -540,84 +502,6 @@ public final class GalleryAnimatedPreview {
         return null;
     }
 
-    private static Object buildMediaSource(Context context, String url)
-            throws Exception {
-        Class<?> boostHttpClass = Class.forName("tb.a");
-        Method boostHttpMethod = boostHttpClass.getDeclaredMethod("b");
-        boostHttpMethod.setAccessible(true);
-        Object okHttpClient = boostHttpMethod.invoke(null);
-
-        Class<?> callFactoryClass = Class.forName("okhttp3.Call$Factory");
-        Class<?> dataSourceFactoryClass = Class.forName("x3.a$b");
-        Object dataSourceFactory = dataSourceFactoryClass
-                .getConstructor(callFactoryClass)
-                .newInstance(okHttpClient);
-
-        String userAgent = "Boost";
-        try {
-            Class<?> boostMediaUtilsClass = Class.forName("he.h0");
-            Method userAgentMethod = boostMediaUtilsClass.getDeclaredMethod(
-                    "T",
-                    Context.class,
-                    String.class
-            );
-            userAgentMethod.setAccessible(true);
-            Object value = userAgentMethod.invoke(null, context, "Boost");
-            if (value instanceof String) userAgent = (String) value;
-        } catch (Throwable ignored) {
-        }
-        dataSourceFactory = dataSourceFactoryClass.getMethod("d", String.class)
-                .invoke(dataSourceFactory, userAgent);
-
-        Class<?> mediaItemClass = Class.forName("com.google.android.exoplayer2.x0");
-        Object mediaItem = mediaItemClass.getMethod("d", Uri.class)
-                .invoke(null, Uri.parse(url));
-
-        Class<?> dataSourceFactoryInterface = Class.forName("m5.j$a");
-        int sourceType = mediaSourceType(url);
-        if (sourceType == MEDIA_SOURCE_DASH) {
-            Class<?> dashChunkSourceFactoryInterface = Class.forName(
-                    "com.google.android.exoplayer2.source.dash.a$a"
-            );
-            Class<?> dashChunkSourceFactoryClass = Class.forName(
-                    "com.google.android.exoplayer2.source.dash.c$a"
-            );
-            Object dashChunkSourceFactory = dashChunkSourceFactoryClass
-                    .getConstructor(dataSourceFactoryInterface)
-                    .newInstance(dataSourceFactory);
-
-            Class<?> dashMediaSourceFactoryClass = Class.forName(
-                    "com.google.android.exoplayer2.source.dash.DashMediaSource$Factory"
-            );
-            Object dashMediaSourceFactory = dashMediaSourceFactoryClass
-                    .getConstructor(
-                            dashChunkSourceFactoryInterface,
-                            dataSourceFactoryInterface
-                    )
-                    .newInstance(dashChunkSourceFactory, dataSourceFactory);
-            return dashMediaSourceFactoryClass.getMethod("a", mediaItemClass)
-                    .invoke(dashMediaSourceFactory, mediaItem);
-        }
-
-        if (sourceType == MEDIA_SOURCE_HLS) {
-            Class<?> hlsMediaSourceFactoryClass = Class.forName(
-                    "com.google.android.exoplayer2.source.hls.HlsMediaSource$Factory"
-            );
-            Object hlsMediaSourceFactory = hlsMediaSourceFactoryClass
-                    .getConstructor(dataSourceFactoryInterface)
-                    .newInstance(dataSourceFactory);
-            return hlsMediaSourceFactoryClass.getMethod("a", mediaItemClass)
-                    .invoke(hlsMediaSourceFactory, mediaItem);
-        }
-
-        Class<?> progressiveFactoryClass = Class.forName("s4.h0$b");
-        Object progressiveFactory = progressiveFactoryClass
-                .getConstructor(dataSourceFactoryInterface)
-                .newInstance(dataSourceFactory);
-        return progressiveFactoryClass.getMethod("b", mediaItemClass)
-                .invoke(progressiveFactory, mediaItem);
-    }
-
     private static void scheduleReadyPoll(final Page page, final int generation) {
         View playerView = page.inlinePlayerView;
         if (playerView == null) return;
@@ -636,9 +520,7 @@ public final class GalleryAnimatedPreview {
                 }
 
                 try {
-                    Class<?> playerInterface = Class.forName("com.google.android.exoplayer2.w1");
-                    Object value = playerInterface.getMethod("Q").invoke(page.inlinePlayer);
-                    int state = value instanceof Integer ? (Integer) value : -1;
+                    int state = page.inlinePlayer.getPlaybackState();
                     if (state == PLAYER_STATE_READY) {
                         View host = page.inlinePlayerView;
                         if (host != null) {
@@ -710,15 +592,10 @@ public final class GalleryAnimatedPreview {
 
         restorePoster(page, keepPlayButtonHidden);
 
-        Object player = page.inlinePlayer;
+        GalleryPlayback player = page.inlinePlayer;
         if (playerView != null) {
             try {
-                Class<?> playerViewClass = Class.forName(
-                        "com.google.android.exoplayer2.ui.PlayerView"
-                );
-                Class<?> playerInterface = Class.forName("com.google.android.exoplayer2.w1");
-                playerViewClass.getMethod("setPlayer", playerInterface)
-                        .invoke(playerView, (Object) null);
+                GalleryPlayback.detach(playerView);
             } catch (Throwable throwable) {
                 logFailure("inline-player-detach", throwable);
             }
@@ -726,8 +603,7 @@ public final class GalleryAnimatedPreview {
 
         if (player != null) {
             try {
-                Class<?> playerInterface = Class.forName("com.google.android.exoplayer2.w1");
-                playerInterface.getMethod("release").invoke(player);
+                player.release();
             } catch (Throwable throwable) {
                 logFailure("inline-player-release", throwable);
             }
@@ -905,31 +781,6 @@ public final class GalleryAnimatedPreview {
             }
         }
         return null;
-    }
-
-    private static Object callNoArg(Object target, String name) {
-        if (target == null) return null;
-        try {
-            Method method = target.getClass().getMethod(name);
-            method.setAccessible(true);
-            return method.invoke(target);
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private static String callString(Object target, String name) {
-        Object value = callNoArg(target, name);
-        return value instanceof String ? (String) value : null;
-    }
-
-    private static boolean callBoolean(Object target, String name) {
-        return Boolean.TRUE.equals(callBooleanObject(target, name));
-    }
-
-    private static Boolean callBooleanObject(Object target, String name) {
-        Object value = callNoArg(target, name);
-        return value instanceof Boolean ? (Boolean) value : null;
     }
 
     private static void logFailure(String operation, Throwable throwable) {

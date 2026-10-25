@@ -34,8 +34,6 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -59,8 +57,6 @@ final class MorpheSettingsV5AppearanceBindings {
     static final String FONT_RESOLVER_MARKER =
             "MORPHE_BOOST_SETTINGS_V5_FONT_RESOLVER_ISSUE121_V1";
 
-    private static final String SAVED_VIEWS_PREFERENCES =
-            "com.rubenmayayo.reddit.VIEW_PER_SUBSCRIPTION";
     private static final String MULTI_SUFFIX = ".multi";
     private static final String FRONT_PAGE_KEY =
             "_load_front_page_this_is_not_a_subreddit";
@@ -364,10 +360,7 @@ final class MorpheSettingsV5AppearanceBindings {
             this.preferences = PreferenceManager.getDefaultSharedPreferences(
                     context
             );
-            this.savedViews = context.getSharedPreferences(
-                    SAVED_VIEWS_PREFERENCES,
-                    Context.MODE_PRIVATE
-            );
+            this.savedViews = BoostSettingsNative.savedViewsPreferences();
         }
 
         void render(MorpheSettingsV5Registry.V5PageSpec page) {
@@ -548,7 +541,7 @@ final class MorpheSettingsV5AppearanceBindings {
             );
             if (summary != null) {
                 summary.setTypeface(resolveFontTypeface(
-                        preferences.getString(spec.key, "")
+                        preferences.getString(spec.key, stringDefault(spec.key))
                 ));
             }
             row.addView(MorpheSettingsV14Ui.chevron(context, tokens));
@@ -655,7 +648,7 @@ final class MorpheSettingsV5AppearanceBindings {
                     );
                     if (binding.spec.kind == Kind.FONT) {
                         binding.summary.setTypeface(resolveFontTypeface(
-                                preferences.getString(binding.spec.key, "")
+                                preferences.getString(binding.spec.key, stringDefault(binding.spec.key))
                         ));
                     }
                 }
@@ -981,40 +974,7 @@ final class MorpheSettingsV5AppearanceBindings {
         }
 
         private Typeface resolveFontTypeface(String value) {
-            try {
-                Class<?> settingsClass = Class.forName("id.b");
-                Method instanceMethod = settingsClass.getDeclaredMethod("v0");
-                instanceMethod.setAccessible(true);
-                Object settings = instanceMethod.invoke(null);
-                Method resolver = settingsClass.getDeclaredMethod(
-                        "p4",
-                        Context.class,
-                        String.class
-                );
-                resolver.setAccessible(true);
-                Object result = resolver.invoke(settings, context, value);
-                if (result instanceof Typeface) {
-                    return (Typeface) result;
-                }
-            } catch (Throwable ignored) {
-            }
-
-            if (TextUtils.isEmpty(value)) {
-                return Typeface.DEFAULT;
-            }
-            if (value.endsWith(".ttf")) {
-                String[] assetPaths = new String[]{value, "fonts/" + value};
-                for (String assetPath : assetPaths) {
-                    try {
-                        return Typeface.createFromAsset(
-                                context.getAssets(),
-                                assetPath
-                        );
-                    } catch (Throwable ignored) {
-                    }
-                }
-            }
-            return Typeface.create(value, Typeface.NORMAL);
+            return MorpheSettingsV4FontsFragment.typefaceFor(context, value);
         }
 
         private void showAddSavedViewDialog() {
@@ -1104,8 +1064,7 @@ final class MorpheSettingsV5AppearanceBindings {
                                 .remove("pref_comments_font")
                                 .remove("pref_font_size")
                                 .apply();
-                        setBoostStaticBoolean("d");
-                        setBoostStaticBoolean("h");
+                        BoostSettingsNative.invalidateFonts("pref_font_size");
                         updateRows();
                     }
             );
@@ -1260,25 +1219,15 @@ final class MorpheSettingsV5AppearanceBindings {
         private String themeTitle(String value) {
             try {
                 int theme = Integer.parseInt(value);
-                Method method = Class.forName("he.f0").getDeclaredMethod(
-                        "z",
-                        int.class,
-                        Context.class
-                );
-                method.setAccessible(true);
-                Object result = method.invoke(null, theme, context);
-                if (result instanceof String
-                        && !TextUtils.isEmpty((String) result)) {
-                    return (String) result;
-                }
-            } catch (Throwable ignored) {
+                return BoostSettingsNative.themeTitle(context, theme);
+            } catch (NumberFormatException ignored) {
             }
             return "Theme " + value;
         }
 
         private String selectedFontTitle(String key) {
             return valueTitle(
-                    preferences.getString(key, ""),
+                    preferences.getString(key, stringDefault(key)),
                     stringArray("font_options", FONT_TITLES),
                     stringArray("font_values", FONT_VALUES)
             );
@@ -1378,7 +1327,7 @@ final class MorpheSettingsV5AppearanceBindings {
                 return "0";
             }
             if ("pref_theme_night".equals(key)) {
-                return "8";
+                return "5";
             }
             if ("pref_theme_mode_type".equals(key)) {
                 return "system";
@@ -1386,6 +1335,9 @@ final class MorpheSettingsV5AppearanceBindings {
             if ("pref_font_size".equals(key)
                     || "pref_font_size_title".equals(key)) {
                 return "Medium";
+            }
+            if ("pref_title_font".equals(key)) {
+                return "sans-serif-medium";
             }
             return "";
         }
@@ -1404,6 +1356,9 @@ final class MorpheSettingsV5AppearanceBindings {
         }
 
         private boolean booleanDefault(String key) {
+            if ("pref_colored_nav_bar".equals(key)) {
+                return Build.VERSION.SDK_INT >= 26;
+            }
             switch (key) {
                 case "pref_header_show_description":
                 case "morphe_boost_prefer_high_refresh_rate":
@@ -1425,31 +1380,32 @@ final class MorpheSettingsV5AppearanceBindings {
         private void applySideEffects(String key) {
             if (key.startsWith("pref_cards_")
                     || key.startsWith("pref_mini_cards_")) {
-                setBoostStaticBoolean("g");
+                setBoostStaticBoolean("f");
             }
             if ("pref_dense_buttons_visible".equals(key)
-                    || "pref_left_handed".equals(key)) {
-                setBoostStaticBoolean("h");
+                    || "pref_left_handed".equals(key)
+                    || "pref_split_screen".equals(key)) {
+                setBoostStaticBoolean("g");
             }
             if ("pref_show_subreddit_header".equals(key)
                     || "pref_header_show_description".equals(key)
                     || "pref_toolbar_header_type".equals(key)) {
-                setBoostStaticBoolean("e");
+                setBoostStaticBoolean("d");
             }
             if ("pref_show_subreddit_prefix".equals(key)) {
                 setBoostStaticString(
                         "c",
                         preferences.getBoolean(key, false) ? "r/" : ""
                 );
-                setBoostStaticBoolean("i");
+                setBoostStaticBoolean("h");
             }
             if ("pref_colored_nav_bar".equals(key)
                     || "pref_colored_status_bar".equals(key)) {
-                setBoostStaticBoolean("h");
+                setBoostStaticBoolean("g");
                 recreateHost();
             }
             if ("pref_dynamic_colors".equals(key)) {
-                setBoostStaticBoolean("i");
+                setBoostStaticBoolean("h");
                 recreateHost();
             }
             if ("pref_theme".equals(key)
@@ -1457,16 +1413,15 @@ final class MorpheSettingsV5AppearanceBindings {
                     || "pref_theme_mode_type".equals(key)
                     || "pref_theme_night_start_minutes".equals(key)
                     || "pref_theme_night_end_minutes".equals(key)) {
-                invokeStaticNoArgs("kb.a", "d");
-                setBoostStaticBoolean("i");
+                BoostSettingsNative.updateThemeMode();
+                setBoostStaticBoolean("h");
                 recreateHost();
             }
             if ("pref_font_size".equals(key)
-                    || "pref_font_size_title".equals(key)) {
-                setBoostStaticBoolean("d");
-            }
-            if ("pref_title_font".equals(key)) {
-                setBoostStaticBoolean("h");
+                    || "pref_font_size_title".equals(key)
+                    || "pref_title_font".equals(key)
+                    || "pref_comments_font".equals(key)) {
+                BoostSettingsNative.invalidateFonts(key);
             }
             if ("morphe_boost_prefer_high_refresh_rate".equals(key)) {
                 recreateHost();
@@ -1648,78 +1603,26 @@ final class MorpheSettingsV5AppearanceBindings {
         }
 
         private String displayName(String key) {
-            if (FRONT_PAGE_KEY.equals(key)) {
-                return "Front page";
-            }
-            if (SAVED_KEY.equals(key)) {
-                return "Saved";
-            }
-            if (HISTORY_KEY.equals(key)) {
-                return "History";
-            }
-            if ("all".equalsIgnoreCase(key)
-                    || "popular".equalsIgnoreCase(key)) {
-                return "r/" + key;
-            }
-            if (key.endsWith(MULTI_SUFFIX)) {
-                return "Custom feed · "
-                        + key.substring(0, key.length() - MULTI_SUFFIX.length());
-            }
-            return key.startsWith("r/") ? key : "r/" + key;
+            return BoostSettingsNative.savedViewName(context, key);
         }
 
         private String savedViewTitle(int viewType) {
-            try {
-                Method method = Class.forName("he.h0").getDeclaredMethod(
-                        "a1",
-                        Context.class,
-                        int.class
-                );
-                method.setAccessible(true);
-                Object result = method.invoke(null, context, viewType);
-                if (result instanceof String
-                        && !TextUtils.isEmpty((String) result)) {
-                    return (String) result;
-                }
-            } catch (Throwable ignored) {
-            }
-            for (int index = 0; index < SAVED_VIEW_VALUES.length; index++) {
-                if (SAVED_VIEW_VALUES[index] == viewType) {
-                    return VIEW_TITLES[index];
-                }
-            }
-            return "View " + viewType;
+            return BoostSettingsNative.viewTitle(context, viewType);
         }
     }
 
     private static void setBoostStaticBoolean(String fieldName) {
-        try {
-            Field field = Class.forName("id.b").getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.setBoolean(null, true);
-        } catch (Throwable ignored) {
-        }
+        BoostSettingsNative.markDirty(fieldName);
     }
 
     private static void setBoostStaticString(
             String fieldName,
             String value
     ) {
-        try {
-            Field field = Class.forName("id.b").getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(null, value);
-        } catch (Throwable ignored) {
+        if (!"c".equals(fieldName)) {
+            throw new IllegalArgumentException("unsupported Boost string field " + fieldName);
         }
-    }
-
-    private static void invokeStaticNoArgs(String className, String methodName) {
-        try {
-            Method method = Class.forName(className).getDeclaredMethod(methodName);
-            method.setAccessible(true);
-            method.invoke(null);
-        } catch (Throwable ignored) {
-        }
+        BoostSettingsNative.setSubredditPrefix(value);
     }
 
     private interface ValueConsumer {

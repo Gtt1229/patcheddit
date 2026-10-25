@@ -13,27 +13,21 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
-import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableField.Companion.toMutable
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import app.morphe.patcher.util.smali.ExternalLabel
-import app.morphe.patcher.util.smali.toInstructions
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import app.morphe.patches.reddit.customclients.boostforreddit.http.interceptHttpRequests
 import app.morphe.patches.reddit.customclients.boostforreddit.http.REDDIT_UNDELETE_APPLIED_RESOURCE
 import app.morphe.patches.reddit.customclients.boostforreddit.http.undeleteAppliedMarkerPatch
-import app.morphe.util.addInstructionsAtControlFlowLabel
+import app.morphe.patches.reddit.customclients.boostforreddit.wrapHook
 import app.morphe.util.getReference
-import app.morphe.util.indexOfFirstInstruction
-import app.morphe.util.indexOfFirstInstructionReversed
-import app.morphe.util.indexOfFirstInstructionReversedOrThrow
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
-import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction10t
-import com.android.tools.smali.dexlib2.builder.instruction.BuilderInstruction21t
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableField
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
@@ -45,6 +39,50 @@ private const val GLIDE_REDDIT_MEDIA_WAYBACK_DESCRIPTOR =
     "Lapp/morphe/extension/boost/http/reddit/GlideRedditMediaWayback;"
 internal const val EXTRA_EMOJI_CONTEXT_KEY = "extraEmoji"
 internal const val EXTRA_EMOJI_GETTER = "getExtraEmoji"
+
+private const val BABUSHKA_TEXT =
+    "Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText;"
+private const val BABUSHKA_PART =
+    "Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText\$a;"
+private const val BABUSHKA_PART_BUILDER =
+    "Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText\$a\$a;"
+
+private fun extraEmojiInstructions(
+    holder: String,
+    viewField: String,
+    separatorField: String? = null,
+): String {
+    val separator = separatorField?.let {
+        """
+            iget-object v2, v1, $BABUSHKA_TEXT->C:Ljava/util/ArrayList;
+            invoke-virtual {v2}, Ljava/util/ArrayList;->isEmpty()Z
+            move-result v2
+            if-nez v2, :morphe_extra_emoji_separator_done
+            iget-object v2, p0, $holder->$it:$BABUSHKA_PART
+            invoke-virtual {v1, v2}, $BABUSHKA_TEXT->h($BABUSHKA_PART)V
+            :morphe_extra_emoji_separator_done
+        """
+    }.orEmpty()
+    return """
+        invoke-virtual {p1}, Lcom/rubenmayayo/reddit/models/reddit/ContributionModel;->$EXTRA_EMOJI_GETTER()Ljava/lang/String;
+        move-result-object v0
+        invoke-static {v0}, Landroid/text/TextUtils;->isEmpty(Ljava/lang/CharSequence;)Z
+        move-result v1
+        if-nez v1, :morphe_extra_emoji_done
+        iget-object v1, p0, $holder->$viewField:$BABUSHKA_TEXT
+        if-eqz v1, :morphe_extra_emoji_done
+        $separator
+        new-instance v2, $BABUSHKA_PART_BUILDER
+        invoke-direct {v2, v0}, $BABUSHKA_PART_BUILDER-><init>(Ljava/lang/String;)V
+        new-instance v0, $BABUSHKA_PART
+        invoke-direct {v0, v2}, $BABUSHKA_PART-><init>($BABUSHKA_PART_BUILDER)V
+        invoke-virtual {v1, v0}, $BABUSHKA_TEXT->h($BABUSHKA_PART)V
+        invoke-virtual {v1}, $BABUSHKA_TEXT->i()V
+        const/4 v0, 0x0
+        invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+        :morphe_extra_emoji_done
+    """
+}
 
 @Suppress("unused")
 val undeleteRedditPatch = bytecodePatch(
@@ -59,27 +97,49 @@ val undeleteRedditPatch = bytecodePatch(
     execute {
         // Glide uses HttpURLConnection directly, bypassing the OkHttp interceptors.
         GlideHttpUrlFetcherFetchFingerprint.method.apply {
-            val responseCodeIndex = indexOfFirstInstructionReversedOrThrow {
-                val methodReference = getReference<MethodReference>()
-                opcode == Opcode.INVOKE_STATIC &&
-                    methodReference?.definingClass == "Lcom/bumptech/glide/load/data/j;" &&
-                    methodReference.name == "f"
+            val nativeInstructions = implementation!!.instructions
+            val responseCodeIndices = nativeInstructions.withIndex().filter { (_, instruction) ->
+                instruction.opcode == Opcode.INVOKE_STATIC &&
+                    instruction.getReference<MethodReference>()?.toString() ==
+                    "Lm81;->d(Ljava/net/HttpURLConnection;)I"
+            }.map { it.index }
+            check(responseCodeIndices.size == 3) {
+                "Unexpected Glide response handling: $responseCodeIndices"
             }
-            val insertIndex = responseCodeIndex - 2
+            val normalResponseIndex = responseCodeIndices.first()
+            val statusRegister = getInstruction<OneRegisterInstruction>(normalResponseIndex + 1).registerA
+            val errorHandlerStart = nativeInstructions.withIndex().last { (index, instruction) ->
+                index < responseCodeIndices.last() && instruction.opcode == Opcode.MOVE_EXCEPTION
+            }.index + 1
+            check(getInstruction(errorHandlerStart).opcode == Opcode.NEW_INSTANCE)
+
+            // getInputStream() throws on HTTP errors before the normal status
+            // branch. Keep the fetcher receiver and caught exception intact.
             addInstructionsWithLabels(
-                insertIndex,
+                errorHandlerStart,
                 """
-                iget-object         p3, p0, Lcom/bumptech/glide/load/data/j;->e:Ljava/net/HttpURLConnection;
-                invoke-static       {p3}, Lcom/bumptech/glide/load/data/j;->f(Ljava/net/HttpURLConnection;)I
-                move-result         p3
-                iget-object         p4, p0, Lcom/bumptech/glide/load/data/j;->e:Ljava/net/HttpURLConnection;
-                invoke-static       {p4, p3}, $GLIDE_REDDIT_MEDIA_WAYBACK_DESCRIPTOR->open(Ljava/net/HttpURLConnection;I)Ljava/io/InputStream;
-                move-result-object  p4
-                if-eqz              p4, :morphe_glide_wayback_continue
-                iput-object         p4, p0, Lcom/bumptech/glide/load/data/j;->f:Ljava/io/InputStream;
-                return-object       p4
+                    iget-object v3, p0, Lm81;->c:Ljava/net/HttpURLConnection;
+                    invoke-static {v3}, Lm81;->d(Ljava/net/HttpURLConnection;)I
+                    move-result v4
+                    invoke-static {v3, v4}, $GLIDE_REDDIT_MEDIA_WAYBACK_DESCRIPTOR->open(Ljava/net/HttpURLConnection;I)Ljava/io/InputStream;
+                    move-result-object v3
+                    if-eqz v3, :morphe_native_glide_error
+                    iput-object v3, p0, Lm81;->y:Ljava/io/InputStream;
+                    return-object v3
                 """,
-                ExternalLabel("morphe_glide_wayback_continue", getInstruction(insertIndex))
+                ExternalLabel("morphe_native_glide_error", getInstruction(errorHandlerStart)),
+            )
+            addInstructionsWithLabels(
+                normalResponseIndex + 2,
+                """
+                    iget-object v3, p0, Lm81;->c:Ljava/net/HttpURLConnection;
+                    invoke-static {v3, v$statusRegister}, $GLIDE_REDDIT_MEDIA_WAYBACK_DESCRIPTOR->open(Ljava/net/HttpURLConnection;I)Ljava/io/InputStream;
+                    move-result-object v3
+                    if-eqz v3, :morphe_native_glide_response
+                    iput-object v3, p0, Lm81;->y:Ljava/io/InputStream;
+                    return-object v3
+                """,
+                ExternalLabel("morphe_native_glide_response", getInstruction(normalResponseIndex + 2)),
             )
         }
 
@@ -138,156 +198,68 @@ val undeleteRedditPatch = bytecodePatch(
         // endregion
 
         // region Modify SubmissionModel/CommentModel deserialization.
-        arrayOf(SubmissionModelDeserializeFingerprint, CommentModelDeserializeFingerprint).forEach {
-            it.method.apply {
-                val index = indexOfFirstInstruction(Opcode.INVOKE_VIRTUAL)
-                addInstructions(
-                    index,
-                    """
+        arrayOf(SubmissionModelDeserializeFingerprint, CommentModelDeserializeFingerprint).forEach { fingerprint ->
+            fingerprint.wrapHook(
+                after = """
+                    if-eqz v0, :morphe_extra_emoji_deserialized
                     const-string        v1, "$EXTRA_EMOJI_CONTEXT_KEY"
                     invoke-virtual      {p0, v1}, Lnet/dean/jraw/models/JsonModel;->data(Ljava/lang/String;)Ljava/lang/String;
                     move-result-object  v1
                     iput-object         v1, v0, Lcom/rubenmayayo/reddit/models/reddit/ContributionModel;->$EXTRA_EMOJI_CONTEXT_KEY:$fieldType
-                    """
-                )
-            }
+                    :morphe_extra_emoji_deserialized
+                """,
+            )
         }
         // endregion
 
         // region Extend emojis used for BabushkaText.
-        SetCommentBabushkaTextFingerprint.method.apply {
-            val babushkaTextCheckGotoIndex = indexOfFirstInstruction(Opcode.GOTO)
-            val gotoTarget = getInstruction<BuilderInstruction10t>(babushkaTextCheckGotoIndex).target
-            replaceInstruction(babushkaTextCheckGotoIndex - 1, BuilderInstruction10t(Opcode.GOTO, gotoTarget))
-            val checkInstructions = """
-                    invoke-virtual      {p1}, Lcom/rubenmayayo/reddit/models/reddit/ContributionModel;->$EXTRA_EMOJI_GETTER()Ljava/lang/String;
-                    move-result-object  v2
-                    invoke-static       {v2}, Landroid/text/TextUtils;->isEmpty(Ljava/lang/CharSequence;)Z
-                    move-result         v0
-                    """.toInstructions(this).toMutableList()
-            checkInstructions.add(BuilderInstruction21t(Opcode.IF_EQZ, 0, gotoTarget))
-            addInstructions(
-                babushkaTextCheckGotoIndex,
-                checkInstructions,
-            )
-
-            val babushkaTextLoadIndex = indexOfFirstInstructionReversed(Opcode.GOTO_16) + 1
-            addInstructionsAtControlFlowLabel(
-                babushkaTextLoadIndex,
-                $$"""
-                    invoke-virtual      {p1}, Lcom/rubenmayayo/reddit/models/reddit/ContributionModel;->$$EXTRA_EMOJI_GETTER()Ljava/lang/String;
-                    move-result-object  v2
-                    invoke-static       {v2}, Landroid/text/TextUtils;->isEmpty(Ljava/lang/CharSequence;)Z
-                    move-result         v0
-                    if-nez              v0, :continue
-                    iget-object         v0, p0, Lcom/rubenmayayo/reddit/ui/adapters/CommentViewHolder;->distinguishedTv:Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText;
-                    new-instance        v1, Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText$a$a;
-                    invoke-direct       {v1, v2}, Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText$a$a;-><init>(Ljava/lang/String;)V
-                    invoke-virtual      {v1}, Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText$a$a;->r()Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText$a;
-                    move-result-object  v1
-                    invoke-virtual      {v0, v1}, Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText;->m(Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText$a;)V
-                    :continue
-                    nop
-                    """
-            )
-        }
-        SetSubmissionBabushkaTextFingerprint.method.apply {
-            var babushkaTextLoadIndex = indexOfFirstInstruction {
-                val methodReference = getReference<MethodReference>()
-                opcode == Opcode.INVOKE_VIRTUAL && methodReference?.definingClass == "Lcom/rubenmayayo/reddit/models/reddit/PublicContributionModel;" && methodReference.name == "x"
-            }
-
-            addInstructionsAtControlFlowLabel(
-                babushkaTextLoadIndex,
-                $$"""
-                    invoke-virtual      {p1}, Lcom/rubenmayayo/reddit/models/reddit/ContributionModel;->$$EXTRA_EMOJI_GETTER()Ljava/lang/String;
-                    move-result-object  v0
-                    invoke-static       {v0}, Landroid/text/TextUtils;->isEmpty(Ljava/lang/CharSequence;)Z
-                    move-result         v4
-                    if-nez              v4, :continue
-                    iget-object         v4, p0, $$definingClass->infoTop:Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText;
-                    iget-object         v5, p0, $$definingClass->l:Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText$a;
-                    invoke-virtual      {v4, v5}, Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText;->m(Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText$a;)V
-                    new-instance        v5, Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText$a$a;
-                    invoke-direct       {v5, v0}, Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText$a$a;-><init>(Ljava/lang/String;)V
-                    invoke-virtual      {v5}, Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText$a$a;->r()Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText$a;
-                    move-result-object  v5
-                    invoke-virtual      {v4, v5}, Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText;->m(Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText$a;)V
-                    :continue
-                    nop
-                    """
-            )
-        }
+        SetCommentBabushkaTextFingerprint.wrapHook(
+            after = extraEmojiInstructions(
+                "Lcom/rubenmayayo/reddit/ui/adapters/CommentViewHolder;",
+                "distinguishedTv",
+            ),
+        )
+        SetSubmissionBabushkaTextFingerprint.wrapHook(
+            after = extraEmojiInstructions(
+                "Lcom/rubenmayayo/reddit/ui/adapters/SubmissionViewHolder;",
+                "infoTop",
+                "Y",
+            ),
+        )
 
         // endregion
 
         // region Fix the deletion reason detection
-        StateSubmissionViewGetHeaderFingerprint.method.let {
-            StateSubmissionViewGetHeaderFingerprint.stringMatches.forEach { match ->
-                if (match.string == "copyright_takedown") {
-                    it.addInstructionsAtControlFlowLabel(
-                        match.index,
-                        """
-                        const               v1, 0x7F130594
-                        """
-                    )
-                } else {
-                    it.addInstructionsWithLabels(
-                        match.index,
-                        """
-                        const-string        v0, "content_takedown"
-                        invoke-virtual      {v0, p1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-                        move-result         v0
-                        if-eqz              v0, :continue
-                        const               p1, 0x7F130590
-                        return              p1
-                        """,
-                        ExternalLabel("continue", it.getInstruction(match.index))
-                    )
-                }
-            }
-        }
-        StateSubmissionViewGetSummaryFingerprint.method.let {
-            StateSubmissionViewGetSummaryFingerprint.stringMatches.forEach { match ->
-                if (match.string == "copyright_takedown") {
-                    it.addInstructionsAtControlFlowLabel(
-                        match.index,
-                        """
-                        const               v1, 0x7f130595
-                        """
-                    )
-                } else {
-                    it.addInstructionsWithLabels(
-                        match.index,
-                        """
-                        const-string        v0, "content_takedown"
-                        invoke-virtual      {v0, p1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-                        move-result         v0
-                        if-eqz              v0, :continue
-                        const               p1, 0x7F130591
-                        return              p1
-                        """,
-                        ExternalLabel("continue", it.getInstruction(match.index))
-                    )
-                }
-            }
-        }
-        StateSubmissionViewHasValidRemovalReasonFingerprint.let { fingerprint ->
-            // Match indices must come from this method, not the summary method.
-            val match = fingerprint.stringMatches.single { it.string == "reddit" }
-            fingerprint.method.apply {
-                val returnTrueIndex = indexOfFirstInstructionReversedOrThrow(Opcode.CONST_4)
-                addInstructionsWithLabels(
-                    match.index,
-                    """
-                    const-string        v0, "content_takedown"
-                    invoke-virtual      {v0, p1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-                    move-result         v0
-                    if-nez              v0, :matched
-                    """,
-                    ExternalLabel("matched", getInstruction(returnTrueIndex))
-                )
-            }
+        StateSubmissionViewSetStateFingerprint.method.apply {
+            addInstructionsWithLabels(
+                0,
+                """
+                    iget-object v0, p1, Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;->u0:Ljava/lang/String;
+                    const-string v1, "copyright_takedown"
+                    invoke-virtual {v1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                    move-result v1
+                    if-eqz v1, :morphe_check_content_takedown
+                    const v1, 0x7f13057c
+                    const v2, 0x7f13057d
+                    goto :morphe_show_removal_reason
+                    :morphe_check_content_takedown
+                    const-string v1, "content_takedown"
+                    invoke-virtual {v1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+                    move-result v1
+                    if-eqz v1, :morphe_native_removal_reason
+                    const v1, 0x7f130578
+                    const v2, 0x7f130579
+                    :morphe_show_removal_reason
+                    iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/customviews/StateSubmissionView;->headerText:Landroid/widget/TextView;
+                    invoke-virtual {v0, v1}, Landroid/widget/TextView;->setText(I)V
+                    iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/customviews/StateSubmissionView;->summaryText:Landroid/widget/TextView;
+                    invoke-virtual {v0, v2}, Landroid/widget/TextView;->setText(I)V
+                    const/4 v0, 0x0
+                    invoke-virtual {p0, v0}, Landroid/view/View;->setVisibility(I)V
+                    return-void
+                """,
+                ExternalLabel("morphe_native_removal_reason", getInstruction(0)),
+            )
         }
         // endregion
     }

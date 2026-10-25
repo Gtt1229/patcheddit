@@ -35,7 +35,6 @@ import androidx.fragment.app.Fragment;
 import app.morphe.extension.boost.utils.BoostSystemBarInsetsFix;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -667,6 +666,9 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
         Object originalEffect = effectField == null
                 ? null
                 : boostStaticField(effectField);
+        boolean fontSize = "pref_font_size".equals(key)
+                || "pref_font_size_title".equals(key);
+        Object originalCommentsEffect = fontSize ? boostStaticField("i") : null;
         String expected = expectedAuditString(snapshot, key);
         String[] domain = stringDomain(key);
         try {
@@ -689,6 +691,9 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
         } finally {
             if (effectField != null) {
                 setBoostStaticField(effectField, originalEffect);
+            }
+            if (fontSize) {
+                setBoostStaticField("i", originalCommentsEffect);
             }
         }
         return domain.length;
@@ -713,7 +718,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             SharedPreferences snapshot,
             String key
     ) throws Exception {
-        Object originalEffect = boostStaticField("g");
+        Object originalEffect = boostStaticField("f");
         int expected = expectedAuditInteger(snapshot, key);
         try {
             for (int value = INTEGER_MINIMUM;
@@ -725,7 +730,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             }
             assertIntegerDomainValue(defaults, key, expected);
         } finally {
-            setBoostStaticField("g", originalEffect);
+            setBoostStaticField("f", originalEffect);
         }
         return INTEGER_MAXIMUM - INTEGER_MINIMUM + 1;
     }
@@ -735,13 +740,13 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             String key,
             int value
     ) throws Exception {
-        setBoostStaticField("g", false);
+        setBoostStaticField("f", false);
         MorpheSettingsV4PostViewsFragment.applyPreviewLinesPreference(
                 defaults,
                 value
         );
         assertNativeInteger(key, value);
-        assertEffectState(key, "g");
+        assertEffectState(key, "f");
     }
 
     private static int exerciseSavedViewDomain(
@@ -1073,7 +1078,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
     ) {
         if (view.getTypeface() == null
                 || !view.getTypeface().equals(
-                MorpheSettingsV4FontsFragment.typefaceFor(font)
+                MorpheSettingsV4FontsFragment.typefaceFor(view.getContext(), font)
         )) {
             throw new IllegalStateException("font render mismatch");
         }
@@ -1120,7 +1125,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             consumer = "PackageManager";
             effect = "launcher_alias";
         } else {
-            consumer = "id.b." + nativeConsumerForKey(key);
+            consumer = nativeConsumerForKey(key);
             String field = effectFieldForKey(key);
             effect = field == null ? "direct_consumer" : field;
         }
@@ -1282,7 +1287,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             String key,
             boolean expected
     ) throws Exception {
-        Object actual = invokeNativeConsumer(nativeConsumerForKey(key));
+        Object actual = BoostSettingsNative.auditValue(key);
         if (!(actual instanceof Boolean) || ((Boolean) actual) != expected) {
             throw new IllegalStateException(
                     "native boolean consumer mismatch for " + key
@@ -1294,7 +1299,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             String key,
             String expected
     ) throws Exception {
-        Object actual = invokeNativeConsumer(nativeConsumerForKey(key));
+        Object actual = BoostSettingsNative.auditValue(key);
         if (!expected.equals(actual)) {
             throw new IllegalStateException(
                     "native string consumer mismatch for " + key
@@ -1306,7 +1311,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             String key,
             int expected
     ) throws Exception {
-        Object actual = invokeNativeConsumer(nativeConsumerForKey(key));
+        Object actual = BoostSettingsNative.auditValue(key);
         if (!(actual instanceof Integer) || ((Integer) actual) != expected) {
             throw new IllegalStateException(
                     "native integer consumer mismatch for " + key
@@ -1314,26 +1319,15 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
         }
     }
 
-    private static Object invokeNativeConsumer(String methodName)
-            throws Exception {
-        Class<?> settingsClass = Class.forName("id.b");
-        Method singleton = settingsClass.getDeclaredMethod("v0");
-        singleton.setAccessible(true);
-        Object settings = singleton.invoke(null);
-        Method consumer = settingsClass.getDeclaredMethod(methodName);
-        consumer.setAccessible(true);
-        return consumer.invoke(settings);
-    }
-
     private static Object boostStaticField(String name) throws Exception {
-        Field field = Class.forName("id.b").getDeclaredField(name);
+        Field field = BoostSettingsNative.settingsClass().getDeclaredField(name);
         field.setAccessible(true);
         return field.get(null);
     }
 
     private static void setBoostStaticField(String name, Object value)
             throws Exception {
-        Field field = Class.forName("id.b").getDeclaredField(name);
+        Field field = BoostSettingsNative.settingsClass().getDeclaredField(name);
         field.setAccessible(true);
         field.set(null, value);
     }
@@ -1343,13 +1337,13 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             case "pref_dynamic_colors":
             case "pref_lock_sidebar":
             case "pref_show_subreddit_prefix":
-                return "i";
+                return "h";
             case "pref_colored_status_bar":
             case "pref_colored_nav_bar":
             case "pref_left_handed":
             case "pref_dense_buttons_visible":
             case "pref_title_font":
-                return "h";
+                return "g";
             case "pref_cards_rounded_corners":
             case "pref_cards_full_preview":
             case "pref_cards_subreddit_icon":
@@ -1360,10 +1354,12 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             case "pref_mini_cards_rounded_corners":
             case "pref_mini_cards_truncate_title":
             case "pref_mini_cards_buttons_visible":
-                return "g";
+                return "f";
             case "pref_font_size_title":
             case "pref_font_size":
-                return "d";
+                return "g";
+            case "pref_comments_font":
+                return "i";
             default:
                 return null;
         }
@@ -1371,30 +1367,31 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
 
     private static String nativeConsumerForKey(String key) {
         switch (key) {
-            case "pref_dynamic_colors": return "m2";
-            case "pref_colored_status_bar": return "r1";
-            case "pref_colored_nav_bar": return "m1";
-            case "pref_view": return "Y3";
-            case "pref_view_per_subscription": return "L2";
-            case "pref_left_handed": return "s2";
-            case "pref_show_subreddit_prefix": return "S7";
-            case "pref_cards_rounded_corners": return "Y0";
-            case "pref_cards_full_preview": return "V0";
-            case "pref_cards_subreddit_icon": return "e3";
-            case "pref_cards_gallery_carousel": return "L3";
-            case "pref_cards_links_as_thumbnails": return "Q";
-            case "pref_cards_preview_self": return "f4";
-            case "pref_cards_preview_self_lines": return "g4";
-            case "pref_mini_cards_rounded_corners": return "D2";
-            case "pref_mini_cards_truncate_title": return "Y7";
-            case "pref_mini_cards_buttons_visible": return "B2";
-            case "pref_dense_buttons_visible": return "h2";
-            case "pref_load_readability": return "I0";
-            case "pref_lock_sidebar": return "w2";
-            case "pref_title_font": return "m4";
-            case "pref_font_size_title": return "q0";
-            case "pref_comments_font": return "W";
-            case "pref_font_size": return "p0";
+            case "pref_left_handed": return "ns2.I";
+            case "pref_cards_rounded_corners": return "ns2.t";
+            case "pref_cards_full_preview": return "ns2.r";
+            case "pref_dynamic_colors":
+            case "pref_colored_status_bar":
+            case "pref_colored_nav_bar":
+            case "pref_view":
+            case "pref_view_per_subscription":
+            case "pref_show_subreddit_prefix":
+            case "pref_cards_subreddit_icon":
+            case "pref_cards_gallery_carousel":
+            case "pref_cards_links_as_thumbnails":
+            case "pref_cards_preview_self":
+            case "pref_cards_preview_self_lines":
+            case "pref_mini_cards_rounded_corners":
+            case "pref_mini_cards_truncate_title":
+            case "pref_mini_cards_buttons_visible":
+            case "pref_dense_buttons_visible":
+            case "pref_load_readability":
+            case "pref_lock_sidebar":
+            case "pref_title_font":
+            case "pref_font_size_title":
+            case "pref_comments_font":
+            case "pref_font_size":
+                return "ns2.a.SharedPreferences[" + key + "]";
             default:
                 throw new IllegalArgumentException(
                         "missing native consumer for " + key
@@ -1635,6 +1632,9 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
     }
 
     private static boolean defaultBooleanForKey(String key) {
+        if ("pref_colored_nav_bar".equals(key)) {
+            return Build.VERSION.SDK_INT >= 26;
+        }
         for (String candidate : BOOLEAN_DEFAULT_TRUE_KEYS) {
             if (candidate.equals(key)) {
                 return true;
@@ -1647,7 +1647,10 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
         if ("pref_view".equals(key)) {
             return "0";
         }
-        if ("pref_title_font".equals(key) || "pref_comments_font".equals(key)) {
+        if ("pref_title_font".equals(key)) {
+            return "sans-serif-medium";
+        }
+        if ("pref_comments_font".equals(key)) {
             return "";
         }
         if ("pref_font_size_title".equals(key) || "pref_font_size".equals(key)) {

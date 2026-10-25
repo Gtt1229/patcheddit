@@ -10,16 +10,17 @@ package app.morphe.extension.boost.gifsearch;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.text.InputType;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import app.morphe.extension.boost.media.MediaNativeBindings;
 
 public final class GifUrlInsertion {
-    private static final int ATTACH_CAMERA_ID = 0x7f0a0131;
-    private static final int ATTACH_GALLERY_ID = 0x7f0a0132;
-    private static final int INSERT_GIF_URL_ID = 0x7f0a029c;
+    private static final String LOG_TAG = "MorpheGifInsertion";
+    private static final int ATTACH_CAMERA_ID = 0x7f0a00f4;
+    private static final int ATTACH_GALLERY_ID = 0x7f0a00f5;
+    private static final int INSERT_GIF_URL_ID = 0x7f0a0273;
 
     private GifUrlInsertion() {
     }
@@ -33,69 +34,33 @@ public final class GifUrlInsertion {
         }
 
         if (id == ATTACH_CAMERA_ID) {
-            callOriginalImageListener(formattingBar, "a");
+            callOriginalImageListener(formattingBar, true);
             return;
         }
 
         if (id == ATTACH_GALLERY_ID) {
-            callOriginalImageListener(formattingBar, "b");
+            callOriginalImageListener(formattingBar, false);
         }
     }
 
     private static int readMenuOptionId(Object menuOption) {
         try {
-            Method method = menuOption.getClass().getMethod("q");
-            Object value = method.invoke(menuOption);
-            return value instanceof Integer ? ((Integer) value).intValue() : -1;
-        } catch (Throwable ignored) {
+            return MediaNativeBindings.imageMenuOptionId(menuOption);
+        } catch (Throwable throwable) {
+            Log.w(LOG_TAG, "Unable to read image menu option", throwable);
             return -1;
         }
     }
 
-    private static void callOriginalImageListener(Object formattingBar, String methodName) {
-        Object listener = findOriginalImageListener(formattingBar);
-        if (listener == null) {
-            return;
-        }
-
+    private static void callOriginalImageListener(Object formattingBar, boolean camera) {
         try {
-            Method method = listener.getClass().getDeclaredMethod(methodName);
-            method.setAccessible(true);
-            method.invoke(listener);
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private static Object findOriginalImageListener(Object formattingBar) {
-        Class<?> type = formattingBar.getClass();
-
-        while (type != null) {
-            Field[] fields = type.getDeclaredFields();
-
-            for (Field field : fields) {
-                try {
-                    field.setAccessible(true);
-                    Object value = field.get(formattingBar);
-
-                    if (value != null && hasMethod(value, "a") && hasMethod(value, "b")) {
-                        return value;
-                    }
-                } catch (Throwable ignored) {
-                }
+            if (camera) {
+                MediaNativeBindings.attachCamera(formattingBar);
+            } else {
+                MediaNativeBindings.attachGallery(formattingBar);
             }
-
-            type = type.getSuperclass();
-        }
-
-        return null;
-    }
-
-    private static boolean hasMethod(Object target, String name) {
-        try {
-            target.getClass().getDeclaredMethod(name);
-            return true;
-        } catch (Throwable ignored) {
-            return false;
+        } catch (Throwable throwable) {
+            Log.w(LOG_TAG, "Unable to attach image", throwable);
         }
     }
 
@@ -129,9 +94,9 @@ public final class GifUrlInsertion {
 
     private static void insertRawUrl(Object formattingBar, String url) {
         try {
-            Method method = formattingBar.getClass().getMethod("p", String.class);
-            method.invoke(formattingBar, url);
-        } catch (Throwable ignored) {
+            MediaNativeBindings.insertRawUrl(formattingBar, url);
+        } catch (Throwable throwable) {
+            Log.w(LOG_TAG, "Unable to insert GIF URL", throwable);
         }
     }
 }

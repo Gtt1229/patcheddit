@@ -7,11 +7,10 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.searchnav
 
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
-import com.android.tools.smali.dexlib2.Opcode
+import app.morphe.patches.reddit.customclients.boostforreddit.wrapHook
 import app.morphe.patches.all.misc.PatchCategory
 
 private const val SUBREDDIT_NAV_EXTENSION =
@@ -28,27 +27,8 @@ val boostSubredditBottomNavigationSurfacePatch = bytecodePatch(
     dependsOn(ExtensionPatches.Boost)
 
     execute {
-        subredditActivityOnCreateFingerprint.method.apply {
-            val returnIndices =
-                implementation!!.instructions
-                    .withIndex()
-                    .filter { (_, instruction) ->
-                        instruction.opcode == Opcode.RETURN_VOID
-                    }
-                    .map { (index, _) -> index }
-
-            require(returnIndices.isNotEmpty()) {
-                "SubredditActivity.onCreate has no RETURN_VOID"
-            }
-
-            returnIndices.asReversed().forEach { index ->
-                addInstructions(
-                    index,
-                    """
-                        invoke-static {p0}, $SUBREDDIT_NAV_EXTENSION->standardizeSubreddit(Landroid/app/Activity;)V
-                    """.trimIndent(),
-                )
-            }
-        }
+        subredditActivityOnCreateFingerprint.wrapHook(
+            after = "invoke-static {p0}, $SUBREDDIT_NAV_EXTENSION->standardizeSubreddit(Landroid/app/Activity;)V",
+        )
     }
 }

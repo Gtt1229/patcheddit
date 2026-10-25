@@ -10,6 +10,7 @@ package app.morphe.extension.boost.utils;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -17,8 +18,6 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.WeakHashMap;
 
 /**
@@ -145,40 +144,14 @@ public final class AdaptiveRefreshRate {
     }
 
     private static void requestViewHighRefreshRate(View view) {
-        if (view == null) return;
-        invokeRequestedFrameRate(view, requestedHighFrameRateCategory());
+        if (view != null && Build.VERSION.SDK_INT >= 35) {
+            view.setRequestedFrameRate(View.REQUESTED_FRAME_RATE_CATEGORY_HIGH);
+        }
     }
 
     private static void requestViewNoPreference(View view) {
-        if (view == null) return;
-        invokeRequestedFrameRate(view, requestedNoPreferenceFrameRateCategory());
-    }
-
-    private static boolean invokeRequestedFrameRate(View view, float value) {
-        try {
-            Method method = View.class.getMethod("setRequestedFrameRate", Float.TYPE);
-            method.invoke(view, value);
-            return true;
-        } catch (Throwable ignored) {
-            return false;
-        }
-    }
-
-    private static float requestedHighFrameRateCategory() {
-        try {
-            Field field = View.class.getField("REQUESTED_FRAME_RATE_CATEGORY_HIGH");
-            return field.getFloat(null);
-        } catch (Throwable ignored) {
-            return HIGH_REFRESH_RATE_HINT_HZ;
-        }
-    }
-
-    private static float requestedNoPreferenceFrameRateCategory() {
-        try {
-            Field field = View.class.getField("REQUESTED_FRAME_RATE_CATEGORY_NO_PREFERENCE");
-            return field.getFloat(null);
-        } catch (Throwable ignored) {
-            return 0.0f;
+        if (view != null && Build.VERSION.SDK_INT >= 35) {
+            view.setRequestedFrameRate(View.REQUESTED_FRAME_RATE_CATEGORY_NO_PREFERENCE);
         }
     }
 

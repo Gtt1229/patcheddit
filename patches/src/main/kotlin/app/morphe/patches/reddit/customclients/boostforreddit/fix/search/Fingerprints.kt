@@ -33,6 +33,6 @@ internal val searchGenericActivityDefaultGoToFingerprint = Fingerprint(
     strings = listOf("random", "randnsfw"),
     custom = { method, classDef ->
         classDef.type == "Lcom/rubenmayayo/reddit/ui/search/SearchGenericActivity;" &&
-            method.name == "Q1"
+            method.name == "s1"
     },
 )

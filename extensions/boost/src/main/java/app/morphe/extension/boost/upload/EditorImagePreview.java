@@ -22,7 +22,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,6 +29,8 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import app.morphe.extension.boost.media.MediaNativeBindings;
 
 /**
  * Live image preview for Boost editors using FormattingBar.setEditText.
@@ -498,28 +499,7 @@ public final class EditorImagePreview {
             ImageView imageView
     ) {
         try {
-            Class<?> glideClass =
-                    Class.forName("com.bumptech.glide.Glide");
-            Method with = glideClass.getMethod(
-                    "with",
-                    Context.class
-            );
-            Object requestManager =
-                    with.invoke(null, context);
-
-            Object requestBuilder =
-                    invokeLoad(requestManager, url);
-
-            if (requestBuilder == null) {
-                Log.w(
-                        TAG,
-                        CONTRACT_MARKER
-                                + ": Glide load method unavailable"
-                );
-                return;
-            }
-
-            invokeInto(requestBuilder, imageView);
+            MediaNativeBindings.loadImage(null, context, url, imageView);
         } catch (Throwable throwable) {
             Log.w(
                     TAG,
@@ -531,103 +511,4 @@ public final class EditorImagePreview {
         }
     }
 
-    private static Object invokeLoad(
-            Object requestManager,
-            String url
-    ) {
-        try {
-            try {
-                Method method = requestManager
-                        .getClass()
-                        .getMethod("t", String.class);
-                method.setAccessible(true);
-                return method.invoke(requestManager, url);
-            } catch (Throwable ignored) {
-            }
-
-            Method[] methods =
-                    requestManager.getClass().getMethods();
-
-            for (Method method : methods) {
-                if (!"load".equals(method.getName())) {
-                    continue;
-                }
-
-                Class<?>[] parameters =
-                        method.getParameterTypes();
-
-                if (parameters.length != 1) {
-                    continue;
-                }
-
-                Class<?> parameter = parameters[0];
-
-                if (
-                        parameter == String.class
-                                || parameter == Object.class
-                                || CharSequence.class
-                                .isAssignableFrom(parameter)
-                ) {
-                    method.setAccessible(true);
-                    return method.invoke(requestManager, url);
-                }
-            }
-        } catch (Throwable ignored) {
-        }
-
-        return null;
-    }
-
-    private static void invokeInto(
-            Object requestBuilder,
-            ImageView imageView
-    ) {
-        try {
-            try {
-                Method method = requestBuilder
-                        .getClass()
-                        .getMethod("C0", ImageView.class);
-                method.setAccessible(true);
-                method.invoke(requestBuilder, imageView);
-                return;
-            } catch (Throwable ignored) {
-            }
-
-            Method[] methods =
-                    requestBuilder.getClass().getMethods();
-
-            for (Method method : methods) {
-                if (!"into".equals(method.getName())) {
-                    continue;
-                }
-
-                Class<?>[] parameters =
-                        method.getParameterTypes();
-
-                if (parameters.length != 1) {
-                    continue;
-                }
-
-                Class<?> parameter = parameters[0];
-
-                if (
-                        parameter == ImageView.class
-                                || parameter.isAssignableFrom(
-                                ImageView.class
-                        )
-                ) {
-                    method.setAccessible(true);
-                    method.invoke(requestBuilder, imageView);
-                    return;
-                }
-            }
-        } catch (Throwable throwable) {
-            Log.w(
-                    TAG,
-                    CONTRACT_MARKER
-                            + ": Glide into failed",
-                    throwable
-            );
-        }
-    }
 }

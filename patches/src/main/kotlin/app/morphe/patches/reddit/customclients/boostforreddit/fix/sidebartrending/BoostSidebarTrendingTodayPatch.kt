@@ -11,9 +11,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
-import app.morphe.util.addInstructionsAtControlFlowLabel
-import app.morphe.util.indexOfFirstInstructionReversedOrThrow
-import com.android.tools.smali.dexlib2.Opcode
+import app.morphe.patches.reddit.customclients.boostforreddit.wrapHook
 import app.morphe.patches.all.misc.PatchCategory
 
 @Suppress("unused")
@@ -28,7 +26,7 @@ val boostSidebarTrendingTodayPatch = bytecodePatch(
 
     execute {
         /*
-         * TrendingTodayFragment -> TrendingTodayViewModel -> od.a -> xb.l.x0().
+         * TrendingTodayFragment -> TrendingTodayViewModel -> rd3 -> pd2.y().
          * Keep Boost's background AsyncTask, but replace its body with a
          * native-first loader that falls back only when the legacy endpoint
          * returns no rows containing submissions.
@@ -47,57 +45,23 @@ val boostSidebarTrendingTodayPatch = bytecodePatch(
          * has no valid context. Remove it there. When W1() resolves a concrete
          * subreddit, retain it as "Limit to r/<name>" with the value preloaded.
          */
-        trendingTodayFragmentOnViewCreatedFingerprint.method.apply {
-            addInstructions(
-                0,
-                """
-                    invoke-static {p0, p1}, Lapp/morphe/extension/boost/sidebar/SidebarTrendingPosts;->configureSearchOptions(Ljava/lang/Object;Landroid/view/View;)V
-                """.trimIndent(),
-            )
-
-            val returnIndex = indexOfFirstInstructionReversedOrThrow {
-                opcode == Opcode.RETURN_VOID
-            }
-            addInstructions(
-                returnIndex,
-                """
-                    invoke-static {p0}, Lapp/morphe/extension/boost/sidebar/SidebarTrendingPosts;->triggerLoad(Ljava/lang/Object;)V
-                """.trimIndent(),
-            )
-        }
+        trendingTodayFragmentOnViewCreatedFingerprint.wrapHook(
+            before = "invoke-static {p0, p1}, Lapp/morphe/extension/boost/sidebar/SidebarTrendingPosts;->configureSearchOptions(Ljava/lang/Object;Landroid/view/View;)V",
+            after = "invoke-static {p0}, Lapp/morphe/extension/boost/sidebar/SidebarTrendingPosts;->triggerLoad(Ljava/lang/Object;)V",
+        )
 
         /*
-         * Fallback rows use the post title as the native trending query while
-         * the adapter also renders SubmissionModel.A1(). Record row identity at
-         * bind entry, before Boost can reuse p1, then hide the secondary title
-         * only for Morphe-created rows at every control-flow return.
+         * Binding is now inlined into the adapter. Preserve the holder and
+         * obtain the actual row before the native method reuses its arguments.
          */
-        trendingTodayViewHolderBindFingerprint.method.apply {
-            addInstructions(
-                0,
-                """
-                    invoke-static {p0, p1}, Lapp/morphe/extension/boost/sidebar/SidebarTrendingPosts;->recordBoundRow(Ljava/lang/Object;Ljava/lang/Object;)V
-                """.trimIndent(),
-            )
-
-            val returnIndices = implementation!!.instructions
-                .withIndex()
-                .mapNotNull { (index, instruction) ->
-                    if (instruction.opcode == Opcode.RETURN_VOID) index else null
-                }
-
-            check(returnIndices.isNotEmpty()) {
-                "TrendingTodayViewHolder.e() has no RETURN_VOID"
-            }
-
-            returnIndices.asReversed().forEach { index ->
-                addInstructionsAtControlFlowLabel(
-                    index,
-                    """
-                        invoke-static {p0}, Lapp/morphe/extension/boost/sidebar/SidebarTrendingPosts;->applyBoundTextPolicy(Ljava/lang/Object;)V
-                    """.trimIndent(),
-                )
-            }
-        }
+        trendingTodayViewHolderBindFingerprint.wrapHook(
+            before = """
+                iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/sidebar/today/TrendingTodayAdapter;->b:Ljava/util/List;
+                invoke-interface {v0, p2}, Ljava/util/List;->get(I)Ljava/lang/Object;
+                move-result-object v0
+                invoke-static {p1, v0}, Lapp/morphe/extension/boost/sidebar/SidebarTrendingPosts;->recordBoundRow(Ljava/lang/Object;Ljava/lang/Object;)V
+            """,
+            after = "invoke-static {p1}, Lapp/morphe/extension/boost/sidebar/SidebarTrendingPosts;->applyBoundTextPolicy(Ljava/lang/Object;)V",
+        )
     }
 }

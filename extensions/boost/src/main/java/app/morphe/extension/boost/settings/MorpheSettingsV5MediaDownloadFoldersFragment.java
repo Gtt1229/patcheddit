@@ -14,6 +14,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
@@ -32,8 +33,6 @@ import androidx.fragment.app.Fragment;
 
 import app.morphe.extension.boost.utils.BoostSystemBarInsetsFix;
 
-import java.lang.reflect.Method;
-
 /** Complete hidden download-folder leaf for Settings V5 Media. */
 public final class MorpheSettingsV5MediaDownloadFoldersFragment extends Fragment {
     public static final String CONTRACT_MARKER =
@@ -46,15 +45,6 @@ public final class MorpheSettingsV5MediaDownloadFoldersFragment extends Fragment
     private static final int FOLDER_IMAGES = 1;
     private static final int FOLDER_VIDEOS = 2;
     private static final int FOLDER_GIFS = 3;
-
-    private static final String[] FOLDER_KEYS = new String[]{
-            "pref_download_folder_default",
-            "pref_download_folder_img",
-            "pref_download_folder_mp4",
-            "pref_download_folder_gif",
-    };
-    private static final String KEY_COMMUNITY_SUBFOLDERS =
-            "pref_download_folder_per_subreddit";
 
     private final FolderRow[] folderRows = new FolderRow[4];
     private MorpheSettingsV4Theme.Tokens tokens;
@@ -219,13 +209,10 @@ public final class MorpheSettingsV5MediaDownloadFoldersFragment extends Fragment
         int folderType = pendingFolderType;
         pendingFolderType = -1;
         String value = folder.toString();
-        if (!invokeBoostVoid(
-                "D6",
-                new Class<?>[]{int.class, String.class},
-                folderType,
-                value
-        )) {
-            preferences.edit().putString(FOLDER_KEYS[folderType], value).apply();
+        try {
+            BoostSettingsNative.setDownloadFolder(folderType, value);
+        } catch (RuntimeException exception) {
+            showUnavailable();
         }
         refreshFolderRows();
     }
@@ -302,6 +289,14 @@ public final class MorpheSettingsV5MediaDownloadFoldersFragment extends Fragment
     }
 
     private void chooseFolder(int folderType) {
+        if (Build.VERSION.SDK_INT < 30) {
+            try {
+                startActivity(BoostSettingsNative.legacyDownloadFolderIntent(requireContext(), folderType));
+            } catch (RuntimeException exception) {
+                showUnavailable();
+            }
+            return;
+        }
         pendingFolderType = folderType;
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
         intent.addFlags(
@@ -318,13 +313,10 @@ public final class MorpheSettingsV5MediaDownloadFoldersFragment extends Fragment
     }
 
     private void resetFolder(int folderType) {
-        if (!invokeBoostVoid(
-                "D6",
-                new Class<?>[]{int.class, String.class},
-                folderType,
-                null
-        )) {
-            preferences.edit().remove(FOLDER_KEYS[folderType]).apply();
+        try {
+            BoostSettingsNative.setDownloadFolder(folderType, null);
+        } catch (RuntimeException exception) {
+            showUnavailable();
         }
         refreshFolderRows();
     }
@@ -350,61 +342,29 @@ public final class MorpheSettingsV5MediaDownloadFoldersFragment extends Fragment
     }
 
     private String folderSummary(int folderType) {
-        Object value = invokeBoost(
-                "d0",
-                new Class<?>[]{int.class},
-                folderType
-        );
-        if (!(value instanceof String) || TextUtils.isEmpty((String) value)) {
-            value = preferences.getString(FOLDER_KEYS[folderType], "");
-        }
-        if (!(value instanceof String) || TextUtils.isEmpty((String) value)) {
+        String value = BoostSettingsNative.downloadFolder(folderType);
+        if (TextUtils.isEmpty(value)) {
             return "Not set";
         }
-        return friendlyFolder((String) value);
+        return friendlyFolder(value);
     }
 
     private boolean hasCustomFolder(int folderType) {
-        Object value = invokeBoost(
-                "O",
-                new Class<?>[]{int.class},
-                folderType
-        );
-        return value instanceof Boolean
-                ? (Boolean) value
-                : preferences.contains(FOLDER_KEYS[folderType]);
+        return BoostSettingsNative.hasDownloadFolder(folderType);
     }
 
     private boolean communitySubfoldersEnabled() {
-        Object value = invokeBoost("l2", new Class<?>[0]);
-        return value instanceof Boolean
-                ? (Boolean) value
-                : preferences.getBoolean(KEY_COMMUNITY_SUBFOLDERS, false);
+        return BoostSettingsNative.communitySubfoldersEnabled();
     }
 
     private void setCommunitySubfoldersEnabled(boolean enabled) {
-        if (!invokeBoostVoid(
-                "E6",
-                new Class<?>[]{boolean.class},
-                enabled
-        )) {
-            preferences.edit()
-                    .putBoolean(KEY_COMMUNITY_SUBFOLDERS, enabled)
-                    .apply();
-        }
+        BoostSettingsNative.setCommunitySubfoldersEnabled(enabled);
     }
 
     private void applyBoostFolderVisibility() {
-        boolean storageAccessFramework = invokeStaticBoolean(
-                "sb.a",
-                "f",
-                true
-        );
-        boolean typedFolders = storageAccessFramework && invokeStaticBoolean(
-                "sb.a",
-                "g",
-                true
-        );
+        boolean storageAccessFramework = BoostSettingsNative.customDownloadFoldersEnabled();
+        boolean typedFolders = storageAccessFramework
+                && BoostSettingsNative.typedDownloadFoldersEnabled();
         setFolderRowVisible(FOLDER_DEFAULT, storageAccessFramework);
         setFolderRowVisible(FOLDER_IMAGES, typedFolders);
         setFolderRowVisible(FOLDER_VIDEOS, typedFolders);
@@ -415,59 +375,6 @@ public final class MorpheSettingsV5MediaDownloadFoldersFragment extends Fragment
         FolderRow folderRow = folderRows[folderType];
         if (folderRow != null) {
             folderRow.row.setVisibility(visible ? View.VISIBLE : View.GONE);
-        }
-    }
-
-    private Object invokeBoost(
-            String methodName,
-            Class<?>[] parameterTypes,
-            Object... arguments
-    ) {
-        try {
-            Class<?> type = Class.forName("id.b");
-            Method instanceMethod = type.getDeclaredMethod("v0");
-            instanceMethod.setAccessible(true);
-            Object instance = instanceMethod.invoke(null);
-            Method method = type.getDeclaredMethod(methodName, parameterTypes);
-            method.setAccessible(true);
-            return method.invoke(instance, arguments);
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private boolean invokeBoostVoid(
-            String methodName,
-            Class<?>[] parameterTypes,
-            Object... arguments
-    ) {
-        try {
-            Class<?> type = Class.forName("id.b");
-            Method instanceMethod = type.getDeclaredMethod("v0");
-            instanceMethod.setAccessible(true);
-            Object instance = instanceMethod.invoke(null);
-            Method method = type.getDeclaredMethod(methodName, parameterTypes);
-            method.setAccessible(true);
-            method.invoke(instance, arguments);
-            return true;
-        } catch (Throwable ignored) {
-            return false;
-        }
-    }
-
-    private boolean invokeStaticBoolean(
-            String className,
-            String methodName,
-            boolean fallback
-    ) {
-        try {
-            Class<?> type = Class.forName(className);
-            Method method = type.getDeclaredMethod(methodName);
-            method.setAccessible(true);
-            Object value = method.invoke(null);
-            return value instanceof Boolean ? (Boolean) value : fallback;
-        } catch (Throwable ignored) {
-            return fallback;
         }
     }
 

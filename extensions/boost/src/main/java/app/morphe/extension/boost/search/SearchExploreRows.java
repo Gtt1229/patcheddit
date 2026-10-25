@@ -15,9 +15,13 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import java.lang.reflect.Constructor;
+import app.morphe.extension.boost.navigation.BoostNativeListings;
+
+import com.rubenmayayo.reddit.models.reddit.SubredditModel;
+
+import net.dean.jraw.models.Submission;
+
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -251,7 +255,7 @@ public final class SearchExploreRows {
     private static FetchResult fetchActiveRows() throws Exception {
         long startMs = System.currentTimeMillis();
 
-        List submissions = fetchPopularHotSubmissions();
+        List<Submission> submissions = fetchPopularHotSubmissions();
         ArrayList<CommunityStat> ranked = rankCommunitiesFromSubmissions(submissions);
 
         FetchResult result = new FetchResult();
@@ -332,141 +336,14 @@ public final class SearchExploreRows {
         return result;
     }
 
-    private static List fetchPopularHotSubmissions() throws Exception {
+    private static List<Submission> fetchPopularHotSubmissions() {
         long startMs = System.currentTimeMillis();
-
-        Object client = getBoostRedditClient();
-        Class<?> paginatorClass = Class.forName("net.dean.jraw.paginators.SubredditPaginator");
-        Object paginator = constructSourcePaginator(paginatorClass, client, "popular");
-
-        if (paginator == null) {
-            throw new NoSuchMethodException("source-specific SubredditPaginator(popular)");
-        }
-
-        applySorting(paginator, "HOT");
-        applyLimit(paginator, LISTING_LIMIT);
-
-        Object listing = paginator.getClass().getMethod("next").invoke(paginator);
-        Iterable iterable = asIterable(listing);
-        if (iterable == null) {
-            log("source=popular_hot listing_not_iterable type=" + typeName(listing) + " durationMs=" + (System.currentTimeMillis() - startMs));
-            return Collections.emptyList();
-        }
-
-        ArrayList items = new ArrayList();
-        for (Object item : iterable) {
-            items.add(item);
-        }
-
+        List<Submission> items = BoostNativeListings.hotSubmissions("popular", LISTING_LIMIT);
         log("source=popular_hot submissions=" + items.size() + " durationMs=" + (System.currentTimeMillis() - startMs));
         return items;
     }
 
-    private static Object constructSourcePaginator(Class<?> paginatorClass, Object client, String source) {
-        Constructor<?>[] constructors = paginatorClass.getConstructors();
-
-        for (Constructor<?> ctor : constructors) {
-            try {
-                Class<?>[] params = ctor.getParameterTypes();
-
-                if (params.length == 3
-                    && client != null
-                    && params[0].isAssignableFrom(client.getClass())
-                    && params[1] == String.class
-                    && params[2].isArray()
-                    && params[2].getComponentType() == String.class) {
-                    Object paginator = ctor.newInstance(new Object[] { client, source, new String[0] });
-                    log("source_constructor=ok source=" + source + " ctor=" + ctor.toString());
-                    return paginator;
-                }
-
-                if (params.length == 2
-                    && client != null
-                    && params[0].isAssignableFrom(client.getClass())
-                    && params[1] == String.class) {
-                    Object paginator = ctor.newInstance(new Object[] { client, source });
-                    log("source_constructor=ok source=" + source + " ctor=" + ctor.toString());
-                    return paginator;
-                }
-            } catch (Throwable t) {
-                logFailure("source_constructor_try_failed source=" + source + " ctor=" + ctor.toString(), t);
-            }
-        }
-
-        log("source_constructor=missing source=" + source);
-        return null;
-    }
-
-    private static void applySorting(Object paginator, String sortingName) throws Exception {
-        Method[] methods = paginator.getClass().getMethods();
-
-        for (Method method : methods) {
-            String lower = method.getName().toLowerCase();
-            Class<?>[] params = method.getParameterTypes();
-
-            if (params.length != 1 || !params[0].isEnum()) {
-                continue;
-            }
-
-            if (!lower.contains("sort") && !lower.contains("where")) {
-                continue;
-            }
-
-            Object enumValue = enumConstant(params[0], sortingName);
-            if (enumValue == null) {
-                continue;
-            }
-
-            method.invoke(paginator, enumValue);
-            log("sorting=ok method=" + method.toString() + " value=" + sortingName);
-            return;
-        }
-
-        throw new NoSuchMethodException("set sorting " + sortingName);
-    }
-
-    private static void applyLimit(Object paginator, int limit) {
-        String[] methodNames = new String[] { "setLimit", "limit" };
-
-        for (String methodName : methodNames) {
-            try {
-                Method method = paginator.getClass().getMethod(methodName, int.class);
-                method.invoke(paginator, Integer.valueOf(limit));
-                log("limit=ok method=" + methodName + " value=" + limit);
-                return;
-            } catch (Throwable ignored) {
-            }
-        }
-    }
-
-    private static Object enumConstant(Class<?> enumClass, String wanted) {
-        Object[] constants = enumClass.getEnumConstants();
-        if (constants == null) {
-            return null;
-        }
-
-        for (Object constant : constants) {
-            if (constant != null && wanted.equalsIgnoreCase(String.valueOf(constant))) {
-                return constant;
-            }
-        }
-
-        return null;
-    }
-
-    private static Iterable asIterable(Object listing) {
-        if (listing instanceof Iterable) {
-            return (Iterable) listing;
-        }
-
-        if (listing instanceof List) {
-            return (List) listing;
-        }
-
-        return null;
-    }
-
-    private static ArrayList<CommunityStat> rankCommunitiesFromSubmissions(List submissions) {
+    private static ArrayList<CommunityStat> rankCommunitiesFromSubmissions(List<Submission> submissions) {
         HashMap<String, CommunityStat> stats = new HashMap<String, CommunityStat>();
 
         if (submissions == null) {
@@ -474,44 +351,16 @@ public final class SearchExploreRows {
         }
 
         for (int i = 0; i < submissions.size(); i++) {
-            Object item = submissions.get(i);
-
-            String subreddit = normalizeName(firstNonEmpty(
-                callString(item, "getSubreddit"),
-                callString(item, "getSubredditName"),
-                callString(item, "getSubredditNamePrefixed"),
-                jsonString(item, "subreddit"),
-                jsonString(item, "subreddit_name_prefixed")
-            ));
-
-            long postScore = firstPositive(
-                callLong(item, "getScore"),
-                jsonLong(item, "score")
-            );
-
-            long comments = firstPositive(
-                callLong(item, "getCommentCount"),
-                callLong(item, "getNumComments"),
-                jsonLong(item, "num_comments")
-            );
-
-            long createdMs = firstPositive(
-                callDateMs(item, "getCreated"),
-                callLong(item, "getCreatedUtc") * 1000L,
-                jsonLong(item, "created_utc") * 1000L,
-                jsonLong(item, "created") * 1000L
-            );
-
-            boolean stickied = firstBoolean(
-                callBooleanBoxed(item, "isStickied"),
-                jsonBooleanBoxed(item, "stickied")
-            );
-
-            boolean over18 = firstBoolean(
-                callBooleanBoxed(item, "isNsfw"),
-                callBooleanBoxed(item, "isOver18"),
-                jsonBooleanBoxed(item, "over_18")
-            );
+            Submission item = submissions.get(i);
+            String subreddit = normalizeName(item.getSubredditName());
+            Integer score = item.getScore();
+            Integer commentCount = item.getCommentCount();
+            long postScore = score == null ? 0L : score.longValue();
+            long comments = commentCount == null ? 0L : commentCount.longValue();
+            java.util.Date created = item.getCreated();
+            long createdMs = created == null ? 0L : created.getTime();
+            boolean stickied = Boolean.TRUE.equals(item.isStickied());
+            boolean over18 = Boolean.TRUE.equals(item.isNsfw());
 
             if (subreddit == null || subreddit.length() == 0 || stickied || over18) {
                 continue;
@@ -620,51 +469,8 @@ public final class SearchExploreRows {
         return result;
     }
 
-    private static Object hydrateAboutSubredditModel(String name) throws Exception {
-        Object about = fetchAboutSubreddit(name);
-        if (about == null) {
-            return null;
-        }
-
-        Object model = isSubredditModel(about) ? about : makeSubredditModel(about);
-        long count = extractSubscriberCount(about);
-        if (count > 0L) {
-            applySubscriberCount(model, count);
-        }
-        return model;
-    }
-
-    private static Object fetchAboutSubreddit(String name) throws Exception {
-        Object client = getBoostRedditClient();
-
-        Object reference = invokeFirstStringMethod(client, name, new String[] {
-            "getSubreddit",
-            "subreddit",
-            "subredditByName",
-            "getSubredditByName"
-        });
-
-        if (reference != null) {
-            Object about = invokeNoArg(reference, new String[] {
-                "about",
-                "getAbout",
-                "fetch",
-                "get"
-            });
-            if (about != null) {
-                return about;
-            }
-
-            if (reference.getClass().getName().contains("Subreddit")) {
-                return reference;
-            }
-        }
-
-        return invokeFirstStringMethod(client, name, new String[] {
-            "aboutSubreddit",
-            "getSubredditAbout",
-            "getSubredditInfo"
-        });
+    private static SubredditModel hydrateAboutSubredditModel(String name) {
+        return BoostNativeListings.fetchSubreddit(name);
     }
 
     private static List<Object> buildRowsFromCache(List<CacheEntry> entries) {
@@ -694,9 +500,8 @@ public final class SearchExploreRows {
         return rows;
     }
 
-    private static Object makeCachedSubredditModel(CacheEntry entry) throws Exception {
-        Class<?> modelClass = Class.forName("com.rubenmayayo.reddit.models.reddit.SubredditModel");
-        Object model = modelClass.getConstructor(String.class).newInstance(entry.name);
+    private static SubredditModel makeCachedSubredditModel(CacheEntry entry) {
+        SubredditModel model = new SubredditModel(entry.name);
 
         applySubscriberCount(model, entry.count);
         applySubscriptionVisuals(model, entry.iconUrl, entry.color);
@@ -844,89 +649,12 @@ public final class SearchExploreRows {
         }
     }
 
-    private static Object getBoostRepository() throws Exception {
-        Class<?> managerClass = Class.forName("xb.l");
-        Object manager = managerClass.getMethod("V").invoke(null);
-        if (manager == null) {
-            throw new NullPointerException("xb.l.V() returned null");
-        }
-        return manager;
-    }
-
-    private static Object getBoostRedditClient() throws Exception {
-        Object manager = getBoostRepository();
-
-        Field field = null;
-        Class<?> current = manager.getClass();
-        while (current != null && field == null) {
-            try {
-                field = current.getDeclaredField("g");
-            } catch (NoSuchFieldException ignored) {
-                current = current.getSuperclass();
-            }
-        }
-
-        if (field == null) {
-            for (Field candidate : manager.getClass().getDeclaredFields()) {
-                String typeName = candidate.getType().getName();
-                if (typeName.contains("RedditClient") || typeName.equals("xb.j")) {
-                    field = candidate;
-                    break;
-                }
-            }
-        }
-
-        if (field == null) {
-            throw new NoSuchFieldException("xb.l reddit client field");
-        }
-
-        field.setAccessible(true);
-        Object client = field.get(manager);
-        if (client == null) {
-            throw new NullPointerException("Boost RedditClient is null");
-        }
-        return client;
-    }
-
-    private static boolean isSubredditModel(Object item) {
-        return item != null && "com.rubenmayayo.reddit.models.reddit.SubredditModel".equals(item.getClass().getName());
-    }
-
-    private static Object makeSubredditModel(Object sourceItem) throws Exception {
-        Class<?> modelClass = Class.forName("com.rubenmayayo.reddit.models.reddit.SubredditModel");
-
-        for (Constructor<?> ctor : modelClass.getConstructors()) {
-            Class<?>[] params = ctor.getParameterTypes();
-            if (params.length == 1 && sourceItem != null && params[0].isAssignableFrom(sourceItem.getClass())) {
-                return ctor.newInstance(sourceItem);
-            }
-        }
-
-        throw new NoSuchMethodException("SubredditModel single-arg constructor for " + typeName(sourceItem));
-    }
-
-    private static Object makeSubredditRow(String name, Object subredditModel) throws Exception {
-        Class<?> rowClass = Class.forName("kd.b");
-        Class<?> modelClass = Class.forName("com.rubenmayayo.reddit.models.reddit.SubredditModel");
-        Class<?> svmClass = Class.forName("com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel");
-
-        Object row = rowClass.getConstructor(int.class, String.class).newInstance(0x0e, name);
-        Object svm = svmClass.getConstructor(modelClass).newInstance(subredditModel);
-
-        row = rowClass.getMethod("m", svmClass).invoke(row, svm);
-        row = rowClass.getMethod("l", modelClass).invoke(row, subredditModel);
-
-        return row;
+    private static Object makeSubredditRow(String name, Object subredditModel) {
+        return BoostNativeListings.searchRow(name, (SubredditModel) subredditModel);
     }
 
     private static Object makeHeader(String title) {
-        try {
-            Class<?> rowClass = Class.forName("kd.b");
-            return rowClass.getConstructor(int.class, String.class).newInstance(0x06, title);
-        } catch (Throwable t) {
-            logFailure("header_failed", t);
-            return null;
-        }
+        return BoostNativeListings.searchHeader(title);
     }
 
     private static String normalizeName(String raw) {
@@ -943,169 +671,12 @@ public final class SearchExploreRows {
         return name.length() == 0 ? null : name;
     }
 
-    private static String callString(Object target, String methodName) {
-        try {
-            Object value = target.getClass().getMethod(methodName).invoke(target);
-            return value instanceof String ? (String) value : null;
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private static long callLong(Object target, String methodName) {
-        try {
-            Object value = target.getClass().getMethod(methodName).invoke(target);
-            return asLong(value);
-        } catch (Throwable ignored) {
-            return 0L;
-        }
-    }
-
-    private static Boolean callBooleanBoxed(Object target, String methodName) {
-        try {
-            Object value = target.getClass().getMethod(methodName).invoke(target);
-            return value instanceof Boolean ? (Boolean) value : null;
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private static long callDateMs(Object target, String methodName) {
-        try {
-            Object value = target.getClass().getMethod(methodName).invoke(target);
-            if (value == null) {
-                return 0L;
-            }
-
-            Method getTime = value.getClass().getMethod("getTime");
-            return asLong(getTime.invoke(value));
-        } catch (Throwable ignored) {
-            return 0L;
-        }
-    }
-
-    private static String jsonString(Object item, String key) {
-        try {
-            Object data = dataNode(item);
-            if (data == null) {
-                return null;
-            }
-
-            Object child = data.getClass().getMethod("get", String.class).invoke(data, key);
-            if (child == null) {
-                return null;
-            }
-
-            Object text = child.getClass().getMethod("asText").invoke(child);
-            return text instanceof String ? (String) text : null;
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private static long jsonLong(Object item, String key) {
-        try {
-            Object data = dataNode(item);
-            if (data == null) {
-                return 0L;
-            }
-
-            Object child = data.getClass().getMethod("get", String.class).invoke(data, key);
-            if (child == null) {
-                return 0L;
-            }
-
-            Object value = child.getClass().getMethod("asLong").invoke(child);
-            return asLong(value);
-        } catch (Throwable ignored) {
-            return 0L;
-        }
-    }
-
-    private static Boolean jsonBooleanBoxed(Object item, String key) {
-        try {
-            Object data = dataNode(item);
-            if (data == null) {
-                return null;
-            }
-
-            Object child = data.getClass().getMethod("get", String.class).invoke(data, key);
-            if (child == null) {
-                return null;
-            }
-
-            Object value = child.getClass().getMethod("asBoolean").invoke(child);
-            return value instanceof Boolean ? (Boolean) value : null;
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private static Object dataNode(Object item) {
-        try {
-            return item.getClass().getMethod("getDataNode").invoke(item);
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
     private static String extractIconUrl(Object item) {
-        if (item == null) {
-            return null;
-        }
-
-        String icon = getStringField(item, "e");
-        if (hasHttp(icon)) {
-            return icon;
-        }
-
-        String[] methods = new String[] {
-            "getIconImage",
-            "getIconImg",
-            "getCommunityIcon",
-            "getBannerImg",
-            "getHeaderImg"
-        };
-
-        for (String methodName : methods) {
-            try {
-                Object value = item.getClass().getMethod(methodName).invoke(item);
-                if (value instanceof String && hasHttp((String) value)) {
-                    return (String) value;
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-
-        return null;
+        return item == null ? null : ((SubredditModel) item).y;
     }
 
     private static String extractColor(Object item) {
-        if (item == null) {
-            return null;
-        }
-
-        String color = getStringField(item, "f");
-        if (hasColor(color)) {
-            return color;
-        }
-
-        String[] methods = new String[] {
-            "getKeyColor",
-            "getPrimaryColor"
-        };
-
-        for (String methodName : methods) {
-            try {
-                Object value = item.getClass().getMethod(methodName).invoke(item);
-                if (value instanceof String && hasColor((String) value)) {
-                    return (String) value;
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-
-        return null;
+        return item == null ? null : ((SubredditModel) item).z;
     }
 
     private static String extractDescription(Object item) {
@@ -1113,30 +684,8 @@ public final class SearchExploreRows {
             return null;
         }
 
-        String[] methods = new String[] {
-            "c0",
-            "getPublicDescription",
-            "getDescription",
-            "getPublicDescriptionHtml"
-        };
-
-        for (String methodName : methods) {
-            try {
-                Object value = item.getClass().getMethod(methodName).invoke(item);
-                if (value instanceof String && ((String) value).length() > 0) {
-                    return (String) value;
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-
-        String value = getStringField(item, "i");
-        if (value != null && value.length() > 0) {
-            return value;
-        }
-
-        value = getStringField(item, "o");
-        return value != null && value.length() > 0 ? value : null;
+        SubredditModel model = (SubredditModel) item;
+        return firstNonEmpty(model.I, model.C);
     }
 
     private static void applySubscriptionVisuals(Object model, String iconUrl, String color) {
@@ -1145,11 +694,11 @@ public final class SearchExploreRows {
         }
 
         if (hasHttp(iconUrl)) {
-            setStringField(model, "e", iconUrl);
+            ((SubredditModel) model).y = iconUrl;
         }
 
         if (hasColor(color)) {
-            setStringField(model, "f", color);
+            ((SubredditModel) model).z = color;
         }
     }
 
@@ -1158,95 +707,12 @@ public final class SearchExploreRows {
             return;
         }
 
-        setStringField(model, "i", description);
-        setStringField(model, "o", description);
-    }
-
-    private static String getStringField(Object item, String fieldName) {
-        if (item == null) {
-            return null;
-        }
-
-        try {
-            Field field = findField(item.getClass(), fieldName);
-            if (field == null) {
-                return null;
-            }
-            field.setAccessible(true);
-            Object value = field.get(item);
-            return value instanceof String ? (String) value : null;
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private static void setStringField(Object item, String fieldName, String value) {
-        if (item == null || value == null || value.length() == 0) {
-            return;
-        }
-
-        try {
-            Field field = findField(item.getClass(), fieldName);
-            if (field == null || field.getType() != String.class) {
-                return;
-            }
-            field.setAccessible(true);
-            field.set(item, value);
-        } catch (Throwable ignored) {
-        }
+        ((SubredditModel) model).C = description;
+        ((SubredditModel) model).I = description;
     }
 
     private static long extractSubscriberCount(Object item) {
-        if (item == null) {
-            return 0L;
-        }
-
-        String[] methods = new String[] {
-            "getSubscriberCount",
-            "getSubscribers",
-            "getNumSubscribers",
-            "getSubscriber_count",
-            "getNum_subscribers",
-            "g0",
-            "Y"
-        };
-
-        for (String methodName : methods) {
-            try {
-                Object value = item.getClass().getMethod(methodName).invoke(item);
-                long parsed = asLong(value);
-                if (parsed > 0L) {
-                    return parsed;
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-
-        String[] fields = new String[] {
-            "subscriberCount",
-            "subscribers",
-            "numSubscribers",
-            "subscriber_count",
-            "num_subscribers",
-            "r"
-        };
-
-        for (String fieldName : fields) {
-            try {
-                Field field = findField(item.getClass(), fieldName);
-                if (field == null) {
-                    continue;
-                }
-                field.setAccessible(true);
-                long parsed = asLong(field.get(item));
-                if (parsed > 0L) {
-                    return parsed;
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-
-        return 0L;
+        return item == null ? 0L : ((SubredditModel) item).L;
     }
 
     private static void applySubscriberCount(Object subredditModel, long count) {
@@ -1254,100 +720,7 @@ public final class SearchExploreRows {
             return;
         }
 
-        String[] setters = new String[] {
-            "q0",
-            "setSubscriberCount",
-            "setSubscribers"
-        };
-
-        for (String setter : setters) {
-            try {
-                Method method = subredditModel.getClass().getMethod(setter, long.class);
-                method.invoke(subredditModel, Long.valueOf(count));
-                return;
-            } catch (Throwable ignored) {
-            }
-        }
-
-        log("count_apply_failed count=" + count);
-    }
-
-    private static Object invokeFirstStringMethod(Object target, String value, String[] names) {
-        if (target == null) {
-            return null;
-        }
-
-        for (String methodName : names) {
-            try {
-                Method method = target.getClass().getMethod(methodName, String.class);
-                Object result = method.invoke(target, value);
-                if (result != null) {
-                    return result;
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-
-        return null;
-    }
-
-    private static Object invokeNoArg(Object target, String[] names) {
-        if (target == null) {
-            return null;
-        }
-
-        for (String methodName : names) {
-            try {
-                Method method = target.getClass().getMethod(methodName);
-                Object result = method.invoke(target);
-                if (result != null) {
-                    return result;
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-
-        return null;
-    }
-
-    private static long firstPositive(long a, long b) {
-        return a > 0L ? a : Math.max(0L, b);
-    }
-
-    private static long firstPositive(long a, long b, long c) {
-        if (a > 0L) return a;
-        if (b > 0L) return b;
-        return Math.max(0L, c);
-    }
-
-    private static long firstPositive(long a, long b, long c, long d) {
-        if (a > 0L) return a;
-        if (b > 0L) return b;
-        if (c > 0L) return c;
-        return Math.max(0L, d);
-    }
-
-    private static boolean firstBoolean(Boolean a, Boolean b) {
-        if (a != null) return a.booleanValue();
-        return b != null && b.booleanValue();
-    }
-
-    private static boolean firstBoolean(Boolean a, Boolean b, Boolean c) {
-        if (a != null) return a.booleanValue();
-        if (b != null) return b.booleanValue();
-        return c != null && c.booleanValue();
-    }
-
-    private static long asLong(Object value) {
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-
-        if (value instanceof String) {
-            return parseLong((String) value);
-        }
-
-        return 0L;
+        ((SubredditModel) subredditModel).L = count;
     }
 
     private static long parseLong(String value) {
@@ -1421,17 +794,18 @@ public final class SearchExploreRows {
         try {
             Field field = findField(activity.getClass(), "searchEditText");
             if (field == null) {
-                return true;
+                throw new NoSuchFieldException("SearchAbstractActivity.searchEditText");
             }
             field.setAccessible(true);
             Object view = field.get(activity);
             if (!(view instanceof TextView)) {
-                return true;
+                throw new IllegalStateException("Boost searchEditText is not initialized");
             }
             CharSequence text = ((TextView) view).getText();
             return text == null || text.length() == 0;
-        } catch (Throwable ignored) {
-            return true;
+        } catch (Throwable error) {
+            logFailure("query_inspection_failed", error);
+            return false;
         }
     }
 
@@ -1480,18 +854,7 @@ public final class SearchExploreRows {
         }
 
         try {
-            Field field = findField(activity.getClass(), "c");
-            if (field == null) {
-                log("notify_missing_adapter_field");
-                return;
-            }
-            field.setAccessible(true);
-            Object adapter = field.get(activity);
-            if (adapter == null) {
-                log("notify_null_adapter");
-                return;
-            }
-            adapter.getClass().getMethod("notifyDataSetChanged").invoke(adapter);
+            BoostNativeListings.notifySearchRows(activity);
         } catch (Throwable t) {
             logFailure("notify_failed", t);
         }

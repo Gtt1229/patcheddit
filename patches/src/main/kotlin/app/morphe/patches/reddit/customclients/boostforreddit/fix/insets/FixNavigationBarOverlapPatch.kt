@@ -16,6 +16,7 @@ import app.morphe.util.indexOfFirstInstructionOrThrow
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import app.morphe.patches.all.misc.PatchCategory
+import app.morphe.patches.reddit.customclients.boostforreddit.wrapHook
 
 private const val EXTENSION_CLASS_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostSystemBarInsetsFix;"
@@ -49,34 +50,13 @@ val fixNavigationBarOverlapPatch = bytecodePatch(
             mediaImageActivityOnCreateFingerprint,
             mediaVideoActivityOnCreateFingerprint,
         ).forEach { fingerprint ->
-            fingerprint.method.apply {
-                val setContentViewIndex = indexOfFirstInstructionOrThrow {
-                    opcode == Opcode.INVOKE_VIRTUAL &&
-                        getReference<MethodReference>()?.name == "setContentView"
-                }
-
-                addInstructions(
-                    setContentViewIndex + 1,
-                    """
-                        invoke-static {p0}, $EXTENSION_CLASS_DESCRIPTOR->applyMediaInsets(Landroid/app/Activity;)V
-                        """
-                )
-            }
-        }
-
-        mainActivityOnResumeFingerprint.method.apply {
-            val returnIndex = implementation!!.instructions
-                .withIndex()
-                .lastOrNull { (_, instruction) -> instruction.opcode == Opcode.RETURN_VOID }
-                ?.index
-                ?: error("Could not find return-void in MainActivity.onResume")
-
-            addInstructions(
-                returnIndex,
-                """
-                    invoke-static {p0}, $EXTENSION_CLASS_DESCRIPTOR->applyMainInsets(Landroid/app/Activity;)V
-                    """
+            fingerprint.wrapHook(
+                after = "invoke-static {p0}, $EXTENSION_CLASS_DESCRIPTOR->applyMediaInsets(Landroid/app/Activity;)V",
             )
         }
+
+        mainActivityOnResumeFingerprint.wrapHook(
+            after = "invoke-static {p0}, $EXTENSION_CLASS_DESCRIPTOR->applyMainInsets(Landroid/app/Activity;)V",
+        )
     }
 }

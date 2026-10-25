@@ -18,53 +18,23 @@ internal val subredditBaseHideToggleFingerprint = Fingerprint(
     ),
     custom = { method, classDef ->
         classDef.type == "Lcom/rubenmayayo/reddit/ui/submissions/subreddit/SubredditBaseActivity;" &&
-            method.name == "O"
+            method.name == "o0"
     },
 )
 
-private val hideFragmentC0ClassTypes = listOf(
-    "Lcom/rubenmayayo/reddit/ui/fragments/c;",
-    "Lcom/rubenmayayo/reddit/ui/fragments/e;",
-    "Lcom/rubenmayayo/reddit/ui/fragments/g;",
-    "Lcom/rubenmayayo/reddit/ui/fragments/h;",
-    "Lcom/rubenmayayo/reddit/ui/fragments/j;",
+// All feed layouts now share identity-based hiding in this base fragment.
+internal val hideFragmentFingerprint = Fingerprint(
+    definingClass = "Lcom/rubenmayayo/reddit/ui/fragments/SubmissionRecyclerViewFragment;",
+    name = "o0",
+    returnType = "V",
+    parameters = listOf("Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;"),
 )
-
-internal val hideFragmentC0Fingerprints = hideFragmentC0ClassTypes.map { classType ->
-    Fingerprint(
-        returnType = "V",
-        parameters = listOf(
-            "I",
-            "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;",
-        ),
-        custom = { method, classDef ->
-            classDef.type == classType && method.name == "C0"
-        },
-    )
-}
 
 internal val feedActionS1InvalidIndexFingerprint = Fingerprint(
     returnType = "V",
     parameters = listOf("I"),
     custom = { method, classDef ->
-        classDef.type == "Lcom/rubenmayayo/reddit/ui/fragments/j;" &&
-            method.name == "s1"
+        classDef.type == "Lcom/rubenmayayo/reddit/ui/fragments/SubmissionRecyclerViewFragment;" &&
+            method.name == "W0"
     },
 )
-
-private val feedPositionResolverClassTypes = listOf(
-    "Lcom/rubenmayayo/reddit/ui/fragments/g;",
-    "Lcom/rubenmayayo/reddit/ui/fragments/h;",
-    "Lcom/rubenmayayo/reddit/ui/fragments/j;",
-)
-
-internal val feedPositionResolverFingerprints =
-    feedPositionResolverClassTypes.map { classType ->
-        Fingerprint(
-            returnType = "I",
-            parameters = listOf("I"),
-            custom = { method, classDef ->
-                classDef.type == classType && method.name == "O2"
-            },
-        )
-    }

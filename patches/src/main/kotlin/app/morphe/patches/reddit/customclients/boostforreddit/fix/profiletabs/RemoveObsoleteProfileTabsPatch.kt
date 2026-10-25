@@ -8,11 +8,13 @@
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.profiletabs
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import app.morphe.patches.all.misc.PatchCategory
 
 private const val EXTENSION_DESCRIPTOR =
@@ -29,7 +31,14 @@ val removeObsoleteProfileTabsPatch = bytecodePatch(
     dependsOn(ExtensionPatches.Boost)
 
     execute {
-        userActivityBuildTabsFingerprint.method.apply {
+        userActivityBuildTabsFingerprint.classDef.methods.single { candidate ->
+            candidate.parameters.map { it.type } == listOf("Landroid/os/Bundle;") &&
+                candidate.implementation?.instructions?.any { instruction ->
+                    instruction.opcode == Opcode.IPUT_OBJECT &&
+                        (instruction as? ReferenceInstruction)?.reference?.toString() ==
+                        "Lcom/rubenmayayo/reddit/ui/profile/UserActivity;->P:[Ljava/lang/String;"
+                } == true
+        }.apply {
             val routeAssignmentIndices =
                 implementation!!.instructions
                     .withIndex()
@@ -38,19 +47,20 @@ val removeObsoleteProfileTabsPatch = bytecodePatch(
                             (instruction as? ReferenceInstruction)
                                 ?.reference
                                 ?.toString() ==
-                            "Lcom/rubenmayayo/reddit/ui/profile/UserActivity;->w:[Ljava/lang/String;"
+                            "Lcom/rubenmayayo/reddit/ui/profile/UserActivity;->P:[Ljava/lang/String;"
                     }
                     .map { (index, _) -> index }
 
             require(routeAssignmentIndices.size == 2) {
-                "UserActivity.l4 expected two route-array assignments, found ${routeAssignmentIndices.size}"
+                "UserActivity.onCreate expected two route-array assignments, found ${routeAssignmentIndices.size}"
             }
 
             routeAssignmentIndices.asReversed().forEach { assignmentIndex ->
+                val activityRegister = getInstruction<TwoRegisterInstruction>(assignmentIndex).registerB
                 addInstructions(
                     assignmentIndex + 1,
                     """
-                        invoke-static/range {p0 .. p0}, $EXTENSION_DESCRIPTOR->removeObsoleteTabs(Ljava/lang/Object;)V
+                        invoke-static {v$activityRegister}, $EXTENSION_DESCRIPTOR->removeObsoleteTabs(Ljava/lang/Object;)V
                     """.trimIndent(),
                 )
             }

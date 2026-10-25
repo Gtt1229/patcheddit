@@ -22,8 +22,8 @@ internal val drawerMaterialBottomNavigationFingerprint = Fingerprint(
     returnType = "V",
     parameters = listOf("I"),
     custom = { method, classDef ->
-        classDef.type == "Lcom/rubenmayayo/reddit/ui/activities/e;" &&
-            method.name == "g3"
+        classDef.type == "Lpj0;" &&
+            method.name == "R1"
     },
 )
 
@@ -52,8 +52,8 @@ internal val drawerBottomNavigationVisibilityFingerprint = Fingerprint(
     parameters = listOf("Z"),
     custom = { method, classDef ->
         classDef.type ==
-            "Lcom/rubenmayayo/reddit/ui/activities/e;" &&
-            method.name == "p3"
+            "Lpj0;" &&
+            method.name == "U1"
     },
 )
 internal val inboxCountUpdateFingerprint = Fingerprint(
@@ -61,8 +61,8 @@ internal val inboxCountUpdateFingerprint = Fingerprint(
     parameters = listOf("I"),
     custom = { method, classDef ->
         classDef.type ==
-            "Lcom/rubenmayayo/reddit/ui/activities/e;" &&
-            method.name == "N3"
+            "Lpj0;" &&
+            method.name == "d2"
     },
 )
 
@@ -71,8 +71,8 @@ internal val searchAbstractSubredditsErrorCallbackFingerprint = Fingerprint(
     parameters = listOf("Ljava/lang/Exception;"),
     custom = { method, classDef ->
         classDef.type ==
-            "Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity\$e;" &&
-            method.name == "a"
+            "Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity\$c;" &&
+            method.name == "onError"
     },
 )
 
@@ -82,6 +82,6 @@ internal val emptyRecyclerViewBottomNavigationPaddingFingerprint = Fingerprint(
     custom = { method, classDef ->
         classDef.type ==
             "Lcom/rubenmayayo/reddit/ui/customviews/EmptyRecyclerView;" &&
-            method.name == "F1"
+            method.name == "l0"
     },
 )

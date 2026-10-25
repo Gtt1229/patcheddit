@@ -34,7 +34,6 @@ import androidx.fragment.app.Fragment;
 
 import app.morphe.extension.boost.utils.BoostSystemBarInsetsFix;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,8 +44,6 @@ public final class MorpheSettingsV4SavedViewsFragment extends Fragment {
     public static final String CONTRACT_MARKER =
             "MORPHE_BOOST_SETTINGS_V4_SAVED_VIEWS_ISSUE106_V1";
 
-    private static final String SAVED_VIEWS_PREFERENCES =
-            "com.rubenmayayo.reddit.VIEW_PER_SUBSCRIPTION";
     private static final String MULTI_SUFFIX = ".multi";
     private static final String FRONT_PAGE_KEY =
             "_load_front_page_this_is_not_a_subreddit";
@@ -84,10 +81,7 @@ public final class MorpheSettingsV4SavedViewsFragment extends Fragment {
     ) {
         Context context = inflater.getContext();
         tokens = MorpheSettingsV4Theme.resolve(context);
-        savedViews = context.getSharedPreferences(
-                SAVED_VIEWS_PREFERENCES,
-                Context.MODE_PRIVATE
-        );
+        savedViews = BoostSettingsNative.savedViewsPreferences();
         setHasOptionsMenu(true);
 
         ScrollView scrollView = new ScrollView(context);
@@ -657,72 +651,11 @@ public final class MorpheSettingsV4SavedViewsFragment extends Fragment {
     }
 
     private String displayName(String key) {
-        String nativeTitle = nativeDisplayName(key);
-        if (!TextUtils.isEmpty(nativeTitle)) {
-            return nativeTitle;
-        }
-        if ("_load_front_page_this_is_not_a_subreddit".equals(key)) {
-            return "Front page";
-        }
-        if ("_load_saved_this_is_not_a_subreddit".equals(key)) {
-            return "Saved";
-        }
-        if ("_load_history_this_is_not_a_subreddit".equals(key)) {
-            return "History";
-        }
-        if ("all".equalsIgnoreCase(key) || "popular".equalsIgnoreCase(key)) {
-            return "r/" + key;
-        }
-        if (key.endsWith(MULTI_SUFFIX)) {
-            return "Custom feed · "
-                    + key.substring(0, key.length() - MULTI_SUFFIX.length());
-        }
-        return key.startsWith("r/") ? key : "r/" + key;
-    }
-
-    private String nativeDisplayName(String key) {
-        try {
-            Class<?> managerClass = Class.forName("he.k0");
-            Object manager = managerClass.getDeclaredMethod("e").invoke(null);
-            Method createModel = managerClass.getDeclaredMethod(
-                    "i",
-                    String.class
-            );
-            Object model = createModel.invoke(manager, key);
-            Class<?> modelClass = Class.forName(
-                    "com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel"
-            );
-            Method display = Class.forName("he.h0").getDeclaredMethod(
-                    "Z0",
-                    Context.class,
-                    modelClass
-            );
-            Object value = display.invoke(null, requireContext(), model);
-            return value instanceof String ? (String) value : null;
-        } catch (Throwable ignored) {
-            return null;
-        }
+        return BoostSettingsNative.savedViewName(requireContext(), key);
     }
 
     private String viewTitle(int viewType) {
-        try {
-            Method display = Class.forName("he.h0").getDeclaredMethod(
-                    "a1",
-                    Context.class,
-                    int.class
-            );
-            Object value = display.invoke(null, requireContext(), viewType);
-            if (value instanceof String && !TextUtils.isEmpty((String) value)) {
-                return (String) value;
-            }
-        } catch (Throwable ignored) {
-        }
-        for (int index = 0; index < VIEW_VALUES.length; index++) {
-            if (VIEW_VALUES[index] == viewType) {
-                return VIEW_TITLES[index];
-            }
-        }
-        return "View " + viewType;
+        return BoostSettingsNative.viewTitle(requireContext(), viewType);
     }
 
     private LinearLayout addGroup(LinearLayout parent) {

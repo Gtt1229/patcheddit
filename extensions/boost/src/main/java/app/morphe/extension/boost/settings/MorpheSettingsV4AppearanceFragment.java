@@ -31,7 +31,6 @@ import androidx.fragment.app.Fragment;
 
 import app.morphe.extension.boost.utils.BoostSystemBarInsetsFix;
 
-import java.lang.reflect.Field;
 
 /** Morphe-owned appearance controls for the Settings v4 preview. */
 public final class MorpheSettingsV4AppearanceFragment extends Fragment {
@@ -131,7 +130,7 @@ public final class MorpheSettingsV4AppearanceFragment extends Fragment {
                 systemBarsGroup,
                 "Colored navigation bar",
                 "Match the system navigation area to Boost's toolbar",
-                preferences.getBoolean(KEY_COLORED_NAV_BAR, false),
+                preferences.getBoolean(KEY_COLORED_NAV_BAR, Build.VERSION.SDK_INT >= 26),
                 checked -> updateSystemBarPreference(
                         KEY_COLORED_NAV_BAR,
                         checked
@@ -272,7 +271,7 @@ public final class MorpheSettingsV4AppearanceFragment extends Fragment {
             boolean enabled
     ) {
         preferences.edit().putBoolean(KEY_DYNAMIC_COLORS, enabled).apply();
-        setBoostStaticBoolean("i");
+        setBoostStaticBoolean("h");
     }
 
     private void updateSystemBarPreference(String key, boolean enabled) {
@@ -290,17 +289,11 @@ public final class MorpheSettingsV4AppearanceFragment extends Fragment {
             throw new IllegalArgumentException("unsupported system bar key " + key);
         }
         preferences.edit().putBoolean(key, enabled).apply();
-        setBoostStaticBoolean("h");
+        setBoostStaticBoolean("g");
     }
 
     private static void setBoostStaticBoolean(String fieldName) {
-        try {
-            Class<?> settings = Class.forName("id.b");
-            Field field = settings.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.setBoolean(null, true);
-        } catch (Throwable ignored) {
-        }
+        BoostSettingsNative.markDirty(fieldName);
     }
 
     private void openMorpheFragment(String fragmentName) {

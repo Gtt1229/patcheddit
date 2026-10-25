@@ -8,31 +8,34 @@
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.feed
 
 import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
-import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
-import com.android.tools.smali.dexlib2.AccessFlags
+import app.morphe.util.addInstructionsAtControlFlowLabel
+import app.morphe.util.getReference
+import app.morphe.util.indexOfFirstInstructionOrThrow
+import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import app.morphe.patches.all.misc.PatchCategory
 
 private const val FILTERED_PAGE_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostFilteredPageAutoLoad;"
 
 private const val THING_FRAGMENT =
-    "Lcom/rubenmayayo/reddit/ui/fragments/l;"
+    "Lcom/rubenmayayo/reddit/ui/fragments/p;"
 
-// Native "Load next" Snackbar action: calls Callbacks.T0() (next page).
+// Native "Load next" Snackbar action: calls Callbacks.m0() (next page).
 private const val LOAD_NEXT_LISTENER =
-    "Lcom/rubenmayayo/reddit/ui/fragments/l\$b;"
+    "Lcom/rubenmayayo/reddit/ui/fragments/o;"
+
+private const val SUBMISSION_FRAGMENT =
+    "Lcom/rubenmayayo/reddit/ui/fragments/d;"
 
 // ThingFragment.showFilteredNextPageSnackbar(View): shown when content-type
 // filters removed every post on a page.
 private val filteredNextPageSnackbarFingerprint = Fingerprint(
     definingClass = THING_FRAGMENT,
-    name = "E1",
-    accessFlags = listOf(AccessFlags.PRIVATE),
+    name = "q1",
     returnType = "V",
     parameters = listOf("Landroid/view/View;"),
 )
@@ -51,17 +54,25 @@ val autoLoadFilteredPagePatch = bytecodePatch(
 
     execute {
         filteredNextPageSnackbarFingerprint.method.apply {
-            addInstructionsWithLabels(
-                0,
+            // q1 also shows "Review filter". Only replace its Load next branch.
+            val nextPageIndex = indexOfFirstInstructionOrThrow {
+                opcode == Opcode.SGET_OBJECT &&
+                    getReference<FieldReference>()?.toString() ==
+                    "Lcom/google/android/material/snackbar/Snackbar;->E:[I"
+            }
+            addInstructionsAtControlFlowLabel(
+                nextPageIndex,
                 """
+                    check-cast p0, $SUBMISSION_FRAGMENT
                     new-instance v0, $LOAD_NEXT_LISTENER
-                    invoke-direct {v0, p0}, $LOAD_NEXT_LISTENER-><init>($THING_FRAGMENT)V
+                    invoke-direct {v0, p0}, $LOAD_NEXT_LISTENER-><init>($SUBMISSION_FRAGMENT)V
                     invoke-static {p1, v0}, $FILTERED_PAGE_EXTENSION_DESCRIPTOR->onPageFiltered(Landroid/view/View;Landroid/view/View${'$'}OnClickListener;)Z
                     move-result v0
                     if-eqz v0, :morphe_show_native_snackbar
                     return-void
+                    :morphe_show_native_snackbar
+                    nop
                 """,
-                ExternalLabel("morphe_show_native_snackbar", getInstruction(0)),
             )
         }
     }

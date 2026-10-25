@@ -12,10 +12,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.WeakHashMap;
+
+import app.morphe.extension.boost.media.MediaNativeBindings;
 
 /**
  * Preserves the resolved inline-preview slot while Boost recycles comment rows.
@@ -251,48 +251,16 @@ public final class StableInlinePreviewHeight {
     }
 
     private static int resolveContentSignature(Object commentModel) {
-        String source = callStringMethod(commentModel, "S0");
+        String source = MediaNativeBindings.commentBody(commentModel);
         if (source == null) {
-            source = callStringMethod(commentModel, "T0");
+            source = MediaNativeBindings.commentHtml(commentModel);
         }
 
         return source == null ? 0 : source.hashCode();
     }
 
-    private static String callStringMethod(
-            Object target,
-            String methodName
-    ) {
-        if (target == null || methodName == null) return null;
-
-        try {
-            Method method = target.getClass().getMethod(methodName);
-            method.setAccessible(true);
-            Object value = method.invoke(target);
-            return value instanceof String ? (String) value : null;
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
     private static View getItemView(Object holder) {
-        if (holder == null) return null;
-
-        Class<?> cursor = holder.getClass();
-        while (cursor != null) {
-            try {
-                Field field = cursor.getDeclaredField("itemView");
-                field.setAccessible(true);
-                Object value = field.get(holder);
-                return value instanceof View ? (View) value : null;
-            } catch (NoSuchFieldException ignored) {
-                cursor = cursor.getSuperclass();
-            } catch (Throwable ignored) {
-                return null;
-            }
-        }
-
-        return null;
+        return holder == null ? null : MediaNativeBindings.itemView(holder);
     }
 
     private static View findTaggedPreview(ViewGroup root) {

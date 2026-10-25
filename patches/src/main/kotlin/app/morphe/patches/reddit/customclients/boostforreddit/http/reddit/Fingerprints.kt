@@ -12,25 +12,32 @@ package app.morphe.patches.reddit.customclients.boostforreddit.http.reddit
 import app.morphe.patcher.Fingerprint
 import com.android.tools.smali.dexlib2.AccessFlags
 
-// Lcom/rubenmayayo/reddit/ui/adapters/CommentViewHolder;->O(Lcom/rubenmayayo/reddit/models/reddit/CommentModel;
+// Badge construction is inlined into the binders.
 internal object SetCommentBabushkaTextFingerprint : Fingerprint(
-    accessFlags = listOf(AccessFlags.PUBLIC),
+    definingClass = "Lcom/rubenmayayo/reddit/ui/adapters/CommentViewHolder;",
+    name = "w",
     returnType = "V",
-    parameters = listOf("Lcom/rubenmayayo/reddit/models/reddit/CommentModel"),
-    strings = listOf("\uD83D\uDD12")
+    parameters = listOf(
+        "Lcom/rubenmayayo/reddit/models/reddit/CommentModel;",
+        "Z", "Z", "Z", "Lig2;",
+    ),
 )
 
-// Lcom/rubenmayayo/reddit/ui/adapters/SubmissionViewHolder;->n0(Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;)V
 internal object SetSubmissionBabushkaTextFingerprint : Fingerprint(
-    accessFlags = listOf(AccessFlags.PUBLIC),
+    definingClass = "Lcom/rubenmayayo/reddit/ui/adapters/SubmissionViewHolder;",
+    name = "w",
     returnType = "V",
-    parameters = listOf("Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel"),
-    strings = listOf("\uD83D\uDD12")
+    parameters = listOf(
+        "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;",
+        "Z", "Z", "Z", "Lig2;",
+    ),
 )
 
 internal object ContributionModelConstructorFingerprint : Fingerprint(
     definingClass = "Lcom/rubenmayayo/reddit/models/reddit/ContributionModel;",
-    accessFlags = listOf(AccessFlags.PROTECTED, AccessFlags.CONSTRUCTOR),
+    name = "<init>",
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.CONSTRUCTOR),
+    parameters = listOf("Landroid/os/Parcel;"),
     returnType = "V",
 )
 
@@ -42,41 +49,32 @@ internal object ContributionModelWriteToParcelFingerprint : Fingerprint(
 )
 
 internal object SubmissionModelDeserializeFingerprint : Fingerprint(
+    definingClass = "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;",
+    name = "C",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC),
-    returnType = "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel",
-    parameters = listOf("Lnet/dean/jraw/models/Submission")
+    returnType = "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;",
+    parameters = listOf("Lnet/dean/jraw/models/Submission;"),
 )
 
 internal object CommentModelDeserializeFingerprint : Fingerprint(
+    definingClass = "Lcom/rubenmayayo/reddit/models/reddit/CommentModel;",
+    name = "y",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC),
-    returnType = "Lcom/rubenmayayo/reddit/models/reddit/CommentModel",
-    parameters = listOf("Lnet/dean/jraw/models/Comment")
+    returnType = "Lcom/rubenmayayo/reddit/models/reddit/CommentModel;",
+    parameters = listOf("Lnet/dean/jraw/models/Comment;"),
 )
 
-internal object StateSubmissionViewGetHeaderFingerprint : Fingerprint(
+internal object StateSubmissionViewSetStateFingerprint : Fingerprint(
     definingClass = "Lcom/rubenmayayo/reddit/ui/customviews/StateSubmissionView;",
-    name = "a",
-    accessFlags = listOf(AccessFlags.PRIVATE),
-    strings = listOf("copyright_takedown", "reddit"),
-)
-
-internal object StateSubmissionViewGetSummaryFingerprint : Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/customviews/StateSubmissionView;",
-    name = "b",
-    accessFlags = listOf(AccessFlags.PRIVATE),
-    strings = listOf("copyright_takedown", "reddit"),
-)
-
-internal object StateSubmissionViewHasValidRemovalReasonFingerprint : Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/customviews/StateSubmissionView;",
-    name = "d",
-    accessFlags = listOf(AccessFlags.PRIVATE),
-    strings = listOf("reddit"),
+    name = "setState",
+    returnType = "V",
+    parameters = listOf("Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;"),
+    strings = listOf("reddit", "copyright_takedown"),
 )
 
 internal object GlideHttpUrlFetcherFetchFingerprint : Fingerprint(
-    definingClass = "Lcom/bumptech/glide/load/data/j;",
-    name = "j",
+    definingClass = "Lm81;",
+    name = "f",
     returnType = "Ljava/io/InputStream;",
-    parameters = listOf("Ljava/net/URL", "I", "Ljava/net/URL", "Ljava/util/Map")
+    parameters = listOf("Ljava/net/URL;", "I", "Ljava/net/URL;", "Ljava/util/Map;"),
 )

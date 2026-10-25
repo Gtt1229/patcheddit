@@ -22,18 +22,14 @@ private const val SNACKBAR_ANCHOR_EXTENSION_DESCRIPTOR =
 private const val BASE_TRANSIENT_BOTTOM_BAR =
     "Lcom/google/android/material/snackbar/BaseTransientBottomBar;"
 
-// Holds the WeakReference to the anchor view; b() returns it.
-private const val ANCHOR_HOLDER =
-    "Lcom/google/android/material/snackbar/BaseTransientBottomBar\$q;"
-
 // SnackbarBaseLayout: the Snackbar's own view.
 private const val SNACKBAR_VIEW =
-    "Lcom/google/android/material/snackbar/BaseTransientBottomBar\$t;"
+    "Lcom/google/android/material/snackbar/BaseTransientBottomBar\$h;"
 
-// BaseTransientBottomBar.show()
+// BaseTransientBottomBar.show() is inlined into Snackbar.m() in 1.14.0.
 private val snackbarShowFingerprint = Fingerprint(
-    definingClass = BASE_TRANSIENT_BOTTOM_BAR,
-    name = "a0",
+    definingClass = "Lcom/google/android/material/snackbar/Snackbar;",
+    name = "m",
     returnType = "V",
     parameters = emptyList(),
 )
@@ -45,8 +41,8 @@ private val snackbarShowFingerprint = Fingerprint(
 // Material's anchor offset) and a layout is requested on every frame.
 private val legacyNavigationSnackbarMarginFingerprint = Fingerprint(
     definingClass = "Lcom/aurelhubert/ahbottomnavigation/AHBottomNavigationBehavior;",
-    name = "Q",
-    returnType = "V",
+    name = "f",
+    returnType = "Z",
     parameters = listOf("Landroid/view/View;", "Landroid/view/View;"),
 )
 
@@ -69,7 +65,7 @@ val anchorSnackbarAboveNavigationPatch = bytecodePatch(
                     invoke-virtual {p1}, Landroid/view/View;->isShown()Z
                     move-result v0
                     if-nez v0, :morphe_update_legacy_snackbar
-                    return-void
+                    return v0
                 """,
                 ExternalLabel("morphe_update_legacy_snackbar", getInstruction(0)),
             )
@@ -79,18 +75,14 @@ val anchorSnackbarAboveNavigationPatch = bytecodePatch(
             addInstructionsWithLabels(
                 0,
                 """
-                    iget-object v0, p0, $BASE_TRANSIENT_BOTTOM_BAR->m:$ANCHOR_HOLDER
-                    const/4 v1, 0x0
-                    if-eqz v0, :morphe_anchor_resolved
-                    invoke-virtual {v0}, $ANCHOR_HOLDER->b()Landroid/view/View;
+                    invoke-virtual {p0}, $BASE_TRANSIENT_BOTTOM_BAR->c()Landroid/view/View;
                     move-result-object v1
-                    :morphe_anchor_resolved
                     iget-object v0, p0, $BASE_TRANSIENT_BOTTOM_BAR->g:Landroid/view/ViewGroup;
                     iget-object v2, p0, $BASE_TRANSIENT_BOTTOM_BAR->i:$SNACKBAR_VIEW
                     invoke-static {v0, v1, v2}, $SNACKBAR_ANCHOR_EXTENSION_DESCRIPTOR->anchorFor(Landroid/view/ViewGroup;Landroid/view/View;Landroid/view/View;)Landroid/view/View;
                     move-result-object v0
                     if-eqz v0, :morphe_show_snackbar
-                    invoke-virtual {p0, v0}, $BASE_TRANSIENT_BOTTOM_BAR->V(Landroid/view/View;)$BASE_TRANSIENT_BOTTOM_BAR
+                    invoke-virtual {p0, v0}, $BASE_TRANSIENT_BOTTOM_BAR->f(Landroid/view/View;)V
                 """,
                 ExternalLabel("morphe_show_snackbar", getInstruction(0)),
             )

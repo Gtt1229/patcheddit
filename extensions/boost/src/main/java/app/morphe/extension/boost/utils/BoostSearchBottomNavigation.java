@@ -9,6 +9,7 @@ package app.morphe.extension.boost.utils;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
@@ -31,11 +32,9 @@ import android.widget.Toast;
 import android.widget.FrameLayout;
 import android.util.Log;
 
-import java.lang.reflect.Constructor;
+import app.morphe.extension.boost.navigation.BoostNativeNavigation;
+
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.WeakHashMap;
 
 /**
@@ -130,7 +129,7 @@ public final class BoostSearchBottomNavigation {
     private static final String PROFILE_LONG_PRESS_DIALOG_BRIDGE_MARKER =
             "MORPHE_BOOST_PROFILE_LONGPRESS_DIALOG_BRIDGE_V2";
     private static final int PROFILE_SELECTOR_TITLE_RESOURCE_ID =
-            0x7f130157;
+            0x7f130116;
     private static final Object PROFILE_SELECTION_LOCK =
             new Object();
     private static volatile Integer PENDING_PROFILE_SELECTION_INDEX;
@@ -164,19 +163,11 @@ public final class BoostSearchBottomNavigation {
 
     private static final String USER_ACTIVITY =
             "com.rubenmayayo.reddit.ui.profile.UserActivity";
-    private static final String NAVIGATION_UTILITY =
-            "com.rubenmayayo.reddit.ui.activities.i";
-    private static final String BASE_ACTIVITY =
-            "com.rubenmayayo.reddit.ui.activities.b";
-    private static final String BOTTOM_NAV_BASE_ACTIVITY =
-            "com.rubenmayayo.reddit.ui.activities.e";
-    private static final String ACCOUNT_MANAGER = "xb.l";
-
     private static final WeakHashMap<Activity, Boolean>
             NATIVE_NAVIGATION_VISIBILITY_REQUESTS =
                     new WeakHashMap<>();
     /**
-     * Boost's own last p3() decision per activity, before the preference
+     * Boost's own last U1() decision per activity, before the preference
      * gate. SubmissionsActivity forces false while the swipe post viewer is
      * shown; onResume must not override that.
      */
@@ -206,7 +197,7 @@ public final class BoostSearchBottomNavigation {
         );
 
         /*
-         * Search and Go To do not extend Boost's DrawerActivity, so p3() never
+         * Search and Go To do not extend Boost's DrawerActivity, so U1() never
          * runs there and the host XML's HideBottomViewOnScrollBehavior applied
          * regardless of "Hide on scroll". Apply the preference here and keep
          * the list clear of a bar that no longer hides.
@@ -376,7 +367,7 @@ public final class BoostSearchBottomNavigation {
 
             Field subredditField = findField(
                     subscription.getClass(),
-                    "b"
+                    "a"
             );
             if (subredditField == null) return;
 
@@ -849,24 +840,12 @@ public final class BoostSearchBottomNavigation {
         }
 
         if (background != null) {
-            try {
-                Method getFillColor = background
-                        .getClass()
-                        .getMethod("getFillColor");
-
-                Object value =
-                        getFillColor.invoke(background);
-
-                if (value instanceof ColorStateList) {
-                    ColorStateList fill =
-                            (ColorStateList) value;
-
-                    return fill.getColorForState(
-                            navigation.getDrawableState(),
-                            fill.getDefaultColor()
-                    );
-                }
-            } catch (Throwable ignored) {
+            ColorStateList fill = BoostNativeNavigation.fillColor(background);
+            if (fill != null) {
+                return fill.getColorForState(
+                        navigation.getDrawableState(),
+                        fill.getDefaultColor()
+                );
             }
         }
 
@@ -1154,33 +1133,9 @@ public final class BoostSearchBottomNavigation {
             );
         }
 
+        BoostNativeNavigation.applyInboxBadge(navigation, inboxId, count);
+
         if (count <= 0) {
-            Method removeBadge = findMethod(
-                    navigation.getClass(),
-                    "g",
-                    int.class
-            );
-
-            if (removeBadge == null) {
-                removeBadge = findMethod(
-                        navigation.getClass(),
-                        "removeBadge",
-                        int.class
-                );
-            }
-
-            if (removeBadge == null) {
-                throw new NoSuchMethodException(
-                        "NavigationBarView.removeBadge"
-                );
-            }
-
-            removeBadge.setAccessible(true);
-            removeBadge.invoke(
-                    navigation,
-                    inboxId
-            );
-
             Log.i(
                     TAG,
                     "inbox badge removed marker=MORPHE_BOOST_INBOX_BADGE_SYNC_V2_ENTRY_HOOK"
@@ -1189,86 +1144,6 @@ public final class BoostSearchBottomNavigation {
             );
             return;
         }
-
-        Method getOrCreateBadge = findMethod(
-                navigation.getClass(),
-                "e",
-                int.class
-        );
-
-        if (getOrCreateBadge == null) {
-            getOrCreateBadge = findMethod(
-                    navigation.getClass(),
-                    "getOrCreateBadge",
-                    int.class
-            );
-        }
-
-        if (getOrCreateBadge == null) {
-            throw new NoSuchMethodException(
-                    "NavigationBarView.getOrCreateBadge"
-            );
-        }
-
-        getOrCreateBadge.setAccessible(true);
-
-        Object badge = getOrCreateBadge.invoke(
-                navigation,
-                inboxId
-        );
-
-        if (badge == null) {
-            throw new IllegalStateException(
-                    "Inbox BadgeDrawable unavailable"
-            );
-        }
-
-        Method setNumber = findMethod(
-                badge.getClass(),
-                "z",
-                int.class
-        );
-
-        if (setNumber == null) {
-            setNumber = findMethod(
-                    badge.getClass(),
-                    "setNumber",
-                    int.class
-            );
-        }
-
-        Method setVisible = findMethod(
-                badge.getClass(),
-                "C",
-                boolean.class
-        );
-
-        if (setVisible == null) {
-            setVisible = findMethod(
-                    badge.getClass(),
-                    "setVisible",
-                    boolean.class
-            );
-        }
-
-        if (setNumber == null || setVisible == null) {
-            throw new NoSuchMethodException(
-                    "BadgeDrawable number/visibility API"
-            );
-        }
-
-        setNumber.setAccessible(true);
-        setVisible.setAccessible(true);
-
-        setNumber.invoke(
-                badge,
-                count
-        );
-
-        setVisible.invoke(
-                badge,
-                true
-        );
 
         Log.i(
                 TAG,
@@ -1535,21 +1410,8 @@ public final class BoostSearchBottomNavigation {
                 return "layout-params-null";
             }
 
-            for (Method method : params.getClass().getMethods()) {
-                if (
-                        "getBehavior".equals(method.getName())
-                                && method.getParameterTypes().length == 0
-                ) {
-                    Object behavior = method.invoke(params);
-
-                    return behavior == null
-                            ? "none"
-                            : behavior.getClass().getName();
-                }
-            }
-
-            return "unsupported-layout-params:"
-                    + params.getClass().getName();
+            Object behavior = BoostNativeNavigation.coordinatorBehavior(navigation);
+            return behavior == null ? "none" : behavior.getClass().getName();
         } catch (Throwable error) {
             return "error:" + error.getClass().getSimpleName();
         }
@@ -1779,143 +1641,10 @@ public final class BoostSearchBottomNavigation {
         }
 
         try {
-            ClassLoader loader = navigation
-                    .getContext()
-                    .getClassLoader();
-
-            Class<?> preferencesClass = Class.forName(
-                    "id.b",
-                    false,
-                    loader
-            );
-            Method singletonMethod = findMethod(
-                    preferencesClass,
-                    "v0"
-            );
-            Method hidePreferenceMethod = findMethod(
-                    preferencesClass,
-                    "z"
-            );
-
-            if (
-                    singletonMethod == null
-                            || hidePreferenceMethod == null
-            ) {
-                throw new NoSuchMethodException(
-                        "Boost bottom-navigation hide preference"
-                );
-            }
-
-            singletonMethod.setAccessible(true);
-            hidePreferenceMethod.setAccessible(true);
-            Object preferences = singletonMethod.invoke(null);
-            Object rawPreference =
-                    hidePreferenceMethod.invoke(preferences);
-
-            if (!(rawPreference instanceof Boolean)) {
-                throw new IllegalStateException(
-                        "Bottom-navigation hide preference is not Boolean"
-                );
-            }
-
-            boolean hideOnScroll = (Boolean) rawPreference;
-            ViewGroup.LayoutParams params = navigation.getLayoutParams();
-
-            if (params == null) {
-                throw new IllegalStateException(
-                        "Bottom-navigation LayoutParams unavailable"
-                );
-            }
-
-            Class<?> coordinatorBehaviorClass = Class.forName(
-                    "androidx.coordinatorlayout.widget.CoordinatorLayout$c",
-                    false,
-                    loader
-            );
-            Class<?> hideBehaviorClass = Class.forName(
-                    "com.google.android.material.behavior.HideBottomViewOnScrollBehavior",
-                    false,
-                    loader
-            );
-
-            Method getter = null;
-            Method setter = null;
-
-            for (
-                    Class<?> type = params.getClass();
-                    type != null && type != Object.class;
-                    type = type.getSuperclass()
-            ) {
-                for (Method method : type.getDeclaredMethods()) {
-                    Class<?>[] parameterTypes =
-                            method.getParameterTypes();
-
-                    if (
-                            getter == null
-                                    && parameterTypes.length == 0
-                                    && coordinatorBehaviorClass
-                                        .isAssignableFrom(
-                                                method.getReturnType()
-                                        )
-                    ) {
-                        getter = method;
-                    }
-
-                    if (
-                            setter == null
-                                    && parameterTypes.length == 1
-                                    && parameterTypes[0].equals(
-                                            coordinatorBehaviorClass
-                                    )
-                    ) {
-                        setter = method;
-                    }
-                }
-            }
-
-            if (getter == null || setter == null) {
-                throw new NoSuchMethodException(
-                        "CoordinatorLayout behavior accessor"
-                );
-            }
-
-            getter.setAccessible(true);
-            setter.setAccessible(true);
-            Object behaviorBefore = getter.invoke(params);
-            Object behaviorAfter = behaviorBefore;
-
-            if (hideOnScroll) {
-                boolean scrolledAway =
-                        navigation.getTranslationY() != 0.0f;
-
-                if (revealScrolledBar && scrolledAway) {
-                    // A fresh behavior starts in the scrolled-up state, so the
-                    // next downward scroll hides the bar again.
-                    navigation.clearAnimation();
-                    navigation.animate().cancel();
-                    navigation.setTranslationY(0.0f);
-                    behaviorBefore = null;
-                }
-
-                if (!hideBehaviorClass.isInstance(behaviorBefore)) {
-                    Constructor<?> constructor =
-                            hideBehaviorClass.getDeclaredConstructor();
-                    constructor.setAccessible(true);
-                    behaviorAfter = constructor.newInstance();
-                    setter.invoke(
-                            params,
-                            new Object[]{behaviorAfter}
-                    );
-                }
-            } else {
-                navigation.clearAnimation();
-                navigation.animate().cancel();
-                setter.invoke(params, new Object[]{null});
-                behaviorAfter = null;
-                navigation.setTranslationY(0.0f);
-            }
-
-            navigation.setLayoutParams(params);
+            Object behaviorBefore = BoostNativeNavigation.coordinatorBehavior(navigation);
+            boolean hideOnScroll = BoostNativeNavigation.applyHideOnScroll(
+                    navigation, revealScrolledBar);
+            Object behaviorAfter = BoostNativeNavigation.coordinatorBehavior(navigation);
             navigation.setAlpha(1.0f);
             navigation.requestLayout();
             navigation.invalidate();
@@ -1956,26 +1685,14 @@ public final class BoostSearchBottomNavigation {
     }
 
     private static void dismissProfileSelectorDialog(
-            Object dialog
+            Dialog dialog
     ) {
         if (dialog == null) {
             return;
         }
 
         try {
-            Method dismiss = findMethod(
-                    dialog.getClass(),
-                    "dismiss"
-            );
-
-            if (dismiss == null) {
-                throw new NoSuchMethodException(
-                        "Profile selector dialog dismiss"
-                );
-            }
-
-            dismiss.setAccessible(true);
-            dismiss.invoke(dialog);
+            dialog.dismiss();
         } catch (Throwable error) {
             Log.w(
                     TAG,
@@ -1994,24 +1711,13 @@ public final class BoostSearchBottomNavigation {
         }
 
         try {
-            Class<?> utility = Class.forName(
-                    NAVIGATION_UTILITY,
-                    false,
-                    activity.getClassLoader()
-            );
-
-            Method route = utility.getDeclaredMethod(
-                    "l0",
-                    Activity.class
-            );
-            route.setAccessible(true);
-            route.invoke(null, activity);
+            BoostNativeNavigation.addAccount(activity);
 
             Log.i(
                     TAG,
                     "Profile selector Add account dispatched marker="
                             + PROFILE_LONG_PRESS_DIALOG_BRIDGE_MARKER
-                            + " nativeAction=i.l0(Activity)"
+                            + " nativeAction=xy1.x(Activity)"
                             + " activity="
                             + activity.getClass().getName()
             );
@@ -2024,40 +1730,6 @@ public final class BoostSearchBottomNavigation {
                     error
             );
             return false;
-        }
-    }
-
-    private static String profileSelectorUserName(
-            Object user
-    ) {
-        if (user == null) {
-            return null;
-        }
-
-        try {
-            Field name = findField(
-                    user.getClass(),
-                    "name"
-            );
-
-            if (name == null) {
-                return null;
-            }
-
-            name.setAccessible(true);
-            Object value = name.get(user);
-
-            return value instanceof String
-                    ? (String) value
-                    : null;
-        } catch (Throwable error) {
-            Log.w(
-                    TAG,
-                    "Profile selector username lookup failed marker="
-                            + PROFILE_LONG_PRESS_DIALOG_BRIDGE_MARKER,
-                    error
-            );
-            return null;
         }
     }
 
@@ -2075,16 +1747,7 @@ public final class BoostSearchBottomNavigation {
         }
 
         try {
-            Class<?> destination = Class.forName(
-                    MAIN_ACTIVITY,
-                    false,
-                    activity.getClassLoader()
-            );
-
-            Intent intent = new Intent(
-                    activity,
-                    destination
-            );
+            Intent intent = new Intent().setClassName(activity, MAIN_ACTIVITY);
             intent.addFlags(
                     Intent.FLAG_ACTIVITY_CLEAR_TOP
                             | Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -2170,29 +1833,13 @@ public final class BoostSearchBottomNavigation {
                 }
 
                 try {
-                    Method selection = findMethod(
-                            activity.getClass(),
-                            "L2",
-                            int.class
-                    );
-
-                    if (selection == null) {
-                        throw new NoSuchMethodException(
-                                "BottomNavBaseActivity.L2(int)"
-                        );
-                    }
-
-                    selection.setAccessible(true);
-                    selection.invoke(
-                            activity,
-                            accountIndex.intValue()
-                    );
+                    BoostNativeNavigation.selectAccount(activity, accountIndex.intValue());
 
                     Log.i(
                             TAG,
                             "Profile selector native account switch consumed marker="
                                     + PROFILE_LONG_PRESS_DIALOG_BRIDGE_MARKER
-                                    + " nativeAction=e.L2(int)"
+                                    + " nativeAction=pj0.K1(int)"
                                     + " accountIndex="
                                     + accountIndex
                                     + " activity="
@@ -2220,209 +1867,46 @@ public final class BoostSearchBottomNavigation {
         }
 
         try {
-            final ClassLoader classLoader =
-                    activity.getClassLoader();
-            final Class<?> callbackClass = Class.forName(
-                    "com.rubenmayayo.reddit.ui.customviews.dialogs.UserSelectorView$a",
-                    false,
-                    classLoader
-            );
-            final Object[] dialogHolder =
-                    new Object[1];
-
-            Object callback = Proxy.newProxyInstance(
-                    classLoader,
-                    new Class<?>[]{callbackClass},
-                    new InvocationHandler() {
+            final Dialog[] dialogHolder = new Dialog[1];
+            dialogHolder[0] = BoostNativeNavigation.showProfileSelector(
+                    activity,
+                    PROFILE_SELECTOR_TITLE_RESOURCE_ID,
+                    new BoostNativeNavigation.ProfileCallback() {
                         @Override
-                        public Object invoke(
-                                Object proxy,
-                                Method method,
-                                Object[] arguments
+                        public void onAddAccount() {
+                            dismissProfileSelectorDialog(dialogHolder[0]);
+                            invokeProfileAddAccount(activity);
+                        }
+
+                        @Override
+                        public void onAccountSelected(
+                                String selectedUsername,
+                                boolean anonymous,
+                                int accountIndex
                         ) {
-                            String methodName =
-                                    method.getName();
-
-                            if ("toString".equals(methodName)) {
-                                return "MorpheProfileSelectorCallback";
+                            String activeUsername = currentUsername(activity);
+                            dismissProfileSelectorDialog(dialogHolder[0]);
+                            if (anonymous && !isLoggedIn(activity)) {
+                                Log.i(TAG, "Profile selector anonymous account already active marker="
+                                        + PROFILE_LONG_PRESS_DIALOG_BRIDGE_MARKER);
+                                return;
                             }
-
-                            if ("hashCode".equals(methodName)) {
-                                return Integer.valueOf(
-                                        System.identityHashCode(proxy)
-                                );
+                            if (selectedUsername != null && selectedUsername.equals(activeUsername)) {
+                                Log.i(TAG, "Profile selector selected account already active marker="
+                                        + PROFILE_LONG_PRESS_DIALOG_BRIDGE_MARKER
+                                        + " username=" + selectedUsername);
+                                return;
                             }
-
-                            if ("equals".equals(methodName)) {
-                                return Boolean.valueOf(
-                                        arguments != null
-                                                && arguments.length == 1
-                                                && proxy == arguments[0]
-                                );
-                            }
-
-                            if ("C0".equals(methodName)) {
-                                dismissProfileSelectorDialog(
-                                        dialogHolder[0]
-                                );
-                                invokeProfileAddAccount(activity);
-                                return null;
-                            }
-
-                            if ("h".equals(methodName)) {
-                                Object user =
-                                        arguments != null
-                                                && arguments.length > 0
-                                                ? arguments[0]
-                                                : null;
-                                int accountIndex =
-                                        arguments != null
-                                                && arguments.length > 1
-                                                && arguments[1]
-                                                    instanceof Number
-                                                ? ((Number) arguments[1])
-                                                    .intValue()
-                                                : -1;
-                                String selectedUsername =
-                                        profileSelectorUserName(user);
-                                String activeUsername =
-                                        currentUsername(activity);
-
-                                dismissProfileSelectorDialog(
-                                        dialogHolder[0]
-                                );
-
-                                if (
-                                        user == null
-                                                && !isLoggedIn(activity)
-                                ) {
-                                    Log.i(
-                                            TAG,
-                                            "Profile selector anonymous account already active marker="
-                                                    + PROFILE_LONG_PRESS_DIALOG_BRIDGE_MARKER
-                                    );
-                                    return null;
-                                }
-
-                                if (
-                                        selectedUsername != null
-                                                && selectedUsername.equals(
-                                                    activeUsername
-                                                )
-                                ) {
-                                    Log.i(
-                                            TAG,
-                                            "Profile selector selected account already active marker="
-                                                    + PROFILE_LONG_PRESS_DIALOG_BRIDGE_MARKER
-                                                    + " username="
-                                                    + selectedUsername
-                                    );
-                                    return null;
-                                }
-
-                                queueProfileSelection(
-                                        activity,
-                                        accountIndex
-                                );
-                                return null;
-                            }
-
-                            return null;
+                            queueProfileSelection(activity, accountIndex);
                         }
                     }
             );
-
-            Class<?> selectorClass = Class.forName(
-                    "com.rubenmayayo.reddit.ui.customviews.dialogs.UserSelectorView",
-                    false,
-                    classLoader
-            );
-
-            Constructor<?> selectorConstructor =
-                    selectorClass.getDeclaredConstructor(
-                            Context.class,
-                            boolean.class,
-                            boolean.class
-                    );
-            selectorConstructor.setAccessible(true);
-
-            Object selector = selectorConstructor.newInstance(
-                    activity,
-                    true,
-                    true
-            );
-
-            if (!(selector instanceof View)) {
-                throw new IllegalStateException(
-                        "UserSelectorView is not an Android View"
-                );
-            }
-
-            Method setCallback = selectorClass.getDeclaredMethod(
-                    "setCallback",
-                    callbackClass
-            );
-            setCallback.setAccessible(true);
-            setCallback.invoke(
-                    selector,
-                    callback
-            );
-
-            Class<?> builderClass = Class.forName(
-                    "m1.f$e",
-                    false,
-                    classLoader
-            );
-
-            Constructor<?> builderConstructor =
-                    builderClass.getDeclaredConstructor(
-                            Context.class
-                    );
-            builderConstructor.setAccessible(true);
-            Object builder =
-                    builderConstructor.newInstance(activity);
-
-            Method setTitle = builderClass.getDeclaredMethod(
-                    "Z",
-                    int.class
-            );
-            setTitle.setAccessible(true);
-            setTitle.invoke(
-                    builder,
-                    PROFILE_SELECTOR_TITLE_RESOURCE_ID
-            );
-
-            Method setCustomView =
-                    builderClass.getDeclaredMethod(
-                            "o",
-                            View.class,
-                            boolean.class
-                    );
-            setCustomView.setAccessible(true);
-            setCustomView.invoke(
-                    builder,
-                    (View) selector,
-                    false
-            );
-
-            Method show = builderClass.getDeclaredMethod(
-                    "W"
-            );
-            show.setAccessible(true);
-            dialogHolder[0] =
-                    show.invoke(builder);
-
-            if (dialogHolder[0] == null) {
-                throw new IllegalStateException(
-                        "Native profile selector dialog unavailable"
-                );
-            }
 
             Log.i(
                     TAG,
                     "native Profile long-press dialog bridge shown marker="
                             + PROFILE_LONG_PRESS_DIALOG_BRIDGE_MARKER
-                            + " nativePattern=e.B3/UserSelectorView+callback"
+                            + " nativePattern=UserSelectorView(Context,boolean)+dp1.b"
                             + " activity="
                             + activity.getClass().getName()
             );
@@ -2446,24 +1930,15 @@ public final class BoostSearchBottomNavigation {
         }
 
         try {
-            Class<?> utility = Class.forName(
-                    NAVIGATION_UTILITY,
-                    false,
-                    activity.getClassLoader()
-            );
-
-            Method route = utility.getDeclaredMethod(
-                    "t0",
-                    Activity.class
-            );
-            route.setAccessible(true);
-            route.invoke(null, activity);
+            if (!startDirectActivity(activity, SUBSCRIPTIONS_ACTIVITY)) {
+                return false;
+            }
 
             Log.i(
                     TAG,
                     "native Subscriptions long-press cross-activity action marker="
                             + NATIVE_LONG_PRESS_CROSS_ACTIVITY_MARKER
-                            + " nativeAction=i.t0(Activity)"
+                            + " nativeAction=SubscriptionsActivity"
                             + " activity="
                             + activity.getClass().getName()
             );
@@ -2554,13 +2029,7 @@ public final class BoostSearchBottomNavigation {
                 }
 
                 try {
-                    Class<?> baseActivityClass = Class.forName(
-                            BOTTOM_NAV_BASE_ACTIVITY,
-                            false,
-                            activity.getClassLoader()
-                    );
-
-                    if (!baseActivityClass.isInstance(activity)) {
+                    if (!BoostNativeNavigation.isDrawerActivity(activity)) {
                         profileItem.setOnLongClickListener(
                                 new View.OnLongClickListener() {
                                     @Override
@@ -2586,32 +2055,8 @@ public final class BoostSearchBottomNavigation {
                         return;
                     }
 
-                    Class<?> listenerClass = Class.forName(
-                            BOTTOM_NAV_BASE_ACTIVITY + "$y",
-                            false,
-                            activity.getClassLoader()
-                    );
-
-                    Constructor<?> constructor =
-                            listenerClass.getDeclaredConstructor(
-                                    baseActivityClass
-                            );
-                    constructor.setAccessible(true);
-
-                    Object rawListener =
-                            constructor.newInstance(activity);
-
-                    if (
-                            !(rawListener
-                                    instanceof View.OnLongClickListener)
-                    ) {
-                        throw new IllegalStateException(
-                                "Boost Profile listener has wrong type"
-                        );
-                    }
-
                     final View.OnLongClickListener nativeListener =
-                            (View.OnLongClickListener) rawListener;
+                            BoostNativeNavigation.profileLongPress(activity);
 
                     profileItem.setOnLongClickListener(
                             new View.OnLongClickListener() {
@@ -2651,7 +2096,7 @@ public final class BoostSearchBottomNavigation {
                             "native Profile long-press attached marker="
                                     + NATIVE_PROFILE_LONG_PRESS_MARKER
                                     + " listener="
-                                    + listenerClass.getName()
+                                    + "pj0.G1(4,false)"
                                     + " attempts="
                                     + attempts
                     );
@@ -2730,13 +2175,7 @@ public final class BoostSearchBottomNavigation {
                 }
 
                 try {
-                    Class<?> baseActivityClass = Class.forName(
-                            BOTTOM_NAV_BASE_ACTIVITY,
-                            false,
-                            activity.getClassLoader()
-                    );
-
-                    if (!baseActivityClass.isInstance(activity)) {
+                    if (!BoostNativeNavigation.isDrawerActivity(activity)) {
                         subscriptionsItem.setOnLongClickListener(
                                 new View.OnLongClickListener() {
                                     @Override
@@ -2762,32 +2201,8 @@ public final class BoostSearchBottomNavigation {
                         return;
                     }
 
-                    Class<?> listenerClass = Class.forName(
-                            BOTTOM_NAV_BASE_ACTIVITY + "$z",
-                            false,
-                            activity.getClassLoader()
-                    );
-
-                    Constructor<?> constructor =
-                            listenerClass.getDeclaredConstructor(
-                                    baseActivityClass
-                            );
-                    constructor.setAccessible(true);
-
-                    Object rawListener =
-                            constructor.newInstance(activity);
-
-                    if (
-                            !(rawListener
-                                    instanceof View.OnLongClickListener)
-                    ) {
-                        throw new IllegalStateException(
-                                "Boost Subscriptions listener has wrong type"
-                        );
-                    }
-
                     final View.OnLongClickListener nativeListener =
-                            (View.OnLongClickListener) rawListener;
+                            BoostNativeNavigation.subscriptionsLongPress(activity);
 
                     subscriptionsItem.setOnLongClickListener(
                             new View.OnLongClickListener() {
@@ -2827,7 +2242,7 @@ public final class BoostSearchBottomNavigation {
                             "native Subscriptions long-press attached marker="
                                     + NATIVE_SUBSCRIPTIONS_LONG_PRESS_MARKER
                                     + " listener="
-                                    + listenerClass.getName()
+                                    + "pj0.G1(2,false)"
                                     + " attempts="
                                     + attempts
                     );
@@ -2847,27 +2262,7 @@ public final class BoostSearchBottomNavigation {
             Activity activity,
             View navigation
     ) throws Exception {
-        Method getMenu = findMethod(
-                navigation.getClass(),
-                "getMenu"
-        );
-
-        if (getMenu == null) {
-            throw new NoSuchMethodException(
-                    "BottomNavigationView.getMenu"
-            );
-        }
-
-        getMenu.setAccessible(true);
-        Object menuObject = getMenu.invoke(navigation);
-
-        if (!(menuObject instanceof Menu)) {
-            throw new IllegalStateException(
-                    "BottomNavigationView menu unavailable"
-            );
-        }
-
-        Menu menu = (Menu) menuObject;
+        Menu menu = BoostNativeNavigation.menu(navigation);
 
         boolean rebuildOwnedMenu;
 
@@ -2934,25 +2329,13 @@ public final class BoostSearchBottomNavigation {
             }
         }
 
-        invokeOptional(
-                navigation,
-                "setLabelVisibilityMode",
-                new Class<?>[]{int.class},
-                new Object[]{2}
-        );
+        BoostNativeNavigation.setPresentation(navigation);
 
         Log.i(
                 TAG,
                 "Issue #54 shared Search host scoped marker="
                         + "MORPHE_BOOST_ISSUE54_SHARED_HOST_SCOPE_V8"
         );
-        invokeOptional(
-                navigation,
-                "setItemHorizontalTranslationEnabled",
-                new Class<?>[]{boolean.class},
-                new Object[]{false}
-        );
-
         int selectedItemId =
                 selectedItemIdForActivity(
                         activity,
@@ -3312,29 +2695,7 @@ public final class BoostSearchBottomNavigation {
             View navigation,
             int selectedItemId
     ) throws Exception {
-        Method getMenu = findMethod(
-                navigation.getClass(),
-                "getMenu"
-        );
-
-        if (getMenu == null) {
-            throw new NoSuchMethodException(
-                    "BottomNavigationView.getMenu"
-            );
-        }
-
-        getMenu.setAccessible(true);
-
-        Object menuObject =
-                getMenu.invoke(navigation);
-
-        if (!(menuObject instanceof Menu)) {
-            throw new IllegalStateException(
-                    "BottomNavigationView menu unavailable"
-            );
-        }
-
-        Menu menu = (Menu) menuObject;
+        Menu menu = BoostNativeNavigation.menu(navigation);
         MenuItem selectedItem =
                 menu.findItem(selectedItemId);
 
@@ -3366,29 +2727,7 @@ public final class BoostSearchBottomNavigation {
             android.content.res.ColorStateList contrastTint,
             int iconColor
     ) throws Exception {
-        Method getMenu = findMethod(
-                navigation.getClass(),
-                "getMenu"
-        );
-
-        if (getMenu == null) {
-            throw new NoSuchMethodException(
-                    "BottomNavigationView.getMenu"
-            );
-        }
-
-        getMenu.setAccessible(true);
-
-        Object menuObject =
-                getMenu.invoke(navigation);
-
-        if (!(menuObject instanceof Menu)) {
-            throw new IllegalStateException(
-                    "BottomNavigationView menu unavailable"
-            );
-        }
-
-        Menu menu = (Menu) menuObject;
+        Menu menu = BoostNativeNavigation.menu(navigation);
         int renderedIconCount = 0;
 
         for (int index = 0; index < menu.size(); index++) {
@@ -3409,14 +2748,7 @@ public final class BoostSearchBottomNavigation {
 
             itemView.setAlpha(1.0f);
 
-            invokeOptional(
-                    itemView,
-                    "setIconTintList",
-                    new Class<?>[]{
-                        android.content.res.ColorStateList.class
-                    },
-                    new Object[]{contrastTint}
-            );
+            BoostNativeNavigation.setItemIconTint(itemView, contrastTint);
 
             renderedIconCount +=
                     applyRenderedImagesRecursively(
@@ -3545,26 +2877,7 @@ public final class BoostSearchBottomNavigation {
                             iconColor
                     );
 
-            // invokeOptional returns void. Do not assign its result.
-            invokeOptional(
-                    navigation,
-                    "setItemIconTintList",
-                    new Class<?>[]{
-                        android.content.res.ColorStateList.class
-                    },
-                    new Object[]{contrastTint}
-            );
-
-            // Labels are hidden in the canonical bar, but keep their color
-            // aligned if a device/library temporarily exposes them.
-            invokeOptional(
-                    navigation,
-                    "setItemTextColor",
-                    new Class<?>[]{
-                        android.content.res.ColorStateList.class
-                    },
-                    new Object[]{contrastTint}
-            );
+            BoostNativeNavigation.setTint(navigation, contrastTint);
 
             int renderedIconCount =
                     applyRenderedItemIconAppearance(
@@ -3610,9 +2923,8 @@ public final class BoostSearchBottomNavigation {
     }
 
     /**
-     * Boost sets its own listeners once in g3, before our hook; ours replace
-     * them and only capture this activity and view. Re-creating the proxies on
-     * every configure added nothing.
+     * Boost sets its own callback in R1, before our hook. Replace it once;
+     * subsequent configurations retain this activity's selection state.
      */
     private static String attachSelectionListenersOnce(
             Activity activity,
@@ -3624,109 +2936,31 @@ public final class BoostSearchBottomNavigation {
             }
         }
 
-        String listeners =
-                attachSelectedListener(
-                        activity,
-                        navigation
-                )
-                + "+"
-                + attachReselectedListener(
-                        activity,
-                        navigation
-                );
+        BoostNativeNavigation.setSelectionCallback(
+                navigation,
+                new BoostNativeNavigation.SelectionCallback() {
+                    @Override
+                    public boolean onSelected(MenuItem item) {
+                        return preserveSourceSelectionAfterRoute(
+                                activity, item, handleItem(activity, item));
+                    }
+
+                    @Override
+                    public void onReselected(MenuItem item) {
+                        boolean handled = handleReselectedItem(activity, item);
+                        Log.i(TAG, "Bottom navigation reselect routed marker="
+                                + CANONICAL_NAV_MARKER
+                                + " itemId=" + item.getItemId()
+                                + " handled=" + handled);
+                    }
+                }
+        );
 
         synchronized (LISTENERS_ATTACHED) {
             LISTENERS_ATTACHED.put(navigation, Boolean.TRUE);
         }
 
-        return listeners;
-    }
-
-    private static String attachSelectedListener(
-            final Activity activity,
-            final View navigation
-    ) throws Exception {
-        Method setter = findSingleArgumentMethod(
-                navigation.getClass(),
-                "setOnItemSelectedListener"
-        );
-        String api = "setOnItemSelectedListener";
-
-        if (setter == null) {
-            setter = findSingleArgumentMethod(
-                    navigation.getClass(),
-                    "setOnNavigationItemSelectedListener"
-            );
-            api = "setOnNavigationItemSelectedListener";
-        }
-
-        if (setter == null) {
-            throw new NoSuchMethodException(
-                    "No supported BottomNavigationView listener API"
-            );
-        }
-
-        final Class<?> listenerType = setter.getParameterTypes()[0];
-
-        Object listener = Proxy.newProxyInstance(
-                navigation.getClass().getClassLoader(),
-                new Class<?>[]{listenerType},
-                new InvocationHandler() {
-                    @Override
-                    public Object invoke(
-                            Object proxy,
-                            Method method,
-                            Object[] args
-                    ) {
-                        if (method.getDeclaringClass() == Object.class) {
-                            if ("toString".equals(method.getName())) {
-                                return "MorpheSearchBottomNavigationListener";
-                            }
-                            if ("hashCode".equals(method.getName())) {
-                                return System.identityHashCode(proxy);
-                            }
-                            if ("equals".equals(method.getName())) {
-                                return args != null
-                                        && args.length == 1
-                                        && proxy == args[0];
-                            }
-                        }
-
-                        if (
-                                args != null
-                                        && args.length == 1
-                                        && args[0] instanceof MenuItem
-                        ) {
-                            MenuItem item =
-                                    (MenuItem) args[0];
-                            boolean handled =
-                                    handleItem(
-                                            activity,
-                                            item
-                                    );
-
-                            return preserveSourceSelectionAfterRoute(
-                                    activity,
-                                    item,
-                                    handled
-                            );
-                        }
-
-                        if (
-                                method.getReturnType() == boolean.class
-                                        || method.getReturnType() == Boolean.class
-                        ) {
-                            return false;
-                        }
-
-                        return null;
-                    }
-                }
-        );
-
-        setter.setAccessible(true);
-        setter.invoke(navigation, listener);
-        return api;
+        return "MenuBuilder.u";
     }
 
     private static boolean preserveSourceSelectionAfterRoute(
@@ -3776,125 +3010,6 @@ public final class BoostSearchBottomNavigation {
         );
 
         return false;
-    }
-
-    private static String attachReselectedListener(
-            final Activity activity,
-            final View navigation
-    ) throws Exception {
-        Method setter = findSingleArgumentMethod(
-                navigation.getClass(),
-                "setOnItemReselectedListener"
-        );
-
-        if (setter == null) {
-            return "reselect-unavailable";
-        }
-
-        final Class<?> listenerType =
-                setter.getParameterTypes()[0];
-
-        Object listener = Proxy.newProxyInstance(
-                navigation.getClass().getClassLoader(),
-                new Class<?>[]{listenerType},
-                new InvocationHandler() {
-                    @Override
-                    public Object invoke(
-                            Object proxy,
-                            Method method,
-                            Object[] args
-                    ) {
-                        if (
-                                method.getDeclaringClass()
-                                        == Object.class
-                        ) {
-                            if (
-                                    "toString".equals(
-                                            method.getName()
-                                    )
-                            ) {
-                                return "MorpheBottomNavigationReselectedListener";
-                            }
-
-                            if (
-                                    "hashCode".equals(
-                                            method.getName()
-                                    )
-                            ) {
-                                return System.identityHashCode(
-                                        proxy
-                                );
-                            }
-
-                            if (
-                                    "equals".equals(
-                                            method.getName()
-                                    )
-                            ) {
-                                return args != null
-                                        && args.length == 1
-                                        && proxy == args[0];
-                            }
-                        }
-
-                        if (
-                                args != null
-                                        && args.length == 1
-                                        && args[0]
-                                            instanceof MenuItem
-                        ) {
-                            MenuItem item =
-                                    (MenuItem) args[0];
-
-                            boolean handled =
-                                    handleReselectedItem(
-                                            activity,
-                                            item
-                                    );
-
-                            Log.i(
-                                    TAG,
-                                    "Bottom navigation reselect routed marker="
-                                            + CANONICAL_NAV_MARKER
-                                            + " itemId="
-                                            + item.getItemId()
-                                            + " handled="
-                                            + handled
-                            );
-
-                            if (
-                                    method.getReturnType()
-                                            == boolean.class
-                                            || method.getReturnType()
-                                                == Boolean.class
-                            ) {
-                                return handled;
-                            }
-
-                            return null;
-                        }
-
-                        if (
-                                method.getReturnType()
-                                        == boolean.class
-                                        || method.getReturnType()
-                                            == Boolean.class
-                        ) {
-                            return false;
-                        }
-
-                        return null;
-                    }
-                }
-        );
-
-        setter.setAccessible(true);
-        setter.invoke(
-                navigation,
-                listener
-        );
-
-        return "setOnItemReselectedListener";
     }
 
     private static boolean dispatchHomeGoToTop(
@@ -4042,7 +3157,7 @@ public final class BoostSearchBottomNavigation {
             String shownUsername = null;
             Field usernameField = findField(
                     activity.getClass(),
-                    "x"
+                    "Q"
             );
 
             if (usernameField != null) {
@@ -4329,17 +3444,17 @@ public final class BoostSearchBottomNavigation {
         try {
             /*
              * SubredditActivity inherits the current SubscriptionViewModel
-             * from SubmissionsActivity.u. It is the same Parcelable Boost
+             * from SubmissionsActivity.O. It is the same Parcelable Boost
              * saves under "subscription" during activity state handling.
              */
             Field subscriptionField = findField(
                     activity.getClass(),
-                    "u"
+                    "O"
             );
 
             if (subscriptionField == null) {
                 throw new NoSuchFieldException(
-                        "SubmissionsActivity.u"
+                        "SubmissionsActivity.O"
                 );
             }
 
@@ -4399,16 +3514,7 @@ public final class BoostSearchBottomNavigation {
         }
 
         try {
-            Class<?> destination = Class.forName(
-                    SEARCH_ACTIVITY,
-                    false,
-                    activity.getClassLoader()
-            );
-
-            Intent intent = new Intent(
-                    activity,
-                    destination
-            );
+            Intent intent = new Intent().setClassName(activity, SEARCH_ACTIVITY);
             boolean subredditScopeAttached =
                     attachSubredditSearchScope(
                             activity,
@@ -4553,13 +3659,7 @@ public final class BoostSearchBottomNavigation {
 
     private static boolean openHome(Activity activity) {
         try {
-            Class<?> destination = Class.forName(
-                    MAIN_ACTIVITY,
-                    false,
-                    activity.getClassLoader()
-            );
-
-            Intent intent = new Intent(activity, destination);
+            Intent intent = new Intent().setClassName(activity, MAIN_ACTIVITY);
 
             if (isMainActivityTaskRoot(activity)) {
                 intent.addFlags(
@@ -4615,41 +3715,26 @@ public final class BoostSearchBottomNavigation {
 
         try {
             /*
-             * Authoritative Boost 1.12.12 smali:
-             *
-             * SubredditActivity.j6() builds GoToGenericActivity through
-             * i.a(Context, false), attaches the current
-             * SubmissionsActivity.u SubscriptionViewModel as
-             * "target_subscription", starts it for result with request 0x8f,
-             * and applies Boost's native transition.
+             * Boost 1.14.0's SubredditActivity.F1() attaches the current
+             * SubmissionsActivity.O as "target_subscription", starts
+             * GoToGenericActivity for result with request 0x8f, and applies
+             * Boost's native transition.
              *
              * GoToGenericActivity applies Boost's own preference gate before
              * scrolling to that target. Do not duplicate that policy here.
              */
-            Method route = findMethod(
-                    activity.getClass(),
-                    "j6"
-            );
-
-            if (route == null) {
-                throw new NoSuchMethodException(
-                        "SubredditActivity.j6"
-                );
-            }
-
-            route.setAccessible(true);
-            route.invoke(activity);
+            boolean handled = BoostNativeNavigation.openCurrentSubredditSubscriptions(activity);
 
             Log.i(
                     TAG,
                     "Current subreddit Subscriptions route marker="
                             + CURRENT_SUBREDDIT_SUBSCRIPTIONS_MARKER
-                            + " handled=true"
+                            + " handled=" + handled
                             + " activity="
                             + activity.getClass().getName()
             );
 
-            return true;
+            return handled;
         } catch (Throwable error) {
             Log.w(
                     TAG,
@@ -4662,43 +3747,27 @@ public final class BoostSearchBottomNavigation {
     }
 
     private static boolean openSubscriptions(Activity activity) {
-        if (openSubscriptionsFromCurrentSubreddit(activity)) {
-            return true;
+        if (activity != null && SUBREDDIT_ACTIVITY.equals(activity.getClass().getName())) {
+            return openSubscriptionsFromCurrentSubreddit(activity);
         }
 
         try {
-            Class<?> utility = Class.forName(
-                    NAVIGATION_UTILITY,
-                    false,
-                    activity.getClassLoader()
+            // The native Go To entry was inlined in 1.14.0.
+            Intent intent = new Intent().setClassName(activity, GO_TO_ACTIVITY);
+            intent.putExtra("keyboard_visible", false);
+            activity.startActivity(intent);
+            Log.i(
+                    TAG,
+                    "Subscriptions caller preserved marker="
+                            + ACTIVITY_STACK_STATE_MARKER
+                            + " from="
+                            + activity.getClass().getName()
             );
-
-            Method route = findMethod(
-                    utility,
-                    "Z",
-                    Context.class
-            );
-
-            if (route != null) {
-                route.setAccessible(true);
-                route.invoke(null, activity);
-                Log.i(
-                        TAG,
-                        "Subscriptions caller preserved marker="
-                                + ACTIVITY_STACK_STATE_MARKER
-                                + " from="
-                                + activity.getClass().getName()
-                );
-                return true;
-            }
+            return true;
         } catch (Throwable error) {
-            Log.w(TAG, "Native subscriptions route failed", error);
+            Log.e(TAG, "Subscriptions route failed", error);
+            return false;
         }
-
-        return startDirectActivity(
-                activity,
-                SUBSCRIPTIONS_ACTIVITY
-        );
     }
 
     private static boolean openInbox(Activity activity) {
@@ -4725,16 +3794,7 @@ public final class BoostSearchBottomNavigation {
                 return false;
             }
 
-            Method openProfile = findMethod(
-                    activity.getClass(),
-                    "openProfile",
-                    String.class
-            );
-
-            if (openProfile == null) return false;
-
-            openProfile.setAccessible(true);
-            openProfile.invoke(activity, username);
+            BoostNativeNavigation.openProfile(activity, username);
             Log.i(
                     TAG,
                     "Profile caller preserved marker="
@@ -4754,14 +3814,8 @@ public final class BoostSearchBottomNavigation {
             String destinationClassName
     ) {
         try {
-            Class<?> destination = Class.forName(
-                    destinationClassName,
-                    false,
-                    activity.getClassLoader()
-            );
-
             activity.startActivity(
-                    new Intent(activity, destination)
+                    new Intent().setClassName(activity, destinationClassName)
             );
             Log.i(
                     TAG,
@@ -4785,17 +3839,7 @@ public final class BoostSearchBottomNavigation {
 
     private static boolean isLoggedIn(Activity activity) {
         try {
-            Class<?> baseActivity = Class.forName(
-                    BASE_ACTIVITY,
-                    false,
-                    activity.getClassLoader()
-            );
-            Method method = findMethod(baseActivity, "isLoggedIn");
-
-            if (method == null) return false;
-
-            method.setAccessible(true);
-            return Boolean.TRUE.equals(method.invoke(null));
+            return BoostNativeNavigation.isLoggedIn();
         } catch (Throwable error) {
             Log.w(TAG, "Login-state check failed", error);
             return false;
@@ -4804,28 +3848,7 @@ public final class BoostSearchBottomNavigation {
 
     private static String currentUsername(Activity activity) {
         try {
-            Class<?> managerClass = Class.forName(
-                    ACCOUNT_MANAGER,
-                    false,
-                    activity.getClassLoader()
-            );
-            Method getInstance = findMethod(managerClass, "V");
-
-            if (getInstance == null) return null;
-
-            getInstance.setAccessible(true);
-            Object manager = getInstance.invoke(null);
-            if (manager == null) return null;
-
-            Method getUsername = findMethod(manager.getClass(), "b");
-            if (getUsername == null) return null;
-
-            getUsername.setAccessible(true);
-            Object value = getUsername.invoke(manager);
-
-            return value instanceof String
-                    ? (String) value
-                    : null;
+            return BoostNativeNavigation.currentUsername();
         } catch (Throwable error) {
             Log.w(TAG, "Username lookup failed", error);
             return null;
@@ -4868,49 +3891,6 @@ public final class BoostSearchBottomNavigation {
         );
     }
 
-    private static Method findSingleArgumentMethod(
-            Class<?> type,
-            String name
-    ) {
-        Class<?> current = type;
-
-        while (current != null) {
-            for (Method method : current.getDeclaredMethods()) {
-                if (
-                        name.equals(method.getName())
-                                && method.getParameterTypes().length == 1
-                ) {
-                    return method;
-                }
-            }
-
-            current = current.getSuperclass();
-        }
-
-        return null;
-    }
-
-    private static Method findMethod(
-            Class<?> type,
-            String name,
-            Class<?>... parameterTypes
-    ) {
-        Class<?> current = type;
-
-        while (current != null) {
-            try {
-                return current.getDeclaredMethod(
-                        name,
-                        parameterTypes
-                );
-            } catch (NoSuchMethodException ignored) {
-                current = current.getSuperclass();
-            }
-        }
-
-        return null;
-    }
-
     private static Field findField(
             Class<?> type,
             String name
@@ -4928,34 +3908,4 @@ public final class BoostSearchBottomNavigation {
         return null;
     }
 
-    private static void invokeRequired(
-            Object receiver,
-            String name,
-            Class<?>[] parameterTypes,
-            Object[] arguments
-    ) throws Exception {
-        Method method = receiver
-                .getClass()
-                .getMethod(name, parameterTypes);
-
-        method.setAccessible(true);
-        method.invoke(receiver, arguments);
-    }
-
-    private static void invokeOptional(
-            Object receiver,
-            String name,
-            Class<?>[] parameterTypes,
-            Object[] arguments
-    ) {
-        try {
-            invokeRequired(
-                    receiver,
-                    name,
-                    parameterTypes,
-                    arguments
-            );
-        } catch (Throwable ignored) {
-        }
-    }
 }

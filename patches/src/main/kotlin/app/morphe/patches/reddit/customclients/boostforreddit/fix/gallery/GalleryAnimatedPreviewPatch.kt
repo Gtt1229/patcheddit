@@ -11,18 +11,17 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
-import app.morphe.util.addInstructionsAtControlFlowLabel
-import com.android.tools.smali.dexlib2.Opcode
+import app.morphe.patches.reddit.customclients.boostforreddit.wrapHook
 import app.morphe.patches.all.misc.PatchCategory
 
 private const val GALLERY_ACTIVITY_DESCRIPTOR =
     "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity;"
 
 private const val GALLERY_PAGE_LISTENER_DESCRIPTOR =
-    "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity\$b;"
+    "Lg21;"
 
 private const val GALLERY_PAGE_ADAPTER_DESCRIPTOR =
-    "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity\$c;"
+    "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity\$b;"
 
 private const val GALLERY_PREVIEW_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/gallery/GalleryAnimatedPreview;"
@@ -65,61 +64,22 @@ val galleryAnimatedPreviewPatch = bytecodePatch(
             """.trimIndent(),
         )
 
-        /*
-         * Record the adapter position before Boost replaces p1 with its
-         * ImageModel. Every RETURN_OBJECT then registers the created Fragment
-         * against that position. v0 is an existing local in this method.
-         */
-        galleryPageFactoryFingerprint.method.apply {
-            addInstructions(
-                0,
-                """
-                    iget-object v0, p0, $GALLERY_PAGE_ADAPTER_DESCRIPTOR->j:$GALLERY_ACTIVITY_DESCRIPTOR
-                    invoke-static {v0, p1}, $GALLERY_PREVIEW_EXTENSION_DESCRIPTOR->beginPage(Ljava/lang/Object;I)V
-                """.trimIndent(),
-            )
+        galleryPageFactoryFingerprint.wrapHook(
+            before = """
+                iget-object v1, p0, $GALLERY_PAGE_ADAPTER_DESCRIPTOR->i:$GALLERY_ACTIVITY_DESCRIPTOR
+                invoke-static {v1, p1}, $GALLERY_PREVIEW_EXTENSION_DESCRIPTOR->beginPage(Ljava/lang/Object;I)V
+            """,
+            after = """
+                iget-object v1, p0, $GALLERY_PAGE_ADAPTER_DESCRIPTOR->i:$GALLERY_ACTIVITY_DESCRIPTOR
+                invoke-static {v1, v0}, $GALLERY_PREVIEW_EXTENSION_DESCRIPTOR->registerPage(Ljava/lang/Object;Ljava/lang/Object;)V
+            """,
+        )
 
-            val returnIndices = implementation!!.instructions
-                .withIndex()
-                .mapNotNull { (index, instruction) ->
-                    if (instruction.opcode == Opcode.RETURN_OBJECT) index else null
-                }
-
-            check(returnIndices.isNotEmpty()) {
-                "GalleryActivity page factory has no RETURN_OBJECT"
-            }
-
-            returnIndices.asReversed().forEach { index ->
-                addInstructionsAtControlFlowLabel(
-                    index,
-                    """
-                        iget-object v0, p0, $GALLERY_PAGE_ADAPTER_DESCRIPTOR->j:$GALLERY_ACTIVITY_DESCRIPTOR
-                        invoke-static {v0, p1}, $GALLERY_PREVIEW_EXTENSION_DESCRIPTOR->registerPage(Ljava/lang/Object;Ljava/lang/Object;)V
-                    """.trimIndent(),
-                )
-            }
-        }
-
-        imageModelFragmentOnCreateViewFingerprint.method.apply {
-            val returnIndices = implementation!!.instructions
-                .withIndex()
-                .mapNotNull { (index, instruction) ->
-                    if (instruction.opcode == Opcode.RETURN_OBJECT) index else null
-                }
-
-            check(returnIndices.isNotEmpty()) {
-                "ImageModelFragment.onCreateView has no RETURN_OBJECT"
-            }
-
-            returnIndices.asReversed().forEach { index ->
-                addInstructionsAtControlFlowLabel(
-                    index,
-                    """
-                        invoke-static {p0, p1}, $GALLERY_PREVIEW_EXTENSION_DESCRIPTOR->bindPage(Ljava/lang/Object;Landroid/view/View;)V
-                    """.trimIndent(),
-                )
-            }
-        }
+        imageModelFragmentOnCreateViewFingerprint.wrapHook(
+            after = """
+                invoke-static {p0, v0}, $GALLERY_PREVIEW_EXTENSION_DESCRIPTOR->bindPage(Ljava/lang/Object;Landroid/view/View;)V
+            """,
+        )
 
         imageModelFragmentOnDestroyFingerprint.method.addInstructions(
             0,

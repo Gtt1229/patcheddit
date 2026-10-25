@@ -9,29 +9,29 @@ package app.morphe.patches.reddit.customclients.boostforreddit.fix.flair
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
-import app.morphe.util.indexOfFirstInstructionReversedOrThrow
-import com.android.tools.smali.dexlib2.Opcode
+import app.morphe.util.getReference
+import app.morphe.util.indexOfFirstInstructionOrThrow
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import app.morphe.patches.all.misc.PatchCategory
 
 private const val FLAIR_CONTRAST_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostFlairContrast;"
 
-// FlairColors(FlairModel, defaultTextColor, defaultBackgroundColor):
-// field a = background color, field b = text color.
-private const val FLAIR_COLORS =
-    "Lcom/rubenmayayo/reddit/ui/customviews/m;"
+private const val RICH_FLAIR_VIEW =
+    "Lcom/rubenmayayo/reddit/models/reddit/RichFlairView;"
 
-private val flairColorsConstructorFingerprint = Fingerprint(
-    definingClass = FLAIR_COLORS,
-    name = "<init>",
+private val flairColorsFingerprint = Fingerprint(
+    definingClass = RICH_FLAIR_VIEW,
+    name = "c",
     returnType = "V",
     parameters = listOf(
         "Lcom/rubenmayayo/reddit/models/reddit/FlairModel;",
-        "I",
-        "I",
+        "Z",
     ),
 )
 
@@ -47,19 +47,22 @@ val readableFlairLabelsPatch = bytecodePatch(
     compatibleWith(*AppCompatibility.Boost)
 
     execute {
-        flairColorsConstructorFingerprint.method.apply {
-            val returnIndex = indexOfFirstInstructionReversedOrThrow {
-                opcode == Opcode.RETURN_VOID
+        flairColorsFingerprint.method.apply {
+            val backgroundIndex = indexOfFirstInstructionOrThrow {
+                getReference<MethodReference>()?.toString() ==
+                    "Landroid/graphics/drawable/GradientDrawable;->setColor(I)V"
             }
-
+            val textIndex = indexOfFirstInstructionOrThrow {
+                getReference<MethodReference>()?.toString() == "$RICH_FLAIR_VIEW->setTextColor(I)V"
+            }
+            check(backgroundIndex < textIndex)
+            val backgroundRegister = getInstruction<FiveRegisterInstruction>(backgroundIndex).registerD
+            val textRegister = getInstruction<FiveRegisterInstruction>(textIndex).registerD
             addInstructions(
-                returnIndex,
+                textIndex,
                 """
-                    iget p1, p0, $FLAIR_COLORS->b:I
-                    iget p2, p0, $FLAIR_COLORS->a:I
-                    invoke-static {p1, p2}, $FLAIR_CONTRAST_EXTENSION_DESCRIPTOR->readableTextColor(II)I
-                    move-result p1
-                    iput p1, p0, $FLAIR_COLORS->b:I
+                    invoke-static {v$textRegister, v$backgroundRegister}, $FLAIR_CONTRAST_EXTENSION_DESCRIPTOR->readableTextColor(II)I
+                    move-result v$textRegister
                 """,
             )
         }

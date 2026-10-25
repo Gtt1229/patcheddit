@@ -37,7 +37,6 @@ import androidx.fragment.app.Fragment;
 
 import app.morphe.extension.boost.utils.BoostSystemBarInsetsFix;
 
-import java.lang.reflect.Field;
 
 /** Morphe-owned post-view controls backed by Boost's canonical preferences. */
 public final class MorpheSettingsV4PostViewsFragment extends Fragment {
@@ -165,7 +164,7 @@ public final class MorpheSettingsV4PostViewsFragment extends Fragment {
                 "Thumbnails on left",
                 "Place post thumbnails on the left side",
                 preferences.getBoolean(KEY_LEFT_HANDED, false),
-                checked -> putBoolean(KEY_LEFT_HANDED, checked, "h")
+                checked -> putBoolean(KEY_LEFT_HANDED, checked, "g")
         );
         addSwitchRow(
                 layoutGroup,
@@ -181,25 +180,25 @@ public final class MorpheSettingsV4PostViewsFragment extends Fragment {
         LinearLayout cardsGroup = addGroup(content);
         addSwitchRow(cardsGroup, "Rounded corners", null,
                 preferences.getBoolean(KEY_CARDS_ROUNDED, false),
-                checked -> putBoolean(KEY_CARDS_ROUNDED, checked, "g"));
+                checked -> putBoolean(KEY_CARDS_ROUNDED, checked, "f"));
         addSwitchRow(cardsGroup, "Full height images",
                 "Turn off to use fixed-height images",
                 preferences.getBoolean(KEY_CARDS_FULL_PREVIEW, false),
-                checked -> putBoolean(KEY_CARDS_FULL_PREVIEW, checked, "g"));
+                checked -> putBoolean(KEY_CARDS_FULL_PREVIEW, checked, "f"));
         addSwitchRow(cardsGroup, "Show community icon", null,
                 preferences.getBoolean(KEY_CARDS_SUBREDDIT_ICON, true),
-                checked -> putBoolean(KEY_CARDS_SUBREDDIT_ICON, checked, "g"));
+                checked -> putBoolean(KEY_CARDS_SUBREDDIT_ICON, checked, "f"));
         addSwitchRow(cardsGroup, "Carousel for multiple images", null,
                 preferences.getBoolean(KEY_CARDS_GALLERY_CAROUSEL, true),
-                checked -> putBoolean(KEY_CARDS_GALLERY_CAROUSEL, checked, "g"));
+                checked -> putBoolean(KEY_CARDS_GALLERY_CAROUSEL, checked, "f"));
         addSwitchRow(cardsGroup, "Show thumbnails for link posts",
                 "Turn off to use large image previews",
                 preferences.getBoolean(KEY_CARDS_LINK_THUMBNAILS, true),
-                checked -> putBoolean(KEY_CARDS_LINK_THUMBNAILS, checked, "g"));
+                checked -> putBoolean(KEY_CARDS_LINK_THUMBNAILS, checked, "f"));
         addSwitchRow(cardsGroup, "Preview text from posts", null,
                 preferences.getBoolean(KEY_CARDS_PREVIEW_TEXT, true),
                 checked -> {
-                    putBoolean(KEY_CARDS_PREVIEW_TEXT, checked, "g");
+                    putBoolean(KEY_CARDS_PREVIEW_TEXT, checked, "f");
                     setPreviewLinesEnabled(checked);
                 });
         previewLinesRow = addSeekBarRow(
@@ -217,15 +216,15 @@ public final class MorpheSettingsV4PostViewsFragment extends Fragment {
         LinearLayout miniCardsGroup = addGroup(content);
         addSwitchRow(miniCardsGroup, "Rounded corners", null,
                 preferences.getBoolean(KEY_MINI_ROUNDED, true),
-                checked -> putBoolean(KEY_MINI_ROUNDED, checked, "g"));
+                checked -> putBoolean(KEY_MINI_ROUNDED, checked, "f"));
         addSwitchRow(miniCardsGroup, "Truncate title",
                 "Limit the post title to two lines",
                 preferences.getBoolean(KEY_MINI_TRUNCATE_TITLE, true),
-                checked -> putBoolean(KEY_MINI_TRUNCATE_TITLE, checked, "g"));
+                checked -> putBoolean(KEY_MINI_TRUNCATE_TITLE, checked, "f"));
         addSwitchRow(miniCardsGroup, "Buttons always visible",
                 "When off, long-press to show buttons",
                 preferences.getBoolean(KEY_MINI_BUTTONS, false),
-                checked -> putBoolean(KEY_MINI_BUTTONS, checked, "g"));
+                checked -> putBoolean(KEY_MINI_BUTTONS, checked, "f"));
 
         addSpace(content, 24);
         addSectionLabel(content, "Dense");
@@ -234,7 +233,7 @@ public final class MorpheSettingsV4PostViewsFragment extends Fragment {
         addSwitchRow(denseGroup, "Buttons always visible",
                 "When off, long-press to show buttons",
                 preferences.getBoolean(KEY_DENSE_BUTTONS, false),
-                checked -> putBoolean(KEY_DENSE_BUTTONS, checked, "h"));
+                checked -> putBoolean(KEY_DENSE_BUTTONS, checked, "g"));
 
         addSpace(content, 24);
         addSectionLabel(content, "Swipe");
@@ -247,7 +246,7 @@ public final class MorpheSettingsV4PostViewsFragment extends Fragment {
         addSwitchRow(swipeGroup, "Lock sidebar",
                 "Disable opening the sidebar with a swipe",
                 preferences.getBoolean(KEY_LOCK_SIDEBAR, false),
-                checked -> putBoolean(KEY_LOCK_SIDEBAR, checked, "i"));
+                checked -> putBoolean(KEY_LOCK_SIDEBAR, checked, "h"));
 
         return scrollView;
     }
@@ -497,7 +496,7 @@ public final class MorpheSettingsV4PostViewsFragment extends Fragment {
     ) {
         preferences.edit().putBoolean(KEY_SUBREDDIT_PREFIX, enabled).apply();
         setBoostStaticString("c", enabled ? "r/" : "");
-        setBoostStaticBoolean("i");
+        setBoostStaticBoolean("h");
     }
 
     static void applyDefaultViewPreference(
@@ -518,7 +517,7 @@ public final class MorpheSettingsV4PostViewsFragment extends Fragment {
             throw new IllegalArgumentException("preview lines outside 0..100");
         }
         preferences.edit().putInt(KEY_CARDS_PREVIEW_LINES, value).apply();
-        setBoostStaticBoolean("g");
+        setBoostStaticBoolean("f");
     }
 
     private static int indexOf(String[] values, String target) {
@@ -531,23 +530,14 @@ public final class MorpheSettingsV4PostViewsFragment extends Fragment {
     }
 
     private static void setBoostStaticBoolean(String fieldName) {
-        try {
-            Class<?> settings = Class.forName("id.b");
-            Field field = settings.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.setBoolean(null, true);
-        } catch (Throwable ignored) {
-        }
+        BoostSettingsNative.markDirty(fieldName);
     }
 
     private static void setBoostStaticString(String fieldName, String value) {
-        try {
-            Class<?> settings = Class.forName("id.b");
-            Field field = settings.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(null, value);
-        } catch (Throwable ignored) {
+        if (!"c".equals(fieldName)) {
+            throw new IllegalArgumentException("unsupported Boost string field " + fieldName);
         }
+        BoostSettingsNative.setSubredditPrefix(value);
     }
 
     private void openMorpheFragment(String fragmentName) {

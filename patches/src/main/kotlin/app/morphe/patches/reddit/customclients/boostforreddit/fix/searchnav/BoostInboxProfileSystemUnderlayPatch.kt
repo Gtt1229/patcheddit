@@ -7,11 +7,10 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.searchnav
 import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
-import com.android.tools.smali.dexlib2.Opcode
+import app.morphe.patches.reddit.customclients.boostforreddit.wrapHook
 import app.morphe.patches.all.misc.PatchCategory
 
 private const val UNIFIED_MATERIAL_NAV_PATCH_MARKER =
@@ -66,50 +65,11 @@ val boostInboxProfileSystemUnderlayPatch = bytecodePatch(
                 "MORPHE_BOOST_INBOX_PROFILE_UNDERLAY_LIFECYCLE_V74"
         )
 
-        messagesActivityUnderlayLifecycleFingerprint.method.apply {
-            val returnIndices =
-                implementation!!.instructions
-                    .withIndex()
-                    .filter { (_, instruction) ->
-                        instruction.opcode == Opcode.RETURN_VOID
-                    }
-                    .map { (index, _) -> index }
-
-            require(returnIndices.isNotEmpty()) {
-                "MessagesActivity.onResume has no RETURN_VOID instruction"
-            }
-
-            returnIndices.asReversed().forEach { returnIndex ->
-                addInstructions(
-                    returnIndex,
-                    """
-                        invoke-static {p0}, $INBOX_PROFILE_EXTENSION_DESCRIPTOR->standardizeInbox(Landroid/app/Activity;)V
-                    """.trimIndent(),
-                )
-            }
-        }
-
-        userActivityUnderlayLifecycleFingerprint.method.apply {
-            val returnIndices =
-                implementation!!.instructions
-                    .withIndex()
-                    .filter { (_, instruction) ->
-                        instruction.opcode == Opcode.RETURN_VOID
-                    }
-                    .map { (index, _) -> index }
-
-            require(returnIndices.isNotEmpty()) {
-                "UserActivity.onCreate has no RETURN_VOID instruction"
-            }
-
-            returnIndices.asReversed().forEach { returnIndex ->
-                addInstructions(
-                    returnIndex,
-                    """
-                        invoke-static {p0}, $INBOX_PROFILE_EXTENSION_DESCRIPTOR->standardizeProfile(Landroid/app/Activity;)V
-                    """.trimIndent(),
-                )
-            }
-        }
+        messagesActivityUnderlayLifecycleFingerprint.wrapHook(
+            after = "invoke-static {p0}, $INBOX_PROFILE_EXTENSION_DESCRIPTOR->standardizeInbox(Landroid/app/Activity;)V",
+        )
+        userActivityUnderlayLifecycleFingerprint.wrapHook(
+            after = "invoke-static {p0}, $INBOX_PROFILE_EXTENSION_DESCRIPTOR->standardizeProfile(Landroid/app/Activity;)V",
+        )
     }
 }

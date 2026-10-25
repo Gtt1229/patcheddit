@@ -13,10 +13,13 @@ import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import app.morphe.extension.boost.navigation.BoostNativeListings;
+import app.morphe.extension.boost.navigation.BoostNativeNavigation;
+
+import com.rubenmayayo.reddit.models.reddit.SubmissionModel;
+
+import net.dean.jraw.models.Submission;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,7 +36,7 @@ import java.util.WeakHashMap;
  *
  * The native loader still runs first. Only an empty/non-renderable native
  * result falls back to public HOT listings, converted into Boost's own
- * TrendingSearch and SubmissionModel objects through reflection.
+ * TrendingSearch and SubmissionModel objects through typed 1.14.0 bindings.
  */
 public final class SidebarTrendingPosts {
     private static final String TAG = "MorpheSidebarTrending";
@@ -114,8 +117,8 @@ public final class SidebarTrendingPosts {
         }
 
         try {
-            Object activity = invokeNoArg(fragment, "getActivity");
-            String community = resolveCurrentCommunity(activity);
+            String community = resolveCurrentCommunity(
+                BoostNativeListings.fragmentActivity(fragment));
             View limitGroup = findView(root, "limit_group");
 
             if (limitGroup == null) {
@@ -182,13 +185,7 @@ public final class SidebarTrendingPosts {
         }
 
         try {
-            Field itemViewField = holder.getClass().getField("itemView");
-            Object value = itemViewField.get(holder);
-            if (!(value instanceof View)) {
-                return;
-            }
-
-            View descriptionView = findView((View) value, "item_description");
+            View descriptionView = findView(BoostNativeListings.holderView(holder), "item_description");
             if (!(descriptionView instanceof TextView)) {
                 return;
             }
@@ -211,23 +208,8 @@ public final class SidebarTrendingPosts {
         }
 
         try {
-            Class<?> current = fragment.getClass();
-            while (current != null) {
-                for (Field field : current.getDeclaredFields()) {
-                    if (!"od.d".equals(field.getType().getName())) {
-                        continue;
-                    }
-                    field.setAccessible(true);
-                    Object viewModel = field.get(fragment);
-                    if (viewModel != null) {
-                        viewModel.getClass().getMethod("h").invoke(viewModel);
-                        log("load_trigger=immediate marker=" + MARKER);
-                        return;
-                    }
-                }
-                current = current.getSuperclass();
-            }
-            log("load_trigger=view_model_missing marker=" + MARKER);
+            BoostNativeListings.reloadTrending(fragment);
+            log("load_trigger=immediate marker=" + MARKER);
         } catch (Throwable t) {
             logFailure("load_trigger_failed", t);
         }
@@ -235,10 +217,7 @@ public final class SidebarTrendingPosts {
 
     private static List loadNativeRows() {
         try {
-            Class<?> repositoryClass = Class.forName("xb.l");
-            Object repository = repositoryClass.getMethod("V").invoke(null);
-            Object value = repositoryClass.getMethod("x0").invoke(repository);
-            return value instanceof List ? (List) value : Collections.emptyList();
+            return BoostNativeListings.nativeTrendingRows();
         } catch (Throwable t) {
             logFailure("native_load_failed", t);
             return Collections.emptyList();
@@ -253,44 +232,40 @@ public final class SidebarTrendingPosts {
 
         for (Object row : rows) {
             try {
-                Object submissions = row.getClass().getMethod("b").invoke(row);
-                if (submissions instanceof List && !((List) submissions).isEmpty()) {
+                if (!BoostNativeListings.trendingSubmissions(row).isEmpty()) {
                     result.add(row);
                 }
-            } catch (Throwable ignored) {
+            } catch (Throwable error) {
+                logFailure("native_row_invalid", error);
             }
         }
         return result;
     }
 
     private static List<Object> fetchFallbackRows() throws Exception {
-        Object client = getBoostRedditClient();
-        boolean includeNsfw = includeNsfw();
+        boolean includeNsfw = BoostNativeListings.includeNsfw();
 
-        List raw = fetchHotListing(client, "popular");
+        List<Submission> raw = BoostNativeListings.hotSubmissions("popular", LISTING_LIMIT);
         if (raw.isEmpty()) {
-            raw = fetchHotListing(client, "all");
+            raw = BoostNativeListings.hotSubmissions("all", LISTING_LIMIT);
         }
 
         ArrayList<Object> rows = new ArrayList<Object>();
         Set<String> seen = new HashSet<String>();
 
         for (int i = 0; i < raw.size() && rows.size() < FINAL_LIMIT; i++) {
-            Object submission = raw.get(i);
-            if (submission == null || isTrue(submission, "isStickied")) {
+            Submission submission = raw.get(i);
+            if (submission == null || Boolean.TRUE.equals(submission.isStickied())) {
                 continue;
             }
-            if (isTrue(submission, "isPromoted") || isTrue(submission, "isAdvertisement")) {
+            if (BoostNativeListings.isPromoted(submission)) {
                 continue;
             }
-            if (!includeNsfw && (isTrue(submission, "isNsfw") || isTrue(submission, "isOver18"))) {
+            if (!includeNsfw && Boolean.TRUE.equals(submission.isNsfw())) {
                 continue;
             }
 
-            String title = firstNonEmpty(
-                callString(submission, "getTitle"),
-                jsonString(submission, "title")
-            );
+            String title = submission.getTitle();
             if (title == null) {
                 continue;
             }
@@ -300,23 +275,16 @@ public final class SidebarTrendingPosts {
             }
 
             String dedupe = firstNonEmpty(
-                callString(submission, "getFullName"),
-                callString(submission, "getId"),
+                submission.getFullName(),
+                submission.getId(),
                 title.toLowerCase(Locale.US)
             );
             if (dedupe == null || !seen.add(dedupe)) {
                 continue;
             }
 
-            Object model = makeSubmissionModel(submission);
-            if (model == null) {
-                continue;
-            }
-
-            Object row = makeTrendingRow(title, model);
-            if (row != null) {
-                rows.add(row);
-            }
+            SubmissionModel model = BoostNativeListings.submissionModel(submission);
+            rows.add(BoostNativeListings.trendingRow(title, model));
         }
 
         if (!rows.isEmpty()) {
@@ -328,195 +296,23 @@ public final class SidebarTrendingPosts {
         return rows;
     }
 
-    private static List fetchHotListing(Object client, String source) throws Exception {
-        Class<?> paginatorClass = Class.forName("net.dean.jraw.paginators.SubredditPaginator");
-        Object paginator = constructSourcePaginator(paginatorClass, client, source);
-        if (paginator == null) {
-            throw new NoSuchMethodException("SubredditPaginator for " + source);
-        }
-
-        applySorting(paginator, "HOT");
-        applyLimit(paginator, LISTING_LIMIT);
-
-        Object listing = paginator.getClass().getMethod("next").invoke(paginator);
-        if (!(listing instanceof Iterable)) {
-            return Collections.emptyList();
-        }
-
-        ArrayList<Object> result = new ArrayList<Object>();
-        for (Object item : (Iterable) listing) {
-            result.add(item);
-        }
-        return result;
-    }
-
-    private static Object constructSourcePaginator(Class<?> paginatorClass, Object client, String source) {
-        for (Constructor<?> constructor : paginatorClass.getConstructors()) {
-            try {
-                Class<?>[] parameters = constructor.getParameterTypes();
-                if (parameters.length == 3
-                    && parameters[0].isAssignableFrom(client.getClass())
-                    && parameters[1] == String.class
-                    && parameters[2].isArray()
-                    && parameters[2].getComponentType() == String.class) {
-                    return constructor.newInstance(new Object[] { client, source, new String[0] });
-                }
-                if (parameters.length == 2
-                    && parameters[0].isAssignableFrom(client.getClass())
-                    && parameters[1] == String.class) {
-                    return constructor.newInstance(client, source);
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-        return null;
-    }
-
-    private static void applySorting(Object paginator, String wanted) throws Exception {
-        for (Method method : paginator.getClass().getMethods()) {
-            Class<?>[] parameters = method.getParameterTypes();
-            String name = method.getName().toLowerCase(Locale.US);
-            if (parameters.length != 1 || !parameters[0].isEnum()) {
-                continue;
-            }
-            if (!name.contains("sort") && !name.contains("where")) {
-                continue;
-            }
-            Object value = enumConstant(parameters[0], wanted);
-            if (value != null) {
-                method.invoke(paginator, value);
-                return;
-            }
-        }
-        throw new NoSuchMethodException("HOT sorting setter");
-    }
-
-    private static void applyLimit(Object paginator, int limit) {
-        for (String name : new String[] { "setLimit", "limit" }) {
-            try {
-                paginator.getClass().getMethod(name, int.class).invoke(paginator, Integer.valueOf(limit));
-                return;
-            } catch (Throwable ignored) {
-            }
-        }
-    }
-
-    private static Object enumConstant(Class<?> enumClass, String wanted) {
-        Object[] constants = enumClass.getEnumConstants();
-        if (constants == null) {
-            return null;
-        }
-        for (Object constant : constants) {
-            if (constant != null && wanted.equalsIgnoreCase(String.valueOf(constant))) {
-                return constant;
-            }
-        }
-        return null;
-    }
-
-    private static Object makeSubmissionModel(Object submission) {
-        try {
-            Class<?> modelClass = Class.forName("com.rubenmayayo.reddit.models.reddit.SubmissionModel");
-            for (Method method : modelClass.getDeclaredMethods()) {
-                Class<?>[] parameters = method.getParameterTypes();
-                if (!Modifier.isStatic(method.getModifiers())
-                    || parameters.length != 1
-                    || !modelClass.isAssignableFrom(method.getReturnType())
-                    || !parameters[0].isAssignableFrom(submission.getClass())) {
-                    continue;
-                }
-                method.setAccessible(true);
-                Object result = method.invoke(null, submission);
-                if (result != null) {
-                    return result;
-                }
-            }
-        } catch (Throwable t) {
-            logFailure("submission_model_failed", t);
-        }
-        return null;
-    }
-
-    private static Object makeTrendingRow(String title, Object submissionModel) {
-        try {
-            Class<?> rowClass = Class.forName("com.rubenmayayo.reddit.models.reddit.m");
-            Object row = rowClass.getConstructor().newInstance();
-            rowClass.getMethod("c", String.class).invoke(row, title);
-            ArrayList<Object> models = new ArrayList<Object>();
-            models.add(submissionModel);
-            rowClass.getMethod("d", List.class).invoke(row, models);
-            return row;
-        } catch (Throwable t) {
-            logFailure("trending_row_failed", t);
-            return null;
-        }
-    }
-
-    private static Object getBoostRedditClient() throws Exception {
-        Class<?> repositoryClass = Class.forName("xb.l");
-        Object repository = repositoryClass.getMethod("V").invoke(null);
-        Class<?> current = repository.getClass();
-
-        while (current != null) {
-            for (Field field : current.getDeclaredFields()) {
-                String type = field.getType().getName();
-                if (!type.equals("xb.j") && !type.contains("RedditClient")) {
-                    continue;
-                }
-                field.setAccessible(true);
-                Object value = field.get(repository);
-                if (value != null) {
-                    return value;
-                }
-            }
-            current = current.getSuperclass();
-        }
-
-        throw new NoSuchFieldException("Boost RedditClient");
-    }
-
-    private static boolean includeNsfw() {
-        try {
-            Class<?> preferences = Class.forName("id.b");
-            Object instance = preferences.getMethod("v0").invoke(null);
-            Object value = preferences.getMethod("J5").invoke(instance);
-            return value instanceof Boolean && ((Boolean) value).booleanValue();
-        } catch (Throwable t) {
-            logFailure("nsfw_preference_failed", t);
-            return false;
-        }
-    }
-
-    private static String resolveCurrentCommunity(Object activity) {
+    private static String resolveCurrentCommunity(android.app.Activity activity) {
         if (activity == null) {
             return null;
         }
 
-        try {
-            Method method = findNoArgMethod(activity.getClass(), "W1");
-            if (method == null) {
-                return null;
-            }
-            method.setAccessible(true);
-            Object value = method.invoke(activity);
-            if (!(value instanceof String)) {
-                return null;
-            }
-
-            String name = ((String) value).trim();
-            while (name.startsWith("/")) {
-                name = name.substring(1);
-            }
-            if (name.startsWith("r/")) {
-                name = name.substring(2);
-            }
-            if (name.length() == 0 || isGlobalSource(name)) {
-                return null;
-            }
-            return name;
-        } catch (Throwable ignored) {
+        String value = BoostNativeNavigation.currentCommunity(activity);
+        if (value == null) {
             return null;
         }
+        String name = value.trim();
+        while (name.startsWith("/")) {
+            name = name.substring(1);
+        }
+        if (name.startsWith("r/")) {
+            name = name.substring(2);
+        }
+        return name.length() == 0 || isGlobalSource(name) ? null : name;
     }
 
     private static boolean isGlobalSource(String value) {
@@ -543,58 +339,6 @@ public final class SidebarTrendingPosts {
         try {
             int id = root.getResources().getIdentifier(name, "id", root.getContext().getPackageName());
             return id == 0 ? null : root.findViewById(id);
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private static Method findNoArgMethod(Class<?> type, String name) {
-        Class<?> current = type;
-        while (current != null) {
-            try {
-                return current.getDeclaredMethod(name);
-            } catch (NoSuchMethodException ignored) {
-                current = current.getSuperclass();
-            }
-        }
-        return null;
-    }
-
-    private static Object invokeNoArg(Object target, String name) {
-        if (target == null) {
-            return null;
-        }
-        try {
-            return target.getClass().getMethod(name).invoke(target);
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private static boolean isTrue(Object target, String methodName) {
-        try {
-            Object value = target.getClass().getMethod(methodName).invoke(target);
-            return value instanceof Boolean && ((Boolean) value).booleanValue();
-        } catch (Throwable ignored) {
-            return false;
-        }
-    }
-
-    private static String callString(Object target, String methodName) {
-        try {
-            Object value = target.getClass().getMethod(methodName).invoke(target);
-            return value instanceof String ? (String) value : null;
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private static String jsonString(Object item, String key) {
-        try {
-            Object data = item.getClass().getMethod("getDataNode").invoke(item);
-            Object child = data.getClass().getMethod("get", String.class).invoke(data, key);
-            Object value = child.getClass().getMethod("asText").invoke(child);
-            return value instanceof String ? (String) value : null;
         } catch (Throwable ignored) {
             return null;
         }

@@ -28,6 +28,9 @@ import android.view.Window;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import app.morphe.extension.boost.navigation.BoostNativeNavigation;
+
 import java.util.WeakHashMap;
 
 /**
@@ -1427,34 +1430,7 @@ public final class BoostSystemBarInsetsFix {
 
     private static void tintToolbarObject(View view, int color) {
         if (view == null) return;
-
-        invokeColorMethod(view, "setTitleTextColor", color);
-        invokeColorMethod(view, "setSubtitleTextColor", color);
-
-        try {
-            Drawable navigationIcon = (Drawable) view.getClass().getMethod("getNavigationIcon").invoke(view);
-            tintDrawable(navigationIcon, color);
-            if (navigationIcon != null) {
-                view.getClass().getMethod("setNavigationIcon", Drawable.class).invoke(view, navigationIcon);
-            }
-        } catch (Throwable ignored) {
-        }
-
-        try {
-            Drawable overflowIcon = (Drawable) view.getClass().getMethod("getOverflowIcon").invoke(view);
-            tintDrawable(overflowIcon, color);
-            if (overflowIcon != null) {
-                view.getClass().getMethod("setOverflowIcon", Drawable.class).invoke(view, overflowIcon);
-            }
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private static void invokeColorMethod(View view, String methodName, int color) {
-        try {
-            view.getClass().getMethod(methodName, int.class).invoke(view, color);
-        } catch (Throwable ignored) {
-        }
+        BoostNativeNavigation.tintToolbar(view, color);
     }
 
     private static void tintToolbarTree(View view, int color) {

@@ -16,6 +16,7 @@ import app.morphe.util.getReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import org.w3c.dom.Element
 import app.morphe.patches.all.misc.PatchCategory
+import app.morphe.patches.reddit.customclients.boostforreddit.wrapHook
 
 private const val MATERIAL_BOTTOM_NAVIGATION =
     "com.google.android.material.bottomnavigation.BottomNavigationView"
@@ -24,7 +25,7 @@ private const val EXTENSION_CLASS_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostSearchBottomNavigation;"
 
 private const val SEARCH_ABSTRACT_SUBREDDITS_ERROR_CALLBACK_DESCRIPTOR =
-    "Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity\$e;"
+    "Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity\$c;"
 
 private const val SEARCH_ABSTRACT_ACTIVITY_DESCRIPTOR =
     "Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity;"
@@ -139,16 +140,15 @@ val boostSearchBottomNavigationPatch = bytecodePatch(
 
 
 
-        searchAbstractSubredditsErrorCallbackFingerprint.method.addInstructions(
-            0,
-            """
+        searchAbstractSubredditsErrorCallbackFingerprint.wrapHook(
+            before = """
                 iget-object v0, p0, $SEARCH_ABSTRACT_SUBREDDITS_ERROR_CALLBACK_DESCRIPTOR->a:$SEARCH_ABSTRACT_ACTIVITY_DESCRIPTOR
                 invoke-virtual {v0}, Landroid/app/Activity;->isFinishing()Z
                 move-result v0
                 if-eqz v0, :morphe_search_subreddits_error_live
                 return-void
                 :morphe_search_subreddits_error_live
-            """.trimIndent(),
+            """,
         )
 
     }

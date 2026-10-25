@@ -32,7 +32,6 @@ import androidx.fragment.app.Fragment;
 
 import app.morphe.extension.boost.utils.BoostSystemBarInsetsFix;
 
-import java.lang.reflect.Field;
 
 /** Material 3 editor for Boost's canonical post and comment font preferences. */
 public final class MorpheSettingsV4FontsFragment extends Fragment {
@@ -142,7 +141,7 @@ public final class MorpheSettingsV4FontsFragment extends Fragment {
         LinearLayout titleFont = addNavigationRow(
                 posts,
                 "Title font",
-                fontTitle(preferences.getString(KEY_TITLE_FONT, "")),
+                fontTitle(preferences.getString(KEY_TITLE_FONT, "sans-serif-medium")),
                 view -> showFontDialog(KEY_TITLE_FONT, "Title font")
         );
         titleFontSummary = rowSummary(titleFont);
@@ -348,7 +347,10 @@ public final class MorpheSettingsV4FontsFragment extends Fragment {
     }
 
     private void showFontDialog(String key, String titleValue) {
-        String selected = preferences.getString(key, "");
+        String selected = preferences.getString(
+                key,
+                KEY_TITLE_FONT.equals(key) ? "sans-serif-medium" : ""
+        );
         Dialog dialog = new Dialog(requireContext());
         LinearLayout content = dialogContent();
         addDialogHeading(content, titleValue);
@@ -370,7 +372,7 @@ public final class MorpheSettingsV4FontsFragment extends Fragment {
                     "",
                     TextUtils.equals(selected, FONT_VALUES[index])
             );
-            row.setTitleTypeface(typefaceFor(FONT_VALUES[index]));
+            row.setTitleTypeface(typefaceFor(requireContext(), FONT_VALUES[index]));
             row.setOnClickListener(view -> {
                 saveFontPreference(key, FONT_VALUES[choice]);
                 dialog.dismiss();
@@ -465,7 +467,7 @@ public final class MorpheSettingsV4FontsFragment extends Fragment {
         if (preferences == null) {
             return;
         }
-        String titleFontValue = preferences.getString(KEY_TITLE_FONT, "");
+        String titleFontValue = preferences.getString(KEY_TITLE_FONT, "sans-serif-medium");
         String titleSizeValue = preferences.getString(KEY_TITLE_SIZE, "Medium");
         String commentsFontValue = preferences.getString(KEY_COMMENTS_FONT, "");
         String commentsSizeValue = preferences.getString(
@@ -502,21 +504,7 @@ public final class MorpheSettingsV4FontsFragment extends Fragment {
     }
 
     private static void markNativeFontCacheDirty(String key) {
-        String fieldName = null;
-        if (KEY_TITLE_SIZE.equals(key) || KEY_COMMENTS_SIZE.equals(key)) {
-            fieldName = "d";
-        } else if (KEY_TITLE_FONT.equals(key)) {
-            fieldName = "h";
-        }
-        if (fieldName == null) {
-            return;
-        }
-        try {
-            Field field = Class.forName("id.b").getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.setBoolean(null, true);
-        } catch (Throwable ignored) {
-        }
+        BoostSettingsNative.invalidateFonts(key);
     }
 
     static void applyPreviewTypography(
@@ -528,18 +516,12 @@ public final class MorpheSettingsV4FontsFragment extends Fragment {
         if (preview == null) {
             return;
         }
-        preview.setTypeface(typefaceFor(fontValue));
+        preview.setTypeface(typefaceFor(preview.getContext(), fontValue));
         preview.setTextSize(previewSizeSp(sizeValue, title));
     }
 
-    static Typeface typefaceFor(String value) {
-        if (TextUtils.isEmpty(value)) {
-            return Typeface.DEFAULT;
-        }
-        if (value.endsWith(".ttf")) {
-            return Typeface.create("serif", Typeface.NORMAL);
-        }
-        Typeface result = Typeface.create(value, Typeface.NORMAL);
+    static Typeface typefaceFor(Context context, String value) {
+        Typeface result = BoostSettingsNative.resolveFont(context, value);
         return result == null ? Typeface.DEFAULT : result;
     }
 

@@ -8,19 +8,21 @@
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.widget
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.util.getReference
 import app.morphe.util.indexOfFirstInstructionOrThrow
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import app.morphe.patches.all.misc.PatchCategory
 
 private const val PENDING_INTENT_GET_ACTIVITY_REFERENCE =
     "Landroid/app/PendingIntent;->getActivity(Landroid/content/Context;ILandroid/content/Intent;I)Landroid/app/PendingIntent;"
 
 private const val BOOST_PENDING_INTENT_FLAGS_REFERENCE =
-    "Lhe/h0;->D()I"
+    "Lhk3;->o()I"
 
 @Suppress("unused")
 val fixImageWidgetClickTargetPatch = bytecodePatch(
@@ -37,6 +39,7 @@ val fixImageWidgetClickTargetPatch = bytecodePatch(
                 opcode == Opcode.INVOKE_STATIC &&
                     getReference<MethodReference>()?.toString() == PENDING_INTENT_GET_ACTIVITY_REFERENCE
             }
+            val intentRegister = getInstruction<FiveRegisterInstruction>(getActivityIndex).registerE
 
             val pendingIntentFlagsIndex = implementation!!.instructions
                 .withIndex()
@@ -48,12 +51,12 @@ val fixImageWidgetClickTargetPatch = bytecodePatch(
                 .lastOrNull()
                 ?.index
                 ?: throw IllegalStateException(
-                    "Could not find ImageWidgetProvider h0.D flags call before CommentsActivity PendingIntent.getActivity"
+                    "Could not find UpdateImageWidget flags call before CommentsActivity PendingIntent.getActivity"
                 )
 
             if (pendingIntentFlagsIndex >= getActivityIndex) {
                 throw IllegalStateException(
-                    "Unexpected ImageWidgetProvider instruction order: h0.D=$pendingIntentFlagsIndex getActivity=$getActivityIndex"
+                    "Unexpected UpdateImageWidget instruction order: flags=$pendingIntentFlagsIndex getActivity=$getActivityIndex"
                 )
             }
 
@@ -82,7 +85,7 @@ val fixImageWidgetClickTargetPatch = bytecodePatch(
                     invoke-static {v4}, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
                     move-result-object v4
 
-                    invoke-virtual {v2, v4}, Landroid/content/Intent;->setData(Landroid/net/Uri;)Landroid/content/Intent;
+                    invoke-virtual {v$intentRegister, v4}, Landroid/content/Intent;->setData(Landroid/net/Uri;)Landroid/content/Intent;
                 """,
             )
         }

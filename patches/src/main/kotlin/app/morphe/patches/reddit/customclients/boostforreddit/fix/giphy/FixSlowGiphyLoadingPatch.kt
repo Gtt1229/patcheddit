@@ -9,10 +9,10 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.giphy
 
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.all.misc.PatchCategory
+import app.morphe.util.addInstructionsAtControlFlowLabel
 
 @Suppress("unused")
 val fixSlowGiphyLoadingPatch = bytecodePatch(
@@ -24,10 +24,10 @@ val fixSlowGiphyLoadingPatch = bytecodePatch(
     compatibleWith(*AppCompatibility.Boost)
 
     execute {
-        resolveGiphyApiFingerprint.method.addInstructions(
-            0,
+        resolveGiphyApiFingerprint.method.addInstructionsAtControlFlowLabel(
+            resolveGiphyApiFingerprint.stringMatches.single().index,
             """
-                invoke-direct { p0 }, Lhe/r;->x()V
+                invoke-virtual {p0}, Lw31;->f()V
                 return-void
                 """
         )

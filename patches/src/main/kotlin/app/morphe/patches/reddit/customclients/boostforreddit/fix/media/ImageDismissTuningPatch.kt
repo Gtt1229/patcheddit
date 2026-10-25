@@ -8,13 +8,10 @@
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.media
 
 import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
-import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
-import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import app.morphe.patches.reddit.customclients.boostforreddit.wrapHook
 import app.morphe.patches.all.misc.PatchCategory
 
 private const val EXTENSION_CLASS_DESCRIPTOR =
@@ -75,48 +72,13 @@ val imageDismissTuningPatch = bytecodePatch(
             legacyImageActivityOnCreateFingerprint,
             legacyImageActivity2OnCreateFingerprint,
         ).forEach { fingerprint ->
-            fingerprint.method.apply {
-                val returnIndex = implementation!!.instructions
-                    .withIndex()
-                    .lastOrNull { (_, instruction) ->
-                        instruction.opcode == Opcode.RETURN_VOID
-                    }
-                    ?.index
-                    ?: error("Could not find image activity return-void")
-
-                // Preserve the native return instruction location so all
-                // existing branch labels execute the hook before returning.
-                replaceInstruction(
-                    returnIndex,
-                    "invoke-static {p0}, $EXTENSION_CLASS_DESCRIPTOR->apply(Ljava/lang/Object;)V",
-                )
-                addInstruction(returnIndex + 1, "return-void")
-            }
-        }
-
-        imageModelFragmentOnCreateViewFingerprint.method.apply {
-            val returnIndex = implementation!!.instructions
-                .withIndex()
-                .lastOrNull { (_, instruction) ->
-                    instruction.opcode == Opcode.RETURN_OBJECT
-                }
-                ?.index
-                ?: error("Could not find image fragment return-object")
-
-            val returnRegister =
-                (implementation!!.instructions[returnIndex] as OneRegisterInstruction)
-                    .registerA
-
-            // Preserve labels on the original return-object location,
-            // then return the same object register from a new instruction.
-            replaceInstruction(
-                returnIndex,
-                "invoke-static {p0}, $EXTENSION_CLASS_DESCRIPTOR->apply(Ljava/lang/Object;)V",
-            )
-            addInstruction(
-                returnIndex + 1,
-                "return-object v$returnRegister",
+            fingerprint.wrapHook(
+                after = "invoke-static {p0}, $EXTENSION_CLASS_DESCRIPTOR->apply(Ljava/lang/Object;)V",
             )
         }
+
+        imageModelFragmentOnCreateViewFingerprint.wrapHook(
+            after = "invoke-static {p0}, $EXTENSION_CLASS_DESCRIPTOR->apply(Ljava/lang/Object;)V",
+        )
     }
 }

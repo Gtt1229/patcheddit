@@ -8,26 +8,27 @@
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.media
 
 import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
-import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import app.morphe.util.getReference
+import app.morphe.util.indexOfFirstInstructionOrThrow
+import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import app.morphe.patches.all.misc.PatchCategory
 
 private const val CONTRACT_MARKER =
     "MORPHE_BOOST_VIDEO_REWIND_BACKBUFFER_ISSUE188_V2"
 
-// Boost 1.12.12 preserves ExoPlayer DefaultLoadControl.java at Ls3/c;.
-// c()J is getBackBufferDurationUs(). We intentionally leave b()Z
-// (retainBackBufferFromKeyframe) untouched so ExoPlayer keeps its original
-// bounded keyframe-retention policy.
+// The getter is inlined in 1.14.0; initialize its microsecond field instead.
 private val backBufferDurationUsFingerprint = Fingerprint(
-    definingClass = "Ls3/c;",
-    name = "c",
-    returnType = "J",
+    definingClass = "Lhc0;",
+    name = "<init>",
+    returnType = "V",
     parameters = emptyList(),
+    strings = listOf("backBufferDurationMs"),
 )
 
 @Suppress("unused")
@@ -44,29 +45,14 @@ val fixBoostVideoRewindBackBufferPatch = bytecodePatch(
         check(CONTRACT_MARKER.endsWith("ISSUE188_V2"))
 
         backBufferDurationUsFingerprint.method.apply {
-            val instructions = implementation?.instructions
-                ?: error("DefaultLoadControl back-buffer getter has no implementation")
-
-            val returnIndex = instructions.withIndex()
-                .singleOrNull { (_, instruction) ->
-                    instruction.opcode == Opcode.RETURN_WIDE
-                }
-                ?.index
-                ?: error("Expected exactly one return-wide in DefaultLoadControl.c()")
-
-            val returnRegister =
-                (instructions[returnIndex] as? OneRegisterInstruction)?.registerA
-                    ?: error("Could not resolve DefaultLoadControl.c() return register")
-
-            // ExoPlayer exposes this getter in microseconds.
-            // 30 seconds = 30,000,000 us.
-            replaceInstruction(
-                returnIndex,
-                "const-wide/32 v$returnRegister, 0x1c9c380",
-            )
-            addInstruction(
-                returnIndex + 1,
-                "return-wide v$returnRegister",
+            val assignmentIndex = indexOfFirstInstructionOrThrow {
+                opcode == Opcode.IPUT_WIDE &&
+                    getReference<FieldReference>()?.toString() == "Lhc0;->f:J"
+            }
+            val durationRegister = getInstruction<TwoRegisterInstruction>(assignmentIndex).registerA
+            addInstructions(
+                assignmentIndex,
+                "const-wide/32 v$durationRegister, 0x1c9c380",
             )
         }
     }

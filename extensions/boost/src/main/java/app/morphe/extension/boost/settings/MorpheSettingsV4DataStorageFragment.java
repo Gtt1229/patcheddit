@@ -34,7 +34,6 @@ import androidx.fragment.app.Fragment;
 
 import app.morphe.extension.boost.utils.BoostSystemBarInsetsFix;
 
-import java.lang.reflect.Method;
 
 /** Morphe-owned data and storage controls backed by Boost's canonical keys. */
 public final class MorpheSettingsV4DataStorageFragment extends Fragment {
@@ -559,7 +558,9 @@ public final class MorpheSettingsV4DataStorageFragment extends Fragment {
     }
 
     private void clearCache() {
-        if (!invokeStaticVoid("qb.a", "a", requireContext())) {
+        try {
+            BoostSettingsNative.clearMediaCache(requireContext());
+        } catch (RuntimeException exception) {
             showUnavailable();
             return;
         }
@@ -570,51 +571,24 @@ public final class MorpheSettingsV4DataStorageFragment extends Fragment {
     }
 
     private void resizeCache() {
-        invokeStaticVoid("qb.b", "d", requireContext());
+        try {
+            BoostSettingsNative.resizeMediaCache(requireContext());
+        } catch (RuntimeException exception) {
+            showUnavailable();
+        }
     }
 
     private void refreshCacheSummary() {
         if (cacheCurrentSizeSummary == null || getContext() == null) {
             return;
         }
-        Object result = invokeStatic("qb.a", "b", requireContext());
-        if (result instanceof String && !TextUtils.isEmpty((String) result)) {
-            cacheCurrentSizeSummary.setText((String) result);
+        String result = BoostSettingsNative.mediaCacheSize(requireContext());
+        if (!TextUtils.isEmpty(result)) {
+            cacheCurrentSizeSummary.setText(result);
         } else {
             cacheCurrentSizeSummary.setText(
                     "Delete images and videos from cache"
             );
-        }
-    }
-
-    private Object invokeStatic(
-            String className,
-            String methodName,
-            Context context
-    ) {
-        try {
-            Class<?> type = Class.forName(className);
-            Method method = type.getDeclaredMethod(methodName, Context.class);
-            method.setAccessible(true);
-            return method.invoke(null, context);
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
-
-    private boolean invokeStaticVoid(
-            String className,
-            String methodName,
-            Context context
-    ) {
-        try {
-            Class<?> type = Class.forName(className);
-            Method method = type.getDeclaredMethod(methodName, Context.class);
-            method.setAccessible(true);
-            method.invoke(null, context);
-            return true;
-        } catch (Throwable ignored) {
-            return false;
         }
     }
 

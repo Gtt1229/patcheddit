@@ -25,8 +25,8 @@ private const val SUBMISSION_LIST =
 
 // RedditJRAW.loadSubmissions(Paginator, boolean): loads one submissions page.
 private val loadSubmissionsFingerprint = Fingerprint(
-    definingClass = "Lxb/l;",
-    name = "s0",
+    definingClass = "Lpd2;",
+    name = "u",
     returnType = "Ljava/util/ArrayList;",
     parameters = listOf("Lnet/dean/jraw/paginators/Paginator;", "Z"),
 )
@@ -34,7 +34,7 @@ private val loadSubmissionsFingerprint = Fingerprint(
 // SubmissionRecyclerViewFragment.appendSubmissions(ArrayList): adds a further page.
 private val appendSubmissionsFingerprint = Fingerprint(
     definingClass = SUBMISSION_FRAGMENT,
-    name = "W",
+    name = "w0",
     returnType = "V",
     parameters = listOf("Ljava/util/ArrayList;"),
 )
@@ -42,7 +42,7 @@ private val appendSubmissionsFingerprint = Fingerprint(
 // SubmissionRecyclerViewFragment.setSubmissions(ArrayList): loads a feed from the top.
 private val setSubmissionsFingerprint = Fingerprint(
     definingClass = SUBMISSION_FRAGMENT,
-    name = "o0",
+    name = "Y0",
     returnType = "V",
     parameters = listOf("Ljava/util/ArrayList;"),
 )

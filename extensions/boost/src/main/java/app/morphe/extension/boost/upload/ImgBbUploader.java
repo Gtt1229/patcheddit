@@ -28,11 +28,8 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import de.e;
-import de.f;
-
 /** ImgBB editor uploader using only Android/JDK network ABI. */
-public final class ImgBbUploader implements de.b {
+public final class ImgBbUploader {
     public static final String CONTRACT_MARKER =
             "MORPHE_BOOST_IMGBB_EDITOR_UPLOAD_ISSUE66_V1";
     public static final String FRAMEWORK_MULTIPART_MARKER =
@@ -43,46 +40,47 @@ public final class ImgBbUploader implements de.b {
     private static final int BUFFER_SIZE = 16 * 1024;
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
 
-    @Override
-    public void a(String title, List<Upload> uploads, f.b progress, e listener) {
+    public interface Callback {
+        void onProgress(int percent);
+
+        void onSuccess(String url);
+
+        void onFailure(Exception exception, String message);
+    }
+
+    public void uploadFirst(List<?> uploads, Callback callback) {
         if (uploads == null || uploads.isEmpty()) {
-            failure(listener, new IOException("No image selected"), "No image selected.");
+            failure(callback, new IOException("No image selected"), "No image selected.");
             return;
         }
-        c(uploads.get(0), progress, listener);
+        upload((Upload) uploads.get(0), callback);
     }
 
-    @Override
-    public void b(Upload upload, f.b progress, e listener) {
-        c(upload, progress, listener);
-    }
-
-    @Override
-    public void c(Upload upload, f.b progress, e listener) {
+    public void upload(Upload upload, Callback callback) {
         File image = upload == null ? null : upload.image;
         if (image == null || !image.isFile()) {
-            failure(listener, new IOException("Selected image is unavailable"), "The selected image is unavailable.");
+            failure(callback, new IOException("Selected image is unavailable"), "The selected image is unavailable.");
             return;
         }
         if (image.length() > MAX_IMAGE_BYTES) {
-            failure(listener, new IOException("Image exceeds ImgBB limit"), "ImgBB supports images up to 32 MB.");
+            failure(callback, new IOException("Image exceeds ImgBB limit"), "ImgBB supports images up to 32 MB.");
             return;
         }
         String apiKey = ExternalImageUploadSettings.getImgBbApiKey();
         if (TextUtils.isEmpty(apiKey)) {
-            failure(listener, new IOException("ImgBB API key is missing"), "Add an ImgBB API key in Morphe settings.");
+            failure(callback, new IOException("ImgBB API key is missing"), "Add an ImgBB API key in Morphe settings.");
             return;
         }
         String mimeType = URLConnection.guessContentTypeFromName(image.getName());
         if (TextUtils.isEmpty(mimeType)) mimeType = "application/octet-stream";
         final String selectedMimeType = mimeType;
         new Thread(
-                () -> upload(image, selectedMimeType, apiKey, progress, listener),
+                () -> upload(image, selectedMimeType, apiKey, callback),
                 "Morphe-ImgBB-upload"
         ).start();
     }
 
-    private static void upload(File image, String mimeType, String apiKey, f.b progress, e listener) {
+    private static void upload(File image, String mimeType, String apiKey, Callback callback) {
         HttpURLConnection connection = null;
         try {
             String endpoint = Uri.parse(API_URL).buildUpon()
@@ -104,7 +102,7 @@ public final class ImgBbUploader implements de.b {
             connection.setRequestProperty("Accept", "application/json");
             connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
 
-            reportProgress(progress, 0);
+            reportProgress(callback, 0);
             try (BufferedOutputStream output = new BufferedOutputStream(connection.getOutputStream());
                  FileInputStream input = new FileInputStream(image)) {
                 output.write(prefix);
@@ -118,7 +116,7 @@ public final class ImgBbUploader implements de.b {
                     int percent = image.length() <= 0L ? 99 : (int) Math.min(99L, (written * 100L) / image.length());
                     if (percent != lastPercent) {
                         lastPercent = percent;
-                        reportProgress(progress, percent);
+                        reportProgress(callback, percent);
                     }
                 }
                 output.write(suffix);
@@ -135,13 +133,13 @@ public final class ImgBbUploader implements de.b {
                     && root.optBoolean("success", false) && imageUrl.startsWith("https://");
             if (!successful) {
                 String message = errorMessage(root, statusCode);
-                failure(listener, new IOException(message), message);
+                failure(callback, new IOException(message), message);
                 return;
             }
-            reportProgress(progress, 100);
-            success(listener, imageUrl);
+            reportProgress(callback, 100);
+            success(callback, imageUrl);
         } catch (Exception exception) {
-            failure(listener, exception, networkErrorMessage(exception));
+            failure(callback, exception, networkErrorMessage(exception));
         } finally {
             if (connection != null) connection.disconnect();
         }
@@ -184,15 +182,15 @@ public final class ImgBbUploader implements de.b {
         return "ImgBB upload failed: " + detail;
     }
 
-    private static void reportProgress(f.b progress, int percent) {
-        if (progress != null) MAIN.post(() -> progress.a(percent));
+    private static void reportProgress(Callback callback, int percent) {
+        if (callback != null) MAIN.post(() -> callback.onProgress(percent));
     }
 
-    private static void success(e listener, String imageUrl) {
-        if (listener != null) MAIN.post(() -> listener.onSuccess(imageUrl));
+    private static void success(Callback callback, String imageUrl) {
+        if (callback != null) MAIN.post(() -> callback.onSuccess(imageUrl));
     }
 
-    private static void failure(e listener, Exception exception, String message) {
-        if (listener != null) MAIN.post(() -> listener.c(exception, message));
+    private static void failure(Callback callback, Exception exception, String message) {
+        if (callback != null) MAIN.post(() -> callback.onFailure(exception, message));
     }
 }

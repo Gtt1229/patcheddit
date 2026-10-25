@@ -10,22 +10,22 @@ package app.morphe.patches.reddit.customclients.boostforreddit.fix.gallery
 import app.morphe.patcher.Fingerprint
 
 internal val galleryPageSelectedFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity\$b;",
+    definingClass = "Lg21;",
     name = "c",
     returnType = "V",
     parameters = listOf("I"),
 )
 
 internal val galleryPagerStateFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity\$b;",
+    definingClass = "Lg21;",
     name = "b",
     returnType = "V",
     parameters = listOf("I"),
 )
 
 internal val galleryPageFactoryFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity\$c;",
-    name = "t",
+    definingClass = "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity\$b;",
+    name = "m",
     returnType = "Landroidx/fragment/app/Fragment;",
     parameters = listOf("I"),
 )

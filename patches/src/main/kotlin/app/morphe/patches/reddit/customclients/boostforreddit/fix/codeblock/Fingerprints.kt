@@ -10,8 +10,8 @@ package app.morphe.patches.reddit.customclients.boostforreddit.fix.codeblock
 import app.morphe.patcher.Fingerprint
 
 internal val boostHtmlSanitizerFingerprint = Fingerprint(
-    definingClass = "Lhe/h0;",
-    name = "d",
+    definingClass = "Lqd2;",
+    name = "a",
     returnType = "Ljava/lang/String;",
     parameters = listOf("Ljava/lang/String;"),
     strings = listOf("<code>", "<tt>", "<pre>", "</pre>")
@@ -33,7 +33,10 @@ internal val boostLinkTextViewSetTextHtmlParsedFingerprint = Fingerprint(
 
 internal val boostSubmissionViewHolderSelfPreviewHtmlFingerprint = Fingerprint(
     definingClass = "Lcom/rubenmayayo/reddit/ui/adapters/SubmissionViewHolder;",
-    name = "H0",
+    name = "w",
     returnType = "V",
-    parameters = listOf("Ljava/lang/String;"),
+    parameters = listOf(
+        "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;",
+        "Z", "Z", "Z", "Lig2;",
+    ),
 )

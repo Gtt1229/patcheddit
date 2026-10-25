@@ -13,7 +13,6 @@ import java.util.List;
 
 import app.morphe.extension.boost.http.arcticshift.ArcticShiftThrottlingInterceptor;
 import app.morphe.extension.boost.http.imgur.ImgurUndeleteInterceptor;
-import app.morphe.extension.boost.http.reddit.RedditFixAudioInDownloadsInterceptor;
 import app.morphe.extension.boost.http.reddit.RedditMediaUndeleteInterceptor;
 import app.morphe.extension.boost.http.reddit.RedditSubmissionUndeleteInterceptor;
 import app.morphe.extension.boost.http.reddit.RedditSubredditUndeleteInterceptor;
@@ -44,7 +43,6 @@ public class OkHttpRequestHook extends BaseOkHttpRequestHook {
                 new RedditMediaUndeleteInterceptor(),
                 new RedditSubmissionUndeleteInterceptor(),
                 new RedditSubredditUndeleteInterceptor(),
-                new RedditFixAudioInDownloadsInterceptor(),
                 new ImgurUndeleteInterceptor(),
                 new RAllPatch()
         );

@@ -15,6 +15,7 @@ import app.morphe.util.getReference
 import app.morphe.util.indexOfFirstInstructionOrThrow
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import org.w3c.dom.Element
 import app.morphe.patches.all.misc.PatchCategory
 
@@ -22,10 +23,10 @@ private const val CRASHLYTICS_REGISTRAR_META_DATA =
     "com.google.firebase.components:com.google.firebase.crashlytics.CrashlyticsRegistrar"
 
 private const val CRASHLYTICS_GET_INSTANCE_REFERENCE =
-    "Lcom/google/firebase/crashlytics/a;->a()Lcom/google/firebase/crashlytics/a;"
+    "Lsu0;->b()Lsu0;"
 
 private const val CRASHLYTICS_SET_COLLECTION_REFERENCE =
-    "Lcom/google/firebase/crashlytics/a;->c(Z)V"
+    "Luu0;->a(Z)V"
 
 private val removeBoostCrashlyticsRegistrarPatch = resourcePatch(
     name = "Remove Boost Crashlytics registrar",
@@ -64,10 +65,15 @@ val disableBoostCrashlyticsPatch = bytecodePatch(
         boostApplicationOnCreateFingerprint.method.apply {
             val instructions = implementation!!.instructions
 
-            val getInstanceIndex = indexOfFirstInstructionOrThrow {
-                opcode == Opcode.INVOKE_STATIC &&
-                    getReference<MethodReference>()?.toString() == CRASHLYTICS_GET_INSTANCE_REFERENCE
+            val crashlyticsTypeIndex = indexOfFirstInstructionOrThrow {
+                opcode == Opcode.CONST_CLASS &&
+                    getReference<TypeReference>()?.type == "Luu0;"
             }
+            val getInstanceIndex = instructions.withIndex().last { (index, instruction) ->
+                index < crashlyticsTypeIndex &&
+                    instruction.opcode == Opcode.INVOKE_STATIC &&
+                    instruction.getReference<MethodReference>()?.toString() == CRASHLYTICS_GET_INSTANCE_REFERENCE
+            }.index
 
             val setCollectionIndex = instructions.withIndex().first { (index, instruction) ->
                 index > getInstanceIndex &&

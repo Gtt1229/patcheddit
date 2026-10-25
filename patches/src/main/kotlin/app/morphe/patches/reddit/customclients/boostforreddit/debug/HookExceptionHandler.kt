@@ -32,7 +32,8 @@ val hookExceptionHandler = bytecodePatch(
             addInstructions(
                 0,
                 """
-                    invoke-static { p0, p1 }, $EXTENSION_CLASS_DESCRIPTOR->handleException(Ljava/lang/Throwable;Ljava/lang/String;)V
+                    const-string v0, "Non-fatal Boost error"
+                    invoke-static {p0, v0}, $EXTENSION_CLASS_DESCRIPTOR->handleException(Ljava/lang/Throwable;Ljava/lang/String;)V
                 """,
             )
         }

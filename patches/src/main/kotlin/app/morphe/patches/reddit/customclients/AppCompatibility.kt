@@ -21,7 +21,7 @@ object AppCompatibility {
         Compatibility(
             name = "Boost for Reddit",
             packageName = "com.rubenmayayo.reddit",
-            targets = listOf(AppTarget(version = "1.12.12"))
+            targets = listOf(AppTarget(version = "1.14.0"))
         )
     )
 

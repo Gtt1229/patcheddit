@@ -13,8 +13,9 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.ViewGroup;
 
+import com.liuguangqiang.swipeback.SwipeBackLayout;
+
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,11 +45,6 @@ public final class ImageDismissTuning {
 
     private static final String SWIPE_BACK_LAYOUT_CLASS =
             "com.liuguangqiang.swipeback.SwipeBackLayout";
-    private static final String SET_ENABLE_FLING_BACK_METHOD =
-            "setEnableFlingBack";
-    private static final String SET_BACK_FACTOR_METHOD =
-            "setBackFactor";
-
     private ImageDismissTuning() {
     }
 
@@ -59,7 +55,7 @@ public final class ImageDismissTuning {
 
         try {
             Object swipeBackLayout = findSwipeBackLayout(owner);
-            if (!(swipeBackLayout instanceof ViewGroup)) {
+            if (!(swipeBackLayout instanceof SwipeBackLayout)) {
                 Log.w(
                         LOG_TAG,
                         CONTRACT_MARKER
@@ -92,31 +88,12 @@ public final class ImageDismissTuning {
                 return;
             }
 
-            Method setEnableFlingBack =
-                    swipeBackLayout
-                            .getClass()
-                            .getMethod(
-                                    SET_ENABLE_FLING_BACK_METHOD,
-                                    Boolean.TYPE
-                            );
-            setEnableFlingBack.invoke(
-                    swipeBackLayout,
-                    true
-            );
+            SwipeBackLayout layout = (SwipeBackLayout) swipeBackLayout;
+            layout.setEnableFlingBack(true);
 
             float backFactor = backFactor(selected);
 
-            Method setBackFactor =
-                    swipeBackLayout
-                            .getClass()
-                            .getMethod(
-                                    SET_BACK_FACTOR_METHOD,
-                                    Float.TYPE
-                            );
-            setBackFactor.invoke(
-                    swipeBackLayout,
-                    backFactor
-            );
+            layout.setBackFactor(backFactor);
 
             String mode =
                     selected <= FLING_ONLY_VALUE
