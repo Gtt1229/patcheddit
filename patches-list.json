@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "2.0.0-dev.4",
+  "version": "2.0.0-dev.5",
   "patches": [
     {
       "name": "Add Boost Search bottom navigation",
@@ -1037,8 +1037,8 @@
       "options": []
     },
     {
-      "name": "Log non-fatal exceptions",
-      "description": "Logs errors reported by Boost, viewable in Morphe settings.",
+      "name": "Log exceptions",
+      "description": "Logs reported errors and fatal crashes, viewable in Morphe settings.",
       "default": true,
       "category": "Advanced",
       "compatiblePackages": [

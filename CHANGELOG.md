@@ -1,3 +1,10 @@
+# [2.0.0-dev.5](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.4...v2.0.0-dev.5) (2026-10-26)
+
+
+### Features
+
+* Add CrashLogPatch from morphe-patches-library as a dependency and expose it in app settings ([0b2d4be](https://github.com/wchill/patcheddit/commit/0b2d4be869d632508e18476f028d9033741711ff))
+
 # [2.0.0-dev.4](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.3...v2.0.0-dev.4) (2026-10-26)
 
 
