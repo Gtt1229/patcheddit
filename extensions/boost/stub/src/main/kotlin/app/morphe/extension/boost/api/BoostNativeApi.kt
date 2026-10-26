@@ -16,6 +16,12 @@ private fun <T> boostApiStub(): T = throw UnsupportedOperationException("Compile
 abstract class ActionBarDrawerToggle protected constructor(stub: Unit) : androidx.drawerlayout.widget.DrawerLayout.DrawerListener {
 }
 
+abstract class AccountStore protected constructor(stub: Unit) {
+    companion object {
+        @JvmStatic fun users(): List<com.rubenmayayo.reddit.aa.User> = boostApiStub()
+    }
+}
+
 abstract class BackActivity protected constructor(stub: Unit) : com.rubenmayayo.reddit.ui.activities.BaseActivity(Unit) {
 }
 
@@ -34,6 +40,8 @@ abstract class BoostPreferences protected constructor(stub: Unit) {
     fun resetLegacyDownloadFolder(p0: Int): Unit = boostApiStub()
     fun resetSafDownloadFolder(p0: Int): Unit = boostApiStub()
     fun fullPreview(): Boolean = boostApiStub()
+    fun getApiPreference(p0: String): String? = boostApiStub()
+    fun getUserAgent(): String = boostApiStub()
     fun roundedCorners(): Boolean = boostApiStub()
     fun saveFilters(p0: String?, p1: List<String>?): Unit = boostApiStub()
     fun setColorPattern(p0: IntArray?): Unit = boostApiStub()
@@ -157,7 +165,6 @@ abstract class MediaBaseActivity protected constructor(stub: Unit) : com.rubenma
 abstract class MediaUploadFactory protected constructor(stub: Unit) : app.morphe.extension.boost.api.internal.MeasurementProvider, app.morphe.extension.boost.api.internal.BillingCallback {
     companion object {
         @JvmStatic fun create(p0: String?): app.morphe.extension.boost.api.MediaUploader? = boostApiStub()
-        @JvmStatic fun createOriginal(p0: String?): app.morphe.extension.boost.api.MediaUploader? = boostApiStub()
     }
 }
 
@@ -239,9 +246,12 @@ abstract class RedditAccount protected constructor(stub: Unit) {
 
 abstract class RedditJraw protected constructor(stub: Unit) : app.morphe.extension.boost.api.RedditAccount(Unit) {
     @JvmField var client: app.morphe.extension.boost.api.MyRedditClient = boostApiStub()
+    @JvmField var credentials: net.dean.jraw.http.oauth.Credentials? = boostApiStub()
+    fun selectAccount(p0: Int): Unit = boostApiStub()
     fun trendingSearches(): List<*>? = boostApiStub()
     fun trendingRows(): List<*>? = boostApiStub()
     companion object {
+        @JvmStatic fun initialize(): Unit = boostApiStub()
         @JvmField var instance: app.morphe.extension.boost.api.RedditJraw = boostApiStub()
     }
 }

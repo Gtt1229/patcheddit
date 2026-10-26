@@ -13,9 +13,6 @@ import app.morphe.extension.shared.Utils;
 
 /**
  * Runtime feature flags for Boost undelete behavior.
- *
- * Defaults must stay false: undelete is optional archive-recovery behavior and
- * must not affect normal feed/comment/media browsing unless the user opts in.
  */
 public final class BoostUndeleteSettings {
     public static final String PREF_REDDIT_UNDELETE_ENABLED =

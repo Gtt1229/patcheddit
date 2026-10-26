@@ -16,6 +16,16 @@ In addition, patches for some apps contain additional features that were not pre
     * Custom patch options override these defaults. In Boost 1.14.0 and up, saved values in the native API settings override the patch-provided defaults.
 
 ### Boost for Reddit
+* Morphe options use Boost's native preference UI. Boost's original settings pages, theme and navigation are kept; no replacement settings menu is installed.
+* **Import and export OAuth tokens** is an opt-in patch that adds **Settings > Morphe > OAuth tokens**. It supports local JSON files and copy/paste, including signing in or adding an account without the browser login flow.
+    * Import checks the access-token owner with Reddit, validates the refresh token using Boost's configured OAuth client, and obtains fresh tokens before adding or updating the verified account. An expired access token can be restored with a valid refresh token. Boost then restarts with that account selected.
+    * Tokens are bound to their OAuth client. Configure the same client ID in Boost's native API settings before importing; the patch does not change API settings automatically.
+    * Exports are **unencrypted account credentials**. Keep them private and delete files and clipboard copies after use. Clipboard exports are marked sensitive; Boost attempts to clear its own copy after one minute and retries when the token screen resumes if Android blocked background clipboard access.
+    * The JSON requires string fields `access_token` and `refresh_token`. Exports also include `version: 1`, `username` and `client_id`; these metadata fields are optional when importing. Duplicate fields, unsupported fields and files larger than 64 KiB of text are rejected. Tokens are stored in Boost's native account database, not Morphe preferences.
+* Image-upload features are separate opt-in patches:
+    * **Use Reddit for image uploads** selects Reddit hosting for image posts and galleries, without changing editor attachments.
+    * **Configure editor image hosting** adds an editor-hosting setting for Imgur Free or ImgBB. It does not change post or gallery hosting.
+    * **Preview images in the editor** adds previews of supported image URLs without changing upload providers.
 * The content of deleted Reddit posts and comments can be loaded from [Project Arctic Shift](https://github.com/ArthurHeitmann/arctic_shift).
     * This only works for text and images, and not all content can be restored. Videos are unlikely to be available.
     * Posts/comments that were deleted are marked as follows:

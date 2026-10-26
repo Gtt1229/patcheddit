@@ -14,4 +14,13 @@ package com.activeandroid
 private fun <T> boostApiStub(): T = throw UnsupportedOperationException("Compile-only Boost adapter stub")
 
 abstract class Model protected constructor(stub: Unit) {
+    fun save(): Long? = boostApiStub()
+}
+
+abstract class ActiveAndroid protected constructor(stub: Unit) {
+    companion object {
+        @JvmStatic fun beginTransaction(): Unit = boostApiStub()
+        @JvmStatic fun setTransactionSuccessful(): Unit = boostApiStub()
+        @JvmStatic fun endTransaction(): Unit = boostApiStub()
+    }
 }

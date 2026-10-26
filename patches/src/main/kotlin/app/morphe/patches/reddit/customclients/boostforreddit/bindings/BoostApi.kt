@@ -154,7 +154,6 @@ internal object BoostApi {
     }
     object MediaUploadFactory : BoostTypeBinding("Lapp/morphe/extension/boost/api/MediaUploadFactory;") {
         val create get() = method("create(Ljava/lang/String;)Lapp/morphe/extension/boost/api/MediaUploader;")
-        val createOriginal get() = method("createOriginal(Ljava/lang/String;)Lapp/morphe/extension/boost/api/MediaUploader;")
     }
     object MediaUploader : BoostTypeBinding("Lapp/morphe/extension/boost/api/MediaUploader;") {
     }

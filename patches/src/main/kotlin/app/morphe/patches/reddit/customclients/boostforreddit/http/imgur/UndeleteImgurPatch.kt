@@ -28,7 +28,7 @@ internal const val OKHTTP_EXTENSION_CLASS_DESCRIPTOR = "Lapp/morphe/extension/bo
 val interceptImgurRequests = bytecodePatch(
     name = "Automatically undelete Imgur images",
     description = "Loads deleted Imgur images from the Wayback Machine.",
-    default = false
+    default = true
 ) {
     category(PatchCategory.UNDELETE)
     dependsOn(ExtensionPatches.Boost, interceptHttpRequests, undeleteAppliedMarkerPatch(IMGUR_UNDELETE_APPLIED_RESOURCE))

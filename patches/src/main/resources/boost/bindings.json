@@ -1,6 +1,8 @@
 {
   "version": "1.14.1",
   "classes": {
+    "Lapp/morphe/extension/boost/api/AccountStore;": "Lbu;",
+    "Lcom/activeandroid/ActiveAndroid;": "Lcom/activeandroid/ActiveAndroid;",
     "Landroidx/activity/ComponentActivity;": "Lpy;",
     "Landroidx/activity/OnBackPressedDispatcherOwner;": "Lp22;",
     "Landroidx/activity/result/ActivityResultCallback;": "Lz3;",
@@ -346,6 +348,15 @@
     "Lokhttp3/OkHttpClient;": "Lokhttp3/OkHttpClient;"
   },
   "methods": {
+    "Lapp/morphe/extension/boost/api/RedditJraw;->initialize()V": "Lpd2;->D()V",
+    "Lapp/morphe/extension/boost/api/RedditJraw;->selectAccount(I)V": "Lpd2;->E(I)V",
+    "Lapp/morphe/extension/boost/api/AccountStore;->users()Ljava/util/List;": "Lbu;->j()Ljava/util/List;",
+    "Lapp/morphe/extension/boost/api/BoostPreferences;->getUserAgent()Ljava/lang/String;": "Lps2;->f0()Ljava/lang/String;",
+    "Lcom/activeandroid/ActiveAndroid;->beginTransaction()V": "Lcom/activeandroid/ActiveAndroid;->beginTransaction()V",
+    "Lcom/activeandroid/ActiveAndroid;->setTransactionSuccessful()V": "Lcom/activeandroid/ActiveAndroid;->setTransactionSuccessful()V",
+    "Lcom/activeandroid/ActiveAndroid;->endTransaction()V": "Lcom/activeandroid/ActiveAndroid;->endTransaction()V",
+    "Lcom/activeandroid/Model;->save()Ljava/lang/Long;": "Lcom/activeandroid/Model;->save()Ljava/lang/Long;",
+    "Lcom/rubenmayayo/reddit/aa/User;-><init>()V": "Lcom/rubenmayayo/reddit/aa/User;-><init>()V",
     "Landroidx/appcompat/view/menu/MenuBuilder$Callback;->onMenuItemSelected(Landroidx/appcompat/view/menu/MenuBuilder;Landroid/view/MenuItem;)Z": "Landroidx/appcompat/view/menu/f$a;->a(Landroidx/appcompat/view/menu/f;Landroid/view/MenuItem;)Z",
     "Landroidx/appcompat/view/menu/MenuBuilder$Callback;->onMenuModeChange(Landroidx/appcompat/view/menu/MenuBuilder;)V": "Landroidx/appcompat/view/menu/f$a;->b(Landroidx/appcompat/view/menu/f;)V",
     "Landroidx/appcompat/view/menu/MenuBuilder;->setCallback(Landroidx/appcompat/view/menu/MenuBuilder$Callback;)V": "Landroidx/appcompat/view/menu/f;->u(Landroidx/appcompat/view/menu/f$a;)V",
@@ -598,7 +609,6 @@
     "Lapp/morphe/extension/boost/api/LinkMenu$Listener;->onClickContextMenu(Lcom/rubenmayayo/reddit/ui/customviews/menu/MenuOption;)V": "Lp32$a;->a(Lcom/rubenmayayo/reddit/ui/customviews/menu/MenuOption;)V",
     "Lapp/morphe/extension/boost/api/LinkMenu;->linkBuildContextMenu(Ljava/lang/String;)V": "Lp32;->b(Ljava/lang/String;)V",
     "Lapp/morphe/extension/boost/api/MediaUploadFactory;->create(Ljava/lang/String;)Lapp/morphe/extension/boost/api/MediaUploader;": "Lel1;->i(Ljava/lang/String;)Lcs1;",
-    "Lapp/morphe/extension/boost/api/MediaUploadFactory;->createOriginal(Ljava/lang/String;)Lapp/morphe/extension/boost/api/MediaUploader;": "Lel1;->morpheCreateOriginalUploader(Ljava/lang/String;)Lcs1;",
     "Lapp/morphe/extension/boost/api/MediaUploader;->upload(Lcom/rubenmayayo/reddit/models/imgur/Upload;Lapp/morphe/extension/boost/api/ProgressRequestBody$ProgressListener;Lapp/morphe/extension/boost/api/MediaUploaderListener;)V": "Lcs1;->c(Lcom/rubenmayayo/reddit/models/imgur/Upload;Lca2$b;Lds1;)V",
     "Lapp/morphe/extension/boost/api/MediaUploader;->uploadBatch(Ljava/util/List;Lapp/morphe/extension/boost/api/ProgressRequestBody$ProgressListener;Lapp/morphe/extension/boost/api/MediaUploaderListener;)V": "Lcs1;->a(Ljava/util/List;Lca2$b;Lds1;)V",
     "Lapp/morphe/extension/boost/api/MediaUploader;->uploadGifv(Lcom/rubenmayayo/reddit/models/imgur/Upload;Lcom/rubenmayayo/reddit/ui/submit/v2/SubmitGifvFragment$ProgressListener;Lcom/rubenmayayo/reddit/ui/submit/v2/SubmitGifvFragment$UploadListener;)V": "Lcs1;->b(Lcom/rubenmayayo/reddit/models/imgur/Upload;Lcom/rubenmayayo/reddit/ui/submit/v2/g$b;Lcom/rubenmayayo/reddit/ui/submit/v2/g$c;)V",
@@ -834,6 +844,12 @@
     "Lnet/dean/jraw/util/JrawUtils;->newUrl(Ljava/lang/String;)Ljava/net/URL;": "Lnet/dean/jraw/util/JrawUtils;->newUrl(Ljava/lang/String;)Ljava/net/URL;"
   },
   "fields": {
+    "Lapp/morphe/extension/boost/api/RedditJraw;->credentials:Lnet/dean/jraw/http/oauth/Credentials;": "Lpd2;->d:Lnet/dean/jraw/http/oauth/Credentials;",
+    "Lcom/rubenmayayo/reddit/aa/User;->accessToken:Ljava/lang/String;": "Lcom/rubenmayayo/reddit/aa/User;->accessToken:Ljava/lang/String;",
+    "Lcom/rubenmayayo/reddit/aa/User;->refreshToken:Ljava/lang/String;": "Lcom/rubenmayayo/reddit/aa/User;->refreshToken:Ljava/lang/String;",
+    "Lcom/rubenmayayo/reddit/aa/User;->expirationDate:Ljava/util/Date;": "Lcom/rubenmayayo/reddit/aa/User;->expirationDate:Ljava/util/Date;",
+    "Lcom/rubenmayayo/reddit/aa/User;->oAuthData:Ljava/lang/String;": "Lcom/rubenmayayo/reddit/aa/User;->oAuthData:Ljava/lang/String;",
+    "Lcom/rubenmayayo/reddit/aa/User;->synced:Z": "Lcom/rubenmayayo/reddit/aa/User;->synced:Z",
     "Landroidx/coordinatorlayout/widget/CoordinatorLayout$LayoutParams;->mBehavior:Landroidx/coordinatorlayout/widget/CoordinatorLayout$Behavior;": "Landroidx/coordinatorlayout/widget/CoordinatorLayout$f;->a:Landroidx/coordinatorlayout/widget/CoordinatorLayout$c;",
     "Landroidx/fragment/app/FragmentManager;->backStack:Ljava/util/ArrayList;": "Landroidx/fragment/app/FragmentManager;->d:Ljava/util/ArrayList;",
     "Landroidx/fragment/app/FragmentManager;->backStackChangeListeners:Ljava/util/ArrayList;": "Landroidx/fragment/app/FragmentManager;->l:Ljava/util/ArrayList;",
@@ -954,6 +970,11 @@
     "Lnet/dean/jraw/paginators/Sorting;->HOT:Lnet/dean/jraw/paginators/Sorting;": "Lnet/dean/jraw/paginators/Sorting;->HOT:Lnet/dean/jraw/paginators/Sorting;"
   },
   "staticMethods": [
+    "Lapp/morphe/extension/boost/api/RedditJraw;->initialize()V",
+    "Lapp/morphe/extension/boost/api/AccountStore;->users()Ljava/util/List;",
+    "Lcom/activeandroid/ActiveAndroid;->beginTransaction()V",
+    "Lcom/activeandroid/ActiveAndroid;->setTransactionSuccessful()V",
+    "Lcom/activeandroid/ActiveAndroid;->endTransaction()V",
     "Landroidx/fragment/app/Fragment;->instantiate(Landroid/content/Context;Ljava/lang/String;)Landroidx/fragment/app/Fragment;",
     "Landroidx/fragment/app/Fragment;->instantiate(Landroid/content/Context;Ljava/lang/String;Landroid/os/Bundle;)Landroidx/fragment/app/Fragment;",
     "Lapp/morphe/extension/boost/api/BoostPreferences;->downloadFolderKey(I)Ljava/lang/String;",
@@ -966,7 +987,6 @@
     "Lapp/morphe/extension/boost/api/DoneUtils;->getInstance()Lapp/morphe/extension/boost/api/DoneUtils;",
     "Lapp/morphe/extension/boost/api/InjectorUtils;->savedSearchViewModelFactory(Landroid/content/Context;)Lapp/morphe/extension/boost/api/SearchViewModelFactory;",
     "Lapp/morphe/extension/boost/api/MediaUploadFactory;->create(Ljava/lang/String;)Lapp/morphe/extension/boost/api/MediaUploader;",
-    "Lapp/morphe/extension/boost/api/MediaUploadFactory;->createOriginal(Ljava/lang/String;)Lapp/morphe/extension/boost/api/MediaUploader;",
     "Lapp/morphe/extension/boost/api/Navigation;->addAccount(Landroid/app/Activity;)V",
     "Lapp/morphe/extension/boost/api/Navigation;->handleNavigation(Landroid/content/Context;Ljava/lang/String;Z)Z",
     "Lapp/morphe/extension/boost/api/Navigation;->imageIntent(Landroid/content/Context;Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;Z)Landroid/content/Intent;",
@@ -1026,7 +1046,5 @@
     "Lnet/dean/jraw/paginators/Sorting;->BEST:Lnet/dean/jraw/paginators/Sorting;",
     "Lnet/dean/jraw/paginators/Sorting;->HOT:Lnet/dean/jraw/paginators/Sorting;"
   ],
-  "injectedMethods": {
-    "Lapp/morphe/extension/boost/api/MediaUploadFactory;->createOriginal(Ljava/lang/String;)Lapp/morphe/extension/boost/api/MediaUploader;": "Lapp/morphe/extension/boost/api/MediaUploadFactory;->create(Ljava/lang/String;)Lapp/morphe/extension/boost/api/MediaUploader;"
-  }
+  "injectedMethods": {}
 }

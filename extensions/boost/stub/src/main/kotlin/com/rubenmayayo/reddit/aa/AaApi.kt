@@ -13,6 +13,12 @@ package com.rubenmayayo.reddit.aa
 
 private fun <T> boostApiStub(): T = throw UnsupportedOperationException("Compile-only Boost adapter stub")
 
-abstract class User protected constructor(stub: Unit) : com.activeandroid.Model(Unit) {
+open class User protected constructor(stub: Unit) : com.activeandroid.Model(Unit) {
+    constructor() : this(Unit) { boostApiStub<Unit>() }
+    @JvmField var accessToken: String? = boostApiStub()
+    @JvmField var refreshToken: String? = boostApiStub()
+    @JvmField var expirationDate: java.util.Date? = boostApiStub()
+    @JvmField var oAuthData: String? = boostApiStub()
+    @JvmField var synced: Boolean = boostApiStub()
     @JvmField var name: String = boostApiStub()
 }

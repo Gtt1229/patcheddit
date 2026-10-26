@@ -9,9 +9,7 @@ package app.morphe.patches.reddit.customclients.boostforreddit.fix.upload
 
 import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal val editorImagePreviewFormattingBarSetEditTextFingerprint = BoostApi.FormattingBar.setEditText.fingerprint()
-
-internal val submitGallerySubmissionKindFingerprint = BoostApi.SubmitGalleryFragment.submitGallerySubmissionKind.fingerprint()
+internal val formattingBarSetEditTextFingerprint = BoostApi.FormattingBar.setEditText.fingerprint()
 
 internal val remoteConfigStringFingerprint = BoostApi.RemoteConfigHelper.remoteConfigString.fingerprint()
 

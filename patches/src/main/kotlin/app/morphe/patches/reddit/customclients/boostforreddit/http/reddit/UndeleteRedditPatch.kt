@@ -82,7 +82,7 @@ private fun extraEmojiInstructions(
 val undeleteRedditPatch = bytecodePatch(
     name = "Automatically undelete Reddit content",
     description = "Restores deleted and removed posts and comments from Arctic Shift, and their media from the Wayback Machine.",
-    default = false
+    default = true
 ) {
     category(PatchCategory.UNDELETE)
     dependsOn(ExtensionPatches.Boost, interceptHttpRequests, undeleteAppliedMarkerPatch(REDDIT_UNDELETE_APPLIED_RESOURCE))

@@ -10,33 +10,35 @@ package app.morphe.extension.boost.settings;
 import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 
 import androidx.preference.PreferenceFragmentCompat;
 
-public final class MorpheSettingsFragment extends PreferenceFragmentCompat {
+public class MorpheSettingsFragment extends PreferenceFragmentCompat {
     public static final String CONTRACT_MARKER =
             "MORPHE_BOOST_TOP_LEVEL_SETTINGS_ISSUE106_V1";
 
     private static final String RESOURCE_NAME = "morphe_boost_settings_skeleton";
     private static final String BOOST_PACKAGE = "com.rubenmayayo.reddit";
 
+    protected String resourceName() {
+        return RESOURCE_NAME;
+    }
+
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        setHasOptionsMenu(true);
         Context context = requireContext();
         Resources resources = context.getResources();
+        String resourceName = resourceName();
 
         int resourceId = resources.getIdentifier(
-                RESOURCE_NAME,
+                resourceName,
                 "xml",
                 context.getPackageName()
         );
 
         if (resourceId == 0) {
             resourceId = resources.getIdentifier(
-                    RESOURCE_NAME,
+                    resourceName,
                     "xml",
                     BOOST_PACKAGE
             );
@@ -44,25 +46,11 @@ public final class MorpheSettingsFragment extends PreferenceFragmentCompat {
 
         if (resourceId == 0) {
             throw new IllegalStateException(
-                    "Missing Morphe settings resource: " + RESOURCE_NAME
+                    "Missing Morphe settings resource: " + resourceName
             );
         }
 
         setPreferencesFromResource(resourceId, rootKey);
-    }
-
-    @Override
-    public void onPrepareOptionsMenu(Menu menu) {
-        super.onPrepareOptionsMenu(menu);
-        MorpheSettingsV4Search.prepareMenu(this, menu, true);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (MorpheSettingsV4Search.handleMenuItem(this, item)) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
 }

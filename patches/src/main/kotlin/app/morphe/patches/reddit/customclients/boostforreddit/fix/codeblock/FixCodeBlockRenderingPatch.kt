@@ -24,25 +24,17 @@ private const val CODEBLOCK_NORMALIZER_DESCRIPTOR =
 @Suppress("unused")
 val fixCodeBlockRenderingPatch = bytecodePatch(
     name = "Fix Boost code block rendering",
-    description = "Fixes fenced code and parenthesized links in feed previews and directly rendered HTML.",
+    description = "Fixes fenced code and parenthesized links in feed previews that bypass Boost's HTML preprocessing.",
     default = true
 ) {
     category(PatchCategory.COMMENTS)
     dependsOn(ExtensionPatches.Boost)
     compatibleWith(*AppCompatibility.Boost)
 
+    // TODO: Render all text bodies through Snudown or another Markdown parser to avoid dealing with inconsistent Reddit-provided HTML.
     execute {
-        // The 1.14.1 parser fixes normal post/comment HTML, but these paths bypass it.
-        boostLinkTextViewSetTextHtmlParsedFingerprint.method.addInstructions(
-            0,
-            """
-                invoke-static/range {p1 .. p1}, $CODEBLOCK_NORMALIZER_DESCRIPTOR->normalize(Ljava/lang/String;)Ljava/lang/String;
-                move-result-object p1
-            """,
-        )
-
-        // Other patches can wrap w(). Locate the one native body containing the
-        // self-preview conversion, rather than injecting into its wrapper.
+        // Unlike LinkTextView's parsed entry point, feed previews bypass RedditParser.
+        // Other patches can wrap the binder, so locate the native conversion body.
         boostSubmissionViewHolderSelfPreviewHtmlFingerprint.classDef.methods.single { candidate ->
             candidate.parameters.map { it.type } ==
                 boostSubmissionViewHolderSelfPreviewHtmlFingerprint.method.parameters.map { it.type } &&

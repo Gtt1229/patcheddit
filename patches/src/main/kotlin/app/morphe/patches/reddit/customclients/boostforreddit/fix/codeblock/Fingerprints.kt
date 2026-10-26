@@ -9,6 +9,4 @@ package app.morphe.patches.reddit.customclients.boostforreddit.fix.codeblock
 
 import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal val boostLinkTextViewSetTextHtmlParsedFingerprint = BoostApi.LinkTextView.setTextHtmlParsed.fingerprint()
-
 internal val boostSubmissionViewHolderSelfPreviewHtmlFingerprint = BoostApi.SubmissionViewHolder.bind.fingerprint()

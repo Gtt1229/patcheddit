@@ -13,7 +13,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
-import app.morphe.patches.reddit.customclients.boostforreddit.misc.settings.boostMorpheSettingsSkeletonPatch
+import app.morphe.patches.reddit.customclients.boostforreddit.misc.settings.boostMorpheSettingsPatch
 import app.morphe.patches.all.misc.PatchCategory
 import app.morphe.util.getReference
 import app.morphe.util.indexOfFirstInstructionOrThrow
@@ -32,7 +32,7 @@ val preferHighRefreshRatePatch = bytecodePatch(
     default = false,
 ) {
     category(PatchCategory.INTERFACE)
-    dependsOn(ExtensionPatches.Boost, boostMorpheSettingsSkeletonPatch)
+    dependsOn(ExtensionPatches.Boost, boostMorpheSettingsPatch)
     compatibleWith(*AppCompatibility.Boost)
 
     execute {

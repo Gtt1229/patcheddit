@@ -13,6 +13,8 @@ dependencies {
     implementation(libs.room.runtime)
     ksp(libs.room.compiler)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.8")
 }
 
 configurations.configureEach {

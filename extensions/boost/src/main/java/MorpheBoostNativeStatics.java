@@ -20,7 +20,6 @@ public final class MorpheBoostNativeStatics {
     public static app.morphe.extension.boost.api.DoneUtils DoneUtils_getInstance() { return app.morphe.extension.boost.api.DoneUtils.getInstance(); }
     public static app.morphe.extension.boost.api.SearchViewModelFactory InjectorUtils_savedSearchViewModelFactory(android.content.Context p0) { return app.morphe.extension.boost.api.InjectorUtils.savedSearchViewModelFactory(p0); }
     public static app.morphe.extension.boost.api.MediaUploader MediaUploadFactory_create(java.lang.String p0) { return app.morphe.extension.boost.api.MediaUploadFactory.create(p0); }
-    public static app.morphe.extension.boost.api.MediaUploader MediaUploadFactory_createOriginal(java.lang.String p0) { return app.morphe.extension.boost.api.MediaUploadFactory.createOriginal(p0); }
     public static void Navigation_addAccount(android.app.Activity p0) { app.morphe.extension.boost.api.Navigation.addAccount(p0); }
     public static android.content.Intent Navigation_imageIntent(android.content.Context p0, com.rubenmayayo.reddit.models.reddit.SubmissionModel p1, boolean p2) { return app.morphe.extension.boost.api.Navigation.imageIntent(p0, p1, p2); }
     public static void Navigation_openAnimatedMedia(android.content.Context p0, com.rubenmayayo.reddit.models.reddit.SubmissionModel p1, boolean p2) { app.morphe.extension.boost.api.Navigation.openAnimatedMedia(p0, p1, p2); }
