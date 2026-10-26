@@ -7,6 +7,8 @@
 
 package app.morphe.extension.boost.utils;
 
+import app.morphe.extension.boost.api.BoostFieldNames;
+
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Dialog;
@@ -367,7 +369,7 @@ public final class BoostSearchBottomNavigation {
 
             Field subredditField = findField(
                     subscription.getClass(),
-                    "a"
+                    BoostFieldNames.SubscriptionViewModelCommunity
             );
             if (subredditField == null) return;
 
@@ -3157,7 +3159,7 @@ public final class BoostSearchBottomNavigation {
             String shownUsername = null;
             Field usernameField = findField(
                     activity.getClass(),
-                    "Q"
+                    BoostFieldNames.UserActivityUsername
             );
 
             if (usernameField != null) {
@@ -3449,7 +3451,7 @@ public final class BoostSearchBottomNavigation {
              */
             Field subscriptionField = findField(
                     activity.getClass(),
-                    "O"
+                    BoostFieldNames.SubmissionsActivitySubscription
             );
 
             if (subscriptionField == null) {

@@ -7,7 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.misc.settings
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
@@ -26,15 +27,7 @@ private const val SETTINGS_V4_EXTENSION_DESCRIPTOR =
 private const val GET_INTENT_REFERENCE =
     "Landroid/app/Activity;->getIntent()Landroid/content/Intent;"
 
-private val settingsActivityOnCreateFingerprint = Fingerprint(
-    returnType = "V",
-    parameters = listOf("Landroid/os/Bundle;"),
-    custom = { method, classDef ->
-        classDef.type ==
-            "Lcom/rubenmayayo/reddit/ui/preferences/v2/SettingsActivityCompat;" &&
-            method.name == "onCreate"
-    },
-)
+private val settingsActivityOnCreateFingerprint = BoostApi.SettingsActivityCompat.onCreate.fingerprint()
 
 private val boostMorpheSettingsResourcesPatch = resourcePatch(
     name = "Boost Morphe settings resources",

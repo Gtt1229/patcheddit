@@ -7,19 +7,10 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.http.archive
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal object LinkBuildContextMenuFingerprint : Fingerprint(
-    definingClass = "Lj32;",
-    name = "b",
-    parameters = listOf("Ljava/lang/String;"),
-    returnType = "V",
+internal val LinkBuildContextMenuFingerprint = BoostApi.LinkMenu.linkBuildContextMenu.fingerprint(
     strings = listOf("Yandex", "Google", "TinEye"),
 )
 
-internal object OnClickContextMenuFingerprint : Fingerprint(
-    definingClass = "Lj32\$a;",
-    name = "a",
-    parameters = listOf("Lcom/rubenmayayo/reddit/ui/customviews/menu/MenuOption;"),
-    returnType = "V",
-)
+internal val OnClickContextMenuFingerprint = BoostApi.LinkMenuListener.onClickContextMenu.fingerprint()

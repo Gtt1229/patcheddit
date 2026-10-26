@@ -7,24 +7,12 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.insets
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal val mediaImageActivityOnCreateFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/activities/MediaImageActivity;",
-    name = "onCreate",
-)
+internal val mediaImageActivityOnCreateFingerprint = BoostApi.MediaImageActivity.onCreate.fingerprint()
 
-internal val mediaVideoActivityOnCreateFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/activities/MediaVideoActivity;",
-    name = "onCreate",
-)
+internal val mediaVideoActivityOnCreateFingerprint = BoostApi.MediaVideoActivity.onCreate.fingerprint()
 
-internal val mainActivityOnResumeFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/submissions/subreddit/MainActivity;",
-    name = "onResume",
-)
+internal val mainActivityOnResumeFingerprint = BoostApi.MainActivity.onResume.fingerprint()
 
-internal val myApplicationOnCreateFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/MyApplication;",
-    name = "onCreate",
-)
+internal val myApplicationOnCreateFingerprint = BoostApi.MyApplication.onCreate.fingerprint()

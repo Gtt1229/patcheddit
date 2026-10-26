@@ -7,76 +7,23 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.homefab
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal val fabNestedScrollFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/customviews/ScrollAwareFABBehavior;",
-    name = "s",
-    returnType = "V",
-    parameters = listOf(
-        "Landroidx/coordinatorlayout/widget/CoordinatorLayout;",
-        "Landroid/view/View;",
-        "Landroid/view/View;",
-        "I", "I", "I", "I",
-    ),
-)
+internal val fabNestedScrollFingerprint = BoostApi.ScrollAwareFABBehavior.fabNestedScroll.fingerprint()
 
-internal val fabMenuNestedScrollFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/customviews/ScrollAwareFABMenuBehavior;",
-    name = "s",
-    returnType = "V",
-    parameters = listOf(
-        "Landroidx/coordinatorlayout/widget/CoordinatorLayout;",
-        "Landroid/view/View;",
-        "Landroid/view/View;",
-        "I", "I", "I", "I",
-    ),
-)
+internal val fabMenuNestedScrollFingerprint = BoostApi.ScrollAwareFABMenuBehavior.fabMenuNestedScroll.fingerprint()
 
-internal val fabMiniNestedScrollFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/customviews/ScrollAwareFABMiniBehavior;",
-    name = "s",
-    returnType = "V",
-    parameters = listOf(
-        "Landroidx/coordinatorlayout/widget/CoordinatorLayout;",
-        "Landroid/view/View;",
-        "Landroid/view/View;",
-        "I", "I", "I", "I",
-    ),
-)
+internal val fabMiniNestedScrollFingerprint = BoostApi.ScrollAwareFABMiniBehavior.fabMiniNestedScroll.fingerprint()
 
-private fun dependentViewFingerprint(
-    definingClass: String,
-    name: String,
-    returnType: String,
-) = Fingerprint(
-    definingClass = definingClass,
-    name = name,
-    returnType = returnType,
-    parameters = listOf(
-        "Landroidx/coordinatorlayout/widget/CoordinatorLayout;",
-        "Landroid/view/View;",
-        "Landroid/view/View;",
-    ),
-)
+internal val fabMenuDependentViewChangedFingerprint =
+    BoostApi.ScrollAwareFABMenuBehavior.onDependentViewChanged.fingerprint()
 
-private const val SCROLL_AWARE_FAB_MENU_BEHAVIOR =
-    "Lcom/rubenmayayo/reddit/ui/customviews/ScrollAwareFABMenuBehavior;"
-private const val SCROLL_AWARE_FAB_BOTTOM_NAVIGATION_BEHAVIOR =
-    "Lcom/rubenmayayo/reddit/ui/customviews/ScrollAwareFABBehaviorBottomNavigation;"
-internal val fabMenuDependentViewChangedFingerprint = dependentViewFingerprint(
-    SCROLL_AWARE_FAB_MENU_BEHAVIOR, "i", "Z",
-)
-
-internal val fabMenuDependentViewRemovedFingerprint = dependentViewFingerprint(
-    SCROLL_AWARE_FAB_MENU_BEHAVIOR, "j", "V",
-)
+internal val fabMenuDependentViewRemovedFingerprint =
+    BoostApi.ScrollAwareFABMenuBehavior.onDependentViewRemoved.fingerprint()
 
 // Inbox/Profile fab + fab_submit, Search fab_save and Home fab_random.
-internal val fabBottomNavigationDependentViewChangedFingerprint = dependentViewFingerprint(
-    SCROLL_AWARE_FAB_BOTTOM_NAVIGATION_BEHAVIOR, "i", "Z",
-)
+internal val fabBottomNavigationDependentViewChangedFingerprint =
+    BoostApi.ScrollAwareFABBehaviorBottomNavigation.onDependentViewChanged.fingerprint()
 
-internal val fabBottomNavigationDependentViewRemovedFingerprint = dependentViewFingerprint(
-    SCROLL_AWARE_FAB_BOTTOM_NAVIGATION_BEHAVIOR, "j", "V",
-)
+internal val fabBottomNavigationDependentViewRemovedFingerprint =
+    BoostApi.ScrollAwareFABBehaviorBottomNavigation.onDependentViewRemoved.fingerprint()

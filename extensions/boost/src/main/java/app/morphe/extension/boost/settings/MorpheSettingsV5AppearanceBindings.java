@@ -7,6 +7,8 @@
 
 package app.morphe.extension.boost.settings;
 
+import app.morphe.extension.boost.api.BoostFieldNames;
+
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
@@ -1380,32 +1382,32 @@ final class MorpheSettingsV5AppearanceBindings {
         private void applySideEffects(String key) {
             if (key.startsWith("pref_cards_")
                     || key.startsWith("pref_mini_cards_")) {
-                setBoostStaticBoolean("f");
+                setBoostStaticBoolean(BoostFieldNames.BoostPreferencesPostViewsDirty);
             }
             if ("pref_dense_buttons_visible".equals(key)
                     || "pref_left_handed".equals(key)
                     || "pref_split_screen".equals(key)) {
-                setBoostStaticBoolean("g");
+                setBoostStaticBoolean(BoostFieldNames.BoostPreferencesPostTypographyDirty);
             }
             if ("pref_show_subreddit_header".equals(key)
                     || "pref_header_show_description".equals(key)
                     || "pref_toolbar_header_type".equals(key)) {
-                setBoostStaticBoolean("d");
+                setBoostStaticBoolean(BoostFieldNames.BoostPreferencesLayoutDirty);
             }
             if ("pref_show_subreddit_prefix".equals(key)) {
                 setBoostStaticString(
-                        "c",
+                        BoostFieldNames.BoostPreferencesSubredditPrefix,
                         preferences.getBoolean(key, false) ? "r/" : ""
                 );
-                setBoostStaticBoolean("h");
+                setBoostStaticBoolean(BoostFieldNames.BoostPreferencesThemeDirty);
             }
             if ("pref_colored_nav_bar".equals(key)
                     || "pref_colored_status_bar".equals(key)) {
-                setBoostStaticBoolean("g");
+                setBoostStaticBoolean(BoostFieldNames.BoostPreferencesPostTypographyDirty);
                 recreateHost();
             }
             if ("pref_dynamic_colors".equals(key)) {
-                setBoostStaticBoolean("h");
+                setBoostStaticBoolean(BoostFieldNames.BoostPreferencesThemeDirty);
                 recreateHost();
             }
             if ("pref_theme".equals(key)
@@ -1414,7 +1416,7 @@ final class MorpheSettingsV5AppearanceBindings {
                     || "pref_theme_night_start_minutes".equals(key)
                     || "pref_theme_night_end_minutes".equals(key)) {
                 BoostSettingsNative.updateThemeMode();
-                setBoostStaticBoolean("h");
+                setBoostStaticBoolean(BoostFieldNames.BoostPreferencesThemeDirty);
                 recreateHost();
             }
             if ("pref_font_size".equals(key)
@@ -1619,7 +1621,7 @@ final class MorpheSettingsV5AppearanceBindings {
             String fieldName,
             String value
     ) {
-        if (!"c".equals(fieldName)) {
+        if (!BoostFieldNames.BoostPreferencesSubredditPrefix.equals(fieldName)) {
             throw new IllegalArgumentException("unsupported Boost string field " + fieldName);
         }
         BoostSettingsNative.setSubredditPrefix(value);

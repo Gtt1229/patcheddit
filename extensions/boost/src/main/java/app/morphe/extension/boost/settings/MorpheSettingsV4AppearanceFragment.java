@@ -7,6 +7,8 @@
 
 package app.morphe.extension.boost.settings;
 
+import app.morphe.extension.boost.api.BoostFieldNames;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -271,7 +273,7 @@ public final class MorpheSettingsV4AppearanceFragment extends Fragment {
             boolean enabled
     ) {
         preferences.edit().putBoolean(KEY_DYNAMIC_COLORS, enabled).apply();
-        setBoostStaticBoolean("h");
+        setBoostStaticBoolean(BoostFieldNames.BoostPreferencesThemeDirty);
     }
 
     private void updateSystemBarPreference(String key, boolean enabled) {
@@ -289,7 +291,7 @@ public final class MorpheSettingsV4AppearanceFragment extends Fragment {
             throw new IllegalArgumentException("unsupported system bar key " + key);
         }
         preferences.edit().putBoolean(key, enabled).apply();
-        setBoostStaticBoolean("g");
+        setBoostStaticBoolean(BoostFieldNames.BoostPreferencesPostTypographyDirty);
     }
 
     private static void setBoostStaticBoolean(String fieldName) {

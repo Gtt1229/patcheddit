@@ -1,8 +1,8 @@
 /*
  * Copyright 2026 wchill.
  *
- * Compile-only declarations for the verified Boost 1.14.0 API.
- * These placeholder implementations must never be packaged with the extension.
+ * Stable compile-only Boost adapter API. Native targets are in boost/bindings.json.
+ * These declarations must never be packaged with the extension.
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -11,9 +11,9 @@
 
 package androidx.drawerlayout.widget
 
-private fun <T> boost114Stub(): T = throw UnsupportedOperationException("Compile-only Boost 1.14 API stub")
+private fun <T> boostApiStub(): T = throw UnsupportedOperationException("Compile-only Boost adapter stub")
 
-abstract class DrawerLayout protected constructor(stub: Unit) : android.view.ViewGroup(boost114Stub<android.content.Context>()) {
-    interface d {
+abstract class DrawerLayout protected constructor(stub: Unit) : android.view.ViewGroup(boostApiStub<android.content.Context>()) {
+    interface DrawerListener {
     }
 }

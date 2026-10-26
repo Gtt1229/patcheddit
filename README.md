@@ -13,7 +13,7 @@ In addition, patches for some apps contain additional features that were not pre
 ### All clients
 * Client ID, redirect URI and user agent are all patchable.
     * By default, `Spoof client` uses RedReader 1.27's client ID, redirect URI and user agent. Leave the OAuth client ID option empty to use its default.
-    * Custom patch options override these defaults. In Boost 1.14.0, saved values in the native API settings override the patch-provided defaults.
+    * Custom patch options override these defaults. In Boost 1.14.0 and up, saved values in the native API settings override the patch-provided defaults.
 
 ### Boost for Reddit
 * The content of deleted Reddit posts and comments can be loaded from [Project Arctic Shift](https://github.com/ArthurHeitmann/arctic_shift).
@@ -116,6 +116,20 @@ and updating the version of Patcheddit. It is triggered by pushing to the `dev` 
 The workflow uses the `publish` task to publish the release of Patcheddit
 - The `buildAndroid` task is used to build Patcheddit so that it can be used on Android.
 The `publish` task depends on the `buildAndroid` task, so it will be run automatically when publishing a release.
+
+### Updating Boost bindings
+
+Boost's compile-only Kotlin API is in `extensions/boost/stub/src/main/kotlin`. Feature code uses stable class and member names; patches use the matching typed `BoostApi` catalog rather than loading Android stub classes on the patcher JVM:
+
+```kotlin
+val fingerprint = BoostApi.DrawerActivity.setupBottomNavigation.fingerprint()
+```
+
+`patches/src/main/resources/boost/bindings.json` contains the version-specific native targets. Its keys are stable adapter descriptors; its values are complete native class, method and field descriptors, including declaring owners. For an obfuscation-only update, change the target values and declared version, update `AppCompatibility`, and refresh the partial library `boost/mapping.txt` when needed. Do not rename the adapter API or feature code to match obfuscated symbols.
+
+`staticMethods` and `staticFields` describe the adapter API's dispatch. `injectedMethods` identifies bridges cloned from native factories. All targets, prototypes, dispatch kinds and instance receivers are checked against the input APK. Missing or conflicting bindings stop patching. Native signature or behavior changes can still require adapter or patch changes.
+
+Only the extension payload is rebound; the app is not deobfuscated, and placeholder stubs are never packaged. Native callbacks are renamed through the same bindings. Reflective field access uses `BoostFieldNames`, whose non-constant values are resolved during binding, so callers do not embed obfuscated names or precompute hashes for renamed strings.
 
 ## 📚 Everything else
 

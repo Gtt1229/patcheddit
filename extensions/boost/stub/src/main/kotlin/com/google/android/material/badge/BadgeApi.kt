@@ -1,8 +1,8 @@
 /*
  * Copyright 2026 wchill.
  *
- * Compile-only declarations for the verified Boost 1.14.0 API.
- * These placeholder implementations must never be packaged with the extension.
+ * Stable compile-only Boost adapter API. Native targets are in boost/bindings.json.
+ * These declarations must never be packaged with the extension.
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -11,29 +11,27 @@
 
 package com.google.android.material.badge
 
-import y73 as TextDrawableHelper
+private fun <T> boostApiStub(): T = throw UnsupportedOperationException("Compile-only Boost adapter stub")
 
-private fun <T> boost114Stub(): T = throw UnsupportedOperationException("Compile-only Boost 1.14 API stub")
-
-abstract class BadgeState protected constructor(stub: Unit) {
-    @JvmField val a: com.google.android.material.badge.BadgeState.State = boost114Stub()
-    @JvmField val b: com.google.android.material.badge.BadgeState.State = boost114Stub()
-    fun a(): Boolean = boost114Stub()
-    abstract class State protected constructor(stub: Unit) : android.os.Parcelable {
-        @JvmField var F: Int = boost114Stub()
-        @JvmField var O: Boolean? = boost114Stub()
-    }
+open class BadgeDrawable protected constructor(stub: Unit) : android.graphics.drawable.Drawable(), com.google.android.material.internal.TextDrawableHelper.TextDrawableDelegate {
+    constructor(p0: android.content.Context?, p1: com.google.android.material.badge.BadgeState.State?) : this(Unit) { boostApiStub<Unit>() }
+    @JvmField val textDrawableHelper: com.google.android.material.internal.TextDrawableHelper = boostApiStub()
+    @JvmField val state: com.google.android.material.badge.BadgeState = boostApiStub()
+    override fun draw(p0: android.graphics.Canvas): Unit = boostApiStub()
+    fun getCustomBadgeParent(): android.widget.FrameLayout? = boostApiStub()
+    override fun getOpacity(): Int = boostApiStub()
+    fun refreshNumberGeometry(): Unit = boostApiStub()
+    fun refreshNumberRendering(): Unit = boostApiStub()
+    override fun setAlpha(p0: Int): Unit = boostApiStub()
+    override fun setColorFilter(p0: android.graphics.ColorFilter?): Unit = boostApiStub()
 }
 
-open class a protected constructor(stub: Unit) : android.graphics.drawable.Drawable(), TextDrawableHelper.b {
-    constructor(p0: android.content.Context?, p1: com.google.android.material.badge.BadgeState.State?) : this(Unit) { boost114Stub<Unit>() }
-    @JvmField val c: TextDrawableHelper = boost114Stub()
-    @JvmField val z: com.google.android.material.badge.BadgeState = boost114Stub()
-    fun e(): android.widget.FrameLayout? = boost114Stub()
-    fun i(): Unit = boost114Stub()
-    fun l(): Unit = boost114Stub()
-    override fun draw(p0: android.graphics.Canvas): Unit = boost114Stub()
-    override fun getOpacity(): Int = boost114Stub()
-    override fun setAlpha(p0: Int): Unit = boost114Stub()
-    override fun setColorFilter(p0: android.graphics.ColorFilter?): Unit = boost114Stub()
+abstract class BadgeState protected constructor(stub: Unit) {
+    @JvmField val overridingState: com.google.android.material.badge.BadgeState.State = boostApiStub()
+    @JvmField val currentState: com.google.android.material.badge.BadgeState.State = boostApiStub()
+    fun hasNumber(): Boolean = boostApiStub()
+    abstract class State protected constructor(stub: Unit) : android.os.Parcelable {
+        @JvmField var number: Int = boostApiStub()
+        @JvmField var visible: Boolean? = boostApiStub()
+    }
 }

@@ -2,6 +2,8 @@
  * Copyright 2026 wchill.
  *
  * Java emits native static calls directly instead of Kotlin companion calls.
+ *
+ * See the included NOTICE file for GPLv3 section 7 terms.
  */
 
 public final class MorpheBoostNativeStatics {
@@ -9,51 +11,47 @@ public final class MorpheBoostNativeStatics {
 
     public static androidx.fragment.app.Fragment Fragment_instantiate(android.content.Context p0, java.lang.String p1) { return androidx.fragment.app.Fragment.instantiate(p0, p1); }
     public static androidx.fragment.app.Fragment Fragment_instantiate(android.content.Context p0, java.lang.String p1, android.os.Bundle p2) { return androidx.fragment.app.Fragment.instantiate(p0, p1, p2); }
-    public static void Fragment_l1(androidx.fragment.app.Fragment p0) { androidx.fragment.app.Fragment.l1(p0); }
-    public static boolean FragmentManager_H(int p0) { return androidx.fragment.app.FragmentManager.H(p0); }
-    public static boolean FragmentManager_I(androidx.fragment.app.Fragment p0) { return androidx.fragment.app.FragmentManager.I(p0); }
-    public static boolean FragmentManager_K(androidx.fragment.app.Fragment p0) { return androidx.fragment.app.FragmentManager.K(p0); }
-    public static void FragmentManager_a0(androidx.fragment.app.Fragment p0) { androidx.fragment.app.FragmentManager.a0(p0); }
-    public static bx2 bx2_b() { return bx2.b(); }
-    public static java.lang.String bx2_c(com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel p0) { return bx2.c(p0); }
-    public static ax2 bx2_d(int p0) { return bx2.d(p0); }
-    public static cd2 cd2_a() { return cd2.a(); }
-    public static bt ce2_a(java.lang.Class p0) { return ce2.a(p0); }
-    public static ig2 a_d(android.content.Context p0) { return com.bumptech.glide.a.d(p0); }
-    public static com.google.android.exoplayer2.o o_a(android.net.Uri p0) { return com.google.android.exoplayer2.o.a(p0); }
+    public static java.lang.String BoostPreferences_downloadFolderKey(int p0) { return app.morphe.extension.boost.api.BoostPreferences.downloadFolderKey(p0); }
+    public static app.morphe.extension.boost.api.BoostPreferences BoostPreferences_getInstance() { return app.morphe.extension.boost.api.BoostPreferences.getInstance(); }
+    public static android.graphics.Typeface BoostPreferences_resolveFont(android.content.Context p0, java.lang.String p1) { return app.morphe.extension.boost.api.BoostPreferences.resolveFont(p0, p1); }
+    public static void CacheUtils_clear(android.content.Context p0) { app.morphe.extension.boost.api.CacheUtils.clear(p0); }
+    public static java.lang.String CacheUtils_size(android.content.Context p0) { return app.morphe.extension.boost.api.CacheUtils.size(p0); }
+    public static void DiskCacheAdapter_resizeMediaCache(android.content.ContextWrapper p0) { app.morphe.extension.boost.api.DiskCacheAdapter.resizeMediaCache(p0); }
+    public static app.morphe.extension.boost.api.DoneUtils DoneUtils_getInstance() { return app.morphe.extension.boost.api.DoneUtils.getInstance(); }
+    public static app.morphe.extension.boost.api.SearchViewModelFactory InjectorUtils_savedSearchViewModelFactory(android.content.Context p0) { return app.morphe.extension.boost.api.InjectorUtils.savedSearchViewModelFactory(p0); }
+    public static app.morphe.extension.boost.api.MediaUploader MediaUploadFactory_create(java.lang.String p0) { return app.morphe.extension.boost.api.MediaUploadFactory.create(p0); }
+    public static app.morphe.extension.boost.api.MediaUploader MediaUploadFactory_createOriginal(java.lang.String p0) { return app.morphe.extension.boost.api.MediaUploadFactory.createOriginal(p0); }
+    public static void Navigation_addAccount(android.app.Activity p0) { app.morphe.extension.boost.api.Navigation.addAccount(p0); }
+    public static android.content.Intent Navigation_imageIntent(android.content.Context p0, com.rubenmayayo.reddit.models.reddit.SubmissionModel p1, boolean p2) { return app.morphe.extension.boost.api.Navigation.imageIntent(p0, p1, p2); }
+    public static void Navigation_openAnimatedMedia(android.content.Context p0, com.rubenmayayo.reddit.models.reddit.SubmissionModel p1, boolean p2) { app.morphe.extension.boost.api.Navigation.openAnimatedMedia(p0, p1, p2); }
+    public static void Navigation_openCommunity(android.app.Activity p0, java.lang.String p1) { app.morphe.extension.boost.api.Navigation.openCommunity(p0, p1); }
+    public static void Navigation_openImage(android.content.Context p0, com.rubenmayayo.reddit.models.reddit.SubmissionModel p1, boolean p2) { app.morphe.extension.boost.api.Navigation.openImage(p0, p1, p2); }
+    public static void Navigation_openSupport(android.content.Context p0) { app.morphe.extension.boost.api.Navigation.openSupport(p0); }
+    public static void Navigation_openUser(android.content.Context p0, java.lang.String p1) { app.morphe.extension.boost.api.Navigation.openUser(p0, p1); }
+    public static void Navigation_openWiki(android.app.Activity p0, java.lang.String p1, java.lang.String p2) { app.morphe.extension.boost.api.Navigation.openWiki(p0, p1, p2); }
+    public static void Navigation_rateApp(android.app.Activity p0) { app.morphe.extension.boost.api.Navigation.rateApp(p0); }
+    public static void NightUtils_updateThemeMode() { app.morphe.extension.boost.api.NightUtils.updateThemeMode(); }
+    public static app.morphe.extension.boost.api.PostHistoryUtils PostHistoryUtils_getInstance() { return app.morphe.extension.boost.api.PostHistoryUtils.getInstance(); }
+    public static app.morphe.extension.boost.api.ReadHistory ReadHistory_getInstance() { return app.morphe.extension.boost.api.ReadHistory.getInstance(); }
+    public static app.morphe.extension.boost.api.runtime.kotlin.jvm.internal.ClassReference Reflection_getKotlinClass(java.lang.Class p0) { return app.morphe.extension.boost.api.Reflection.getKotlinClass(p0); }
+    public static boolean RemoteConfigHelper_isEnabled(java.lang.String p0) { return app.morphe.extension.boost.api.RemoteConfigHelper.isEnabled(p0); }
+    public static app.morphe.extension.boost.api.SearchCache SearchCache_getInstance() { return app.morphe.extension.boost.api.SearchCache.getInstance(); }
+    public static java.util.ArrayList SortMenu_sortOptions(com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel p0, boolean p1, boolean p2) { return app.morphe.extension.boost.api.SortMenu.sortOptions(p0, p1, p2); }
+    public static app.morphe.extension.boost.api.SortUtils SortUtils_getInstance() { return app.morphe.extension.boost.api.SortUtils.getInstance(); }
+    public static app.morphe.extension.boost.api.SortSelection SortUtils_resolveSort(int p0) { return app.morphe.extension.boost.api.SortUtils.resolveSort(p0); }
+    public static java.lang.String SortUtils_subscriptionKey(com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel p0) { return app.morphe.extension.boost.api.SortUtils.subscriptionKey(p0); }
+    public static app.morphe.extension.boost.api.SubredditHistoryUtils SubredditHistoryUtils_getInstance() { return app.morphe.extension.boost.api.SubredditHistoryUtils.getInstance(); }
+    public static int ThemeUtils_accentColor(android.content.Context p0) { return app.morphe.extension.boost.api.ThemeUtils.accentColor(p0); }
+    public static int ThemeUtils_themeIndex(int p0) { return app.morphe.extension.boost.api.ThemeUtils.themeIndex(p0); }
+    public static java.lang.String Utils_subscriptionName(android.content.Context p0, com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel p1) { return app.morphe.extension.boost.api.Utils.subscriptionName(p0, p1); }
+    public static void Utils_subscriptionsChanged(android.content.Context p0) { app.morphe.extension.boost.api.Utils.subscriptionsChanged(p0); }
+    public static app.morphe.extension.boost.api.ViewUtils ViewUtils_getInstance() { return app.morphe.extension.boost.api.ViewUtils.getInstance(); }
+    public static com.bumptech.glide.RequestManager Glide_with(android.content.Context p0) { return com.bumptech.glide.Glide.with(p0); }
+    public static com.google.android.exoplayer2.MediaItem MediaItem_fromUri(android.net.Uri p0) { return com.google.android.exoplayer2.MediaItem.fromUri(p0); }
     public static java.lang.String Snudown_markdown(java.lang.String p0) { return com.rubenmayayo.androidsnudown.Snudown.markdown(p0); }
-    public static com.rubenmayayo.reddit.models.reddit.SubmissionModel SubmissionModel_C(net.dean.jraw.models.Submission p0) { return com.rubenmayayo.reddit.models.reddit.SubmissionModel.C(p0); }
-    public static com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel SubscriptionViewModel_c() { return com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel.c(); }
-    public static void CheckNotificationsWorker_h(android.app.Activity p0) { com.rubenmayayo.reddit.work.notifications.CheckNotificationsWorker.h(p0); }
-    public static void CheckNotificationsWorker_i(android.app.Activity p0) { com.rubenmayayo.reddit.work.notifications.CheckNotificationsWorker.i(p0); }
-    public static void TrendingWorker_h(android.content.Context p0, int p1) { com.rubenmayayo.reddit.work.trending.TrendingWorker.h(p0, p1); }
-    public static d72 d72_c() { return d72.c(); }
-    public static void dr_g(android.content.ContextWrapper p0) { dr.g(p0); }
-    public static cs1 fl1_morpheCreateOriginalUploader(java.lang.String p0) { return fl1.morpheCreateOriginalUploader(p0); }
-    public static fn3 fn3_a() { return fn3.a(); }
-    public static void g02_a() { g02.a(); }
-    public static h43 h43_b() { return h43.b(); }
-    public static void hk3_E(android.content.Context p0) { hk3.E(p0); }
-    public static java.lang.String hk3_X(android.content.Context p0, com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel p1) { return hk3.X(p0, p1); }
-    public static void mo_a(android.content.Context p0) { mo.a(p0); }
-    public static java.lang.String mo_b(android.content.Context p0) { return mo.b(p0); }
-    public static android.graphics.Typeface ns2_c0(android.content.Context p0, java.lang.String p1) { return ns2.c0(p0, p1); }
-    public static java.lang.String ns2_j(int p0) { return ns2.j(p0); }
-    public static ns2 ns2_m() { return ns2.m(); }
-    public static java.util.ArrayList o80_j(com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel p0, boolean p1, boolean p2) { return o80.j(p0, p1, p2); }
-    public static int o83_c(android.content.Context p0) { return o83.c(p0); }
-    public static int o83_q(int p0) { return o83.q(p0); }
-    public static qh0 qh0_b() { return qh0.b(); }
-    public static bo2 tc1_a(android.content.Context p0) { return tc1.a(p0); }
-    public static tm2 tm2_a() { return tm2.a(); }
-    public static boolean xe2_a(java.lang.String p0) { return xe2.a(p0); }
-    public static void xy1_B(android.content.Context p0, java.lang.String p1) { xy1.B(p0, p1); }
-    public static void xy1_F(android.app.Activity p0, java.lang.String p1) { xy1.F(p0, p1); }
-    public static void xy1_I(android.content.Context p0) { xy1.I(p0); }
-    public static void xy1_L(android.app.Activity p0, java.lang.String p1, java.lang.String p2) { xy1.L(p0, p1, p2); }
-    public static void xy1_O(android.app.Activity p0) { xy1.O(p0); }
-    public static android.content.Intent xy1_e(android.content.Context p0, com.rubenmayayo.reddit.models.reddit.SubmissionModel p1, boolean p2) { return xy1.e(p0, p1, p2); }
-    public static void xy1_r(android.content.Context p0, com.rubenmayayo.reddit.models.reddit.SubmissionModel p1, boolean p2) { xy1.r(p0, p1, p2); }
-    public static void xy1_s(android.content.Context p0, com.rubenmayayo.reddit.models.reddit.SubmissionModel p1, boolean p2) { xy1.s(p0, p1, p2); }
-    public static void xy1_x(android.app.Activity p0) { xy1.x(p0); }
+    public static com.rubenmayayo.reddit.models.reddit.SubmissionModel SubmissionModel_fromSubmission(net.dean.jraw.models.Submission p0) { return com.rubenmayayo.reddit.models.reddit.SubmissionModel.fromSubmission(p0); }
+    public static com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel SubscriptionViewModel_frontpage() { return com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel.frontpage(); }
+    public static void CheckNotificationsWorker_disable(android.app.Activity p0) { com.rubenmayayo.reddit.work.notifications.CheckNotificationsWorker.disable(p0); }
+    public static void CheckNotificationsWorker_enable(android.app.Activity p0) { com.rubenmayayo.reddit.work.notifications.CheckNotificationsWorker.enable(p0); }
+    public static void TrendingWorker_schedule(android.content.Context p0, int p1) { com.rubenmayayo.reddit.work.trending.TrendingWorker.schedule(p0, p1); }
 }

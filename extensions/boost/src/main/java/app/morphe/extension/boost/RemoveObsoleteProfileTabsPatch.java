@@ -8,6 +8,7 @@
 package app.morphe.extension.boost;
 
 import android.util.Log;
+import app.morphe.extension.boost.api.BoostFieldNames;
 
 import java.lang.reflect.Field;
 
@@ -27,13 +28,13 @@ public final class RemoveObsoleteProfileTabsPatch {
 
         try {
             Class<?> activityClass = activity.getClass();
-            Field routesField = activityClass.getField("P");
-            Field titlesField = activityClass.getField("O");
-            Field countField = activityClass.getField("R");
+            Field routesField = activityClass.getField(BoostFieldNames.UserActivityTabRoutes);
+            Field titlesField = activityClass.getField(BoostFieldNames.UserActivityTabTitles);
+            Field countField = activityClass.getField(BoostFieldNames.UserActivityTabCount);
             if (routesField.getType() != String[].class
                     || titlesField.getType() != String[].class
                     || countField.getType() != byte.class) {
-                throw new IllegalStateException("Unexpected Boost 1.14.0 profile tab fields");
+                throw new IllegalStateException("Unexpected Boost 1.14.1 profile tab fields");
             }
 
             String[] routes = (String[]) routesField.get(activity);

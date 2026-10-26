@@ -9,72 +9,33 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.http.reddit
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import com.android.tools.smali.dexlib2.AccessFlags
 
 // Badge construction is inlined into the binders.
-internal object SetCommentBabushkaTextFingerprint : Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/adapters/CommentViewHolder;",
-    name = "w",
-    returnType = "V",
-    parameters = listOf(
-        "Lcom/rubenmayayo/reddit/models/reddit/CommentModel;",
-        "Z", "Z", "Z", "Lig2;",
-    ),
-)
+internal val SetCommentBabushkaTextFingerprint = BoostApi.CommentViewHolder.bind.fingerprint()
 
-internal object SetSubmissionBabushkaTextFingerprint : Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/adapters/SubmissionViewHolder;",
-    name = "w",
-    returnType = "V",
-    parameters = listOf(
-        "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;",
-        "Z", "Z", "Z", "Lig2;",
-    ),
-)
+internal val SetSubmissionBabushkaTextFingerprint = BoostApi.SubmissionViewHolder.bind.fingerprint()
 
-internal object ContributionModelConstructorFingerprint : Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/models/reddit/ContributionModel;",
-    name = "<init>",
+internal val ContributionModelConstructorFingerprint = BoostApi.ContributionModel.construct.fingerprint(
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.CONSTRUCTOR),
-    parameters = listOf("Landroid/os/Parcel;"),
-    returnType = "V",
 )
 
-internal object ContributionModelWriteToParcelFingerprint : Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/models/reddit/ContributionModel;",
-    name = "writeToParcel",
+internal val ContributionModelWriteToParcelFingerprint = BoostApi.ContributionModel.writeToParcel.fingerprint(
     accessFlags = listOf(AccessFlags.PUBLIC),
-    returnType = "V",
 )
 
-internal object SubmissionModelDeserializeFingerprint : Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;",
-    name = "C",
+internal val SubmissionModelDeserializeFingerprint = BoostApi.SubmissionModel.fromSubmission.fingerprint(
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC),
-    returnType = "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;",
-    parameters = listOf("Lnet/dean/jraw/models/Submission;"),
 )
 
-internal object CommentModelDeserializeFingerprint : Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/models/reddit/CommentModel;",
-    name = "y",
+internal val CommentModelDeserializeFingerprint = BoostApi.CommentModel.commentModelDeserialize.fingerprint(
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC),
-    returnType = "Lcom/rubenmayayo/reddit/models/reddit/CommentModel;",
-    parameters = listOf("Lnet/dean/jraw/models/Comment;"),
 )
 
-internal object StateSubmissionViewSetStateFingerprint : Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/customviews/StateSubmissionView;",
-    name = "setState",
-    returnType = "V",
-    parameters = listOf("Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;"),
+internal val StateSubmissionViewSetStateFingerprint = BoostApi.StateSubmissionView.setState.fingerprint(
     strings = listOf("reddit", "copyright_takedown"),
 )
 
-internal object GlideHttpUrlFetcherFetchFingerprint : Fingerprint(
-    definingClass = "Lm81;",
-    name = "f",
-    returnType = "Ljava/io/InputStream;",
-    parameters = listOf("Ljava/net/URL;", "I", "Ljava/net/URL;", "Ljava/util/Map;"),
-)
+internal val GlideHttpUrlFetcherFetchFingerprint = BoostApi.HttpUrlFetcher.loadDataWithRedirects.fingerprint()

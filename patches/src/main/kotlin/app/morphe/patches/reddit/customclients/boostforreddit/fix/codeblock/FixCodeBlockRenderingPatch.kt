@@ -24,7 +24,7 @@ private const val CODEBLOCK_NORMALIZER_DESCRIPTOR =
 @Suppress("unused")
 val fixCodeBlockRenderingPatch = bytecodePatch(
     name = "Fix Boost code block rendering",
-    description = "Shows Reddit code blocks correctly and fixes links whose URL contains parentheses.",
+    description = "Fixes fenced code and parenthesized links in feed previews and directly rendered HTML.",
     default = true
 ) {
     category(PatchCategory.COMMENTS)
@@ -32,33 +32,7 @@ val fixCodeBlockRenderingPatch = bytecodePatch(
     compatibleWith(*AppCompatibility.Boost)
 
     execute {
-        boostHtmlSanitizerFingerprint.method.apply {
-            val codeIndex = boostHtmlSanitizerFingerprint.stringMatches.single {
-                it.string == "<code>"
-            }.index
-            val sanitizerIndex = implementation!!.instructions.withIndex().first { (index, instruction) ->
-                index > codeIndex &&
-                    instruction.getReference<MethodReference>()?.toString() ==
-                    "Ljava/lang/String;->replaceAll(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"
-            }.index
-            val htmlRegister = getInstruction<FiveRegisterInstruction>(sanitizerIndex).registerC
-            addInstructions(
-                sanitizerIndex,
-                """
-                    invoke-static {v$htmlRegister}, $CODEBLOCK_NORMALIZER_DESCRIPTOR->normalize(Ljava/lang/String;)Ljava/lang/String;
-                    move-result-object v$htmlRegister
-                """,
-            )
-        }
-
-        boostTableTextViewSetTextHtmlFingerprint.method.addInstructions(
-            0,
-            """
-                invoke-static/range {p1 .. p1}, $CODEBLOCK_NORMALIZER_DESCRIPTOR->normalize(Ljava/lang/String;)Ljava/lang/String;
-                move-result-object p1
-                """
-        )
-
+        // The 1.14.1 parser fixes normal post/comment HTML, but these paths bypass it.
         boostLinkTextViewSetTextHtmlParsedFingerprint.method.addInstructions(
             0,
             """

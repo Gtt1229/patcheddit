@@ -7,6 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.search
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
@@ -39,7 +41,7 @@ val boostSearchDefaultDiscoveryPatch = bytecodePatch(
             addInstructions(
                 0,
                 """
-                    iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity;->a:Ljava/util/ArrayList;
+                    iget-object v0, p0, ${BoostApi.SearchAbstractActivity.rows}
                     invoke-static {p0, v0}, Lapp/morphe/extension/boost/search/SearchExploreRows;->appendOrRefresh(Landroid/app/Activity;Ljava/util/ArrayList;)V
                 """.trimIndent(),
             )
@@ -55,7 +57,7 @@ val boostSearchDefaultDiscoveryPatch = bytecodePatch(
                 move-result-object v0
                 const/4 v1, 0x3
                 invoke-virtual {v0, v1}, Landroid/view/Window;->setSoftInputMode(I)V
-                iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity;->searchEditText:Landroid/widget/EditText;
+                iget-object v0, p0, ${BoostApi.SearchAbstractActivity.searchEditText}
                 invoke-virtual {v0}, Landroid/view/View;->clearFocus()V
             """,
         )

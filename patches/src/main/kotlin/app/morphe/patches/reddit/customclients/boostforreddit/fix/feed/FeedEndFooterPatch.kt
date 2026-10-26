@@ -7,7 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.feed
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
@@ -17,35 +18,17 @@ import app.morphe.patches.all.misc.PatchCategory
 private const val FEED_END_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostFeedEndFooter;"
 
-private const val SUBMISSION_FRAGMENT =
-    "Lcom/rubenmayayo/reddit/ui/fragments/SubmissionRecyclerViewFragment;"
-
-private const val SUBMISSION_LIST =
-    "$SUBMISSION_FRAGMENT->mRecyclerView:Lcom/rubenmayayo/reddit/ui/customviews/EmptyRecyclerView;"
+private val SUBMISSION_FRAGMENT =
+    BoostApi.SubmissionRecyclerViewFragment.type
 
 // RedditJRAW.loadSubmissions(Paginator, boolean): loads one submissions page.
-private val loadSubmissionsFingerprint = Fingerprint(
-    definingClass = "Lpd2;",
-    name = "u",
-    returnType = "Ljava/util/ArrayList;",
-    parameters = listOf("Lnet/dean/jraw/paginators/Paginator;", "Z"),
-)
+private val loadSubmissionsFingerprint = BoostApi.RedditJraw.loadSubmissions.fingerprint()
 
 // SubmissionRecyclerViewFragment.appendSubmissions(ArrayList): adds a further page.
-private val appendSubmissionsFingerprint = Fingerprint(
-    definingClass = SUBMISSION_FRAGMENT,
-    name = "w0",
-    returnType = "V",
-    parameters = listOf("Ljava/util/ArrayList;"),
-)
+private val appendSubmissionsFingerprint = BoostApi.SubmissionRecyclerViewFragment.appendSubmissions.fingerprint()
 
 // SubmissionRecyclerViewFragment.setSubmissions(ArrayList): loads a feed from the top.
-private val setSubmissionsFingerprint = Fingerprint(
-    definingClass = SUBMISSION_FRAGMENT,
-    name = "Y0",
-    returnType = "V",
-    parameters = listOf("Ljava/util/ArrayList;"),
-)
+private val setSubmissionsFingerprint = BoostApi.SubmissionRecyclerViewFragment.setSubmissions.fingerprint()
 
 @Suppress("unused")
 val feedEndFooterPatch = bytecodePatch(
@@ -63,22 +46,22 @@ val feedEndFooterPatch = bytecodePatch(
     execute {
         loadSubmissionsFingerprint.method.addInstructions(
             0,
-            "invoke-static {p1}, $FEED_END_EXTENSION_DESCRIPTOR->onLoadPage(Lnet/dean/jraw/paginators/Paginator;)V",
+            "invoke-static {p1}, Lapp/morphe/extension/boost/utils/BoostFeedEndFooter;->onLoadPage(${BoostApi.Paginator.type})V",
         )
 
         appendSubmissionsFingerprint.method.addInstructions(
             0,
             """
-                iget-object v0, p0, $SUBMISSION_LIST
-                invoke-static {p0, v0, p1}, $FEED_END_EXTENSION_DESCRIPTOR->onAppendPage(Ljava/lang/Object;Landroid/view/View;Ljava/util/List;)V
+                iget-object v0, p0, $SUBMISSION_FRAGMENT->mRecyclerView:${BoostApi.EmptyRecyclerView.type}
+                invoke-static {p0, v0, p1}, Lapp/morphe/extension/boost/utils/BoostFeedEndFooter;->onAppendPage(Ljava/lang/Object;Landroid/view/View;Ljava/util/List;)V
             """,
         )
 
         setSubmissionsFingerprint.method.addInstructions(
             0,
             """
-                iget-object v0, p0, $SUBMISSION_LIST
-                invoke-static {v0}, $FEED_END_EXTENSION_DESCRIPTOR->onReplacePage(Landroid/view/View;)V
+                iget-object v0, p0, $SUBMISSION_FRAGMENT->mRecyclerView:${BoostApi.EmptyRecyclerView.type}
+                invoke-static {v0}, Lapp/morphe/extension/boost/utils/BoostFeedEndFooter;->onReplacePage(Landroid/view/View;)V
             """,
         )
     }

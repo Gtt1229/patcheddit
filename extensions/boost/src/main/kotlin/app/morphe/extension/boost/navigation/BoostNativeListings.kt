@@ -12,8 +12,8 @@ import MorpheBoostNativeStatics
 import android.app.Activity
 import android.view.View
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.RecyclerView.a0 as RecyclerViewViewHolder
-import an2
+import androidx.recyclerview.widget.RecyclerView.ViewHolder as RecyclerViewViewHolder
+import app.morphe.extension.boost.api.SearchOption
 import com.rubenmayayo.reddit.models.reddit.SubmissionModel
 import com.rubenmayayo.reddit.models.reddit.SubredditModel
 import com.rubenmayayo.reddit.models.reddit.SubscriptionViewModel
@@ -24,12 +24,12 @@ import net.dean.jraw.RedditClient
 import net.dean.jraw.models.Submission
 import net.dean.jraw.paginators.Sorting
 import net.dean.jraw.paginators.SubredditPaginator
-import pd2
-import qd3
+import app.morphe.extension.boost.api.RedditJraw
+import app.morphe.extension.boost.api.TrendingSearch
 
-/** Typed bindings for Boost 1.14.0's native JRAW, search rows and sidebar loader. */
+/** Typed bindings for Boost 1.14.1's native JRAW, search rows and sidebar loader. */
 object BoostNativeListings {
-    private fun client(): RedditClient = checkNotNull(pd2.r.e) {
+    private fun client(): RedditClient = checkNotNull(RedditJraw.instance.client) {
         "Boost RedditJRAW client is not initialized"
     }
 
@@ -47,45 +47,45 @@ object BoostNativeListings {
 
     @JvmStatic
     fun searchRow(name: String, model: SubredditModel): Any =
-        an2(14, name).apply {
-            c = SubscriptionViewModel(model)
-            d = model
+        SearchOption(14, name).apply {
+            subscription = SubscriptionViewModel(model)
+            subreddit = model
         }
 
     @JvmStatic
-    fun searchHeader(title: String): Any = an2(6, title)
+    fun searchHeader(title: String): Any = SearchOption(6, title)
 
     @JvmStatic
     fun notifySearchRows(activity: Activity) {
-        checkNotNull((activity as SearchAbstractActivity).b) {
+        checkNotNull((activity as SearchAbstractActivity).searchAdapter) {
             "Boost search adapter is not initialized"
         }.notifyDataSetChanged()
     }
 
     @JvmStatic
-    fun nativeTrendingRows(): List<*> = checkNotNull(pd2.r.y()) {
+    fun nativeTrendingRows(): List<*> = checkNotNull(RedditJraw.instance.trendingRows()) {
         "Boost native trending loader returned null"
     }
 
     @JvmStatic
     fun trendingSubmissions(row: Any): List<SubmissionModel> =
-        (row as qd3).b ?: emptyList()
+        (row as TrendingSearch).submissions ?: emptyList()
 
     @JvmStatic
     fun submissionModel(submission: Submission): SubmissionModel =
-        MorpheBoostNativeStatics.SubmissionModel_C(submission)
+        MorpheBoostNativeStatics.SubmissionModel_fromSubmission(submission)
 
     @JvmStatic
     fun trendingRow(title: String, model: SubmissionModel): Any =
-        qd3().apply {
-            a = title
-            b = arrayListOf(model)
+        TrendingSearch().apply {
+            this.title = title
+            submissions = arrayListOf(model)
         }
 
     @JvmStatic
     fun includeNsfw(): Boolean {
-        val preferences = MorpheBoostNativeStatics.ns2_m()
-        return preferences.a.getBoolean("pref_search_include_over_18", preferences.G0())
+        val preferences = MorpheBoostNativeStatics.BoostPreferences_getInstance()
+        return preferences.preferences.getBoolean("pref_search_include_over_18", preferences.includeNsfw())
     }
 
     @JvmStatic
@@ -102,13 +102,13 @@ object BoostNativeListings {
     @JvmStatic
     fun reloadTrending(fragment: Any) {
         val target = fragment as TrendingTodayFragment
-        checkNotNull(target.a) { "Boost trending view model is not initialized" }
+        checkNotNull(target.viewModel) { "Boost trending view model is not initialized" }
         // The old ViewModel.h() was inlined into this retained native Runnable.
-        TrendingTodayFragment.g(target).run()
+        TrendingTodayFragment.ReloadTask(target).run()
     }
 
     @JvmStatic
-    fun holderView(holder: Any): View = (holder as RecyclerViewViewHolder).a
+    fun holderView(holder: Any): View = (holder as RecyclerViewViewHolder).itemView
 
     @JvmStatic
     fun refreshFeed(fragment: Any) =

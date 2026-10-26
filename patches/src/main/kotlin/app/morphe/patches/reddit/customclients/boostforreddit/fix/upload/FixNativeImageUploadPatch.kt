@@ -7,6 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.upload
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
@@ -83,7 +85,7 @@ val fixNativeImageUploadPatch = bytecodePatch(
         mediaUploaderFactoryFingerprint.method.addInstructions(
             0,
             """
-                invoke-static {p0}, $UPLOAD_FACTORY_DESCRIPTOR->create(Ljava/lang/String;)Lcs1;
+                invoke-static {p0}, Lapp/morphe/extension/boost/upload/ExternalImageUploadFactory;->create(Ljava/lang/String;)${BoostApi.MediaUploader.type}
                 move-result-object v0
                 return-object v0
             """.trimIndent(),

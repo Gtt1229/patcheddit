@@ -19,20 +19,20 @@ import app.morphe.extension.shared.ResourceUtils;
 public class SettingsUtils {
     public static void addMenuOptions(List<MenuOption> options) {
         MenuOption divider = new MenuOption();
-        divider.H = true;
+        divider.divider = true;
         options.add(divider);
 
         int drawableId = ResourceUtils.getDrawableIdentifier("ic_library_24dp");
         MenuOption wayback = new MenuOption();
-        wayback.a = 101;
-        wayback.z = "Open with Wayback Machine";
-        wayback.b = drawableId;
+        wayback.id = 101;
+        wayback.title = "Open with Wayback Machine";
+        wayback.iconResource = drawableId;
         options.add(wayback);
 
         MenuOption archive = new MenuOption();
-        archive.a = 102;
-        archive.z = "Open with Archive.is";
-        archive.b = drawableId;
+        archive.id = 102;
+        archive.title = "Open with Archive.is";
+        archive.iconResource = drawableId;
         options.add(archive);
     }
 }

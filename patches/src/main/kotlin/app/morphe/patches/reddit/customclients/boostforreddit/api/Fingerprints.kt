@@ -7,18 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.api
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal object GetApiPreferenceFingerprint : Fingerprint(
-    definingClass = "Lns2;",
-    name = "g",
-    parameters = listOf("Ljava/lang/String;"),
-    returnType = "Ljava/lang/String;",
-)
+internal val GetApiPreferenceFingerprint = BoostApi.BoostPreferences.getApiPreference.fingerprint()
 
-internal object JrawNewUrlFingerprint : Fingerprint(
-    definingClass = "Lnet/dean/jraw/util/JrawUtils;",
-    name = "newUrl",
-    parameters = listOf("Ljava/lang/String;"),
-    returnType = "Ljava/net/URL;",
-)
+internal val JrawNewUrlFingerprint = BoostApi.JrawUtils.newUrl.fingerprint()

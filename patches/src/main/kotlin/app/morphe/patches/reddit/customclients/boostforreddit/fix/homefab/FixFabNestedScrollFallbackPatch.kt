@@ -7,6 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.homefab
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
@@ -32,20 +34,14 @@ private const val FAB_MINI_NESTED_SCROLL_FALLBACK_MARKER =
 private const val FAB_MINI_NESTED_PRE_SCROLL_MARKER =
     "MORPHE_BOOST_FAB_MINI_NESTED_PRE_SCROLL_ISSUE97_V3"
 
-private const val COORDINATOR_LAYOUT =
-    "Landroidx/coordinatorlayout/widget/CoordinatorLayout;"
 private const val VIEW = "Landroid/view/View;"
-private const val FLOATING_ACTION_BUTTON =
-    "Lcom/google/android/material/floatingactionbutton/FloatingActionButton;"
-private const val FLOATING_ACTION_MENU =
-    "Lcom/rubenmayayo/reddit/ui/customviews/fab/FloatingActionMenu;"
-private const val COORDINATOR_BEHAVIOR =
-    "Landroidx/coordinatorlayout/widget/CoordinatorLayout\$c;"
-
+private val FLOATING_ACTION_BUTTON =
+    BoostApi.FloatingActionButton.type
+private val FLOATING_ACTION_MENU =
+    BoostApi.FloatingActionMenu.type
 private data class ScrollAwareTarget(
     val fingerprint: Fingerprint,
     val childType: String,
-    val nestedScrollMethodName: String,
     val nestedScrollMarker: String,
     val preScrollMarker: String,
 )
@@ -61,35 +57,25 @@ val fixFabNestedScrollFallbackPatch = bytecodePatch(
     compatibleWith(*AppCompatibility.Boost)
 
     execute {
-        val preScrollParameterTypes = listOf(
-            COORDINATOR_LAYOUT,
-            VIEW,
-            VIEW,
-            "I",
-            "I",
-            "[I",
-            "I",
-        )
+        val preScroll = BoostApi.CoordinatorLayoutBehavior.onNestedPreScroll
+        val preScrollParameterTypes = preScroll.parameters
 
         val scrollAwareTargets = listOf(
             ScrollAwareTarget(
                 fabNestedScrollFingerprint,
                 FLOATING_ACTION_BUTTON,
-                "s",
                 FAB_NESTED_SCROLL_FALLBACK_MARKER,
                 FAB_NESTED_PRE_SCROLL_MARKER,
             ),
             ScrollAwareTarget(
                 fabMenuNestedScrollFingerprint,
                 FLOATING_ACTION_MENU,
-                "s",
                 FAB_MENU_NESTED_SCROLL_FALLBACK_MARKER,
                 FAB_MENU_NESTED_PRE_SCROLL_MARKER,
             ),
             ScrollAwareTarget(
                 fabMiniNestedScrollFingerprint,
                 FLOATING_ACTION_BUTTON,
-                "s",
                 FAB_MINI_NESTED_SCROLL_FALLBACK_MARKER,
                 FAB_MINI_NESTED_PRE_SCROLL_MARKER,
             ),
@@ -112,9 +98,10 @@ val fixFabNestedScrollFallbackPatch = bytecodePatch(
             }
 
             val behaviorClass = target.fingerprint.classDef
+            val nestedScroll = target.fingerprint.method
             check(
                 behaviorClass.methods.none { method ->
-                    method.name == "r" &&
+                    method.name == preScroll.name &&
                         method.returnType == "V" &&
                         method.parameters.map { it.type } == preScrollParameterTypes
                 },
@@ -125,7 +112,7 @@ val fixFabNestedScrollFallbackPatch = bytecodePatch(
             behaviorClass.methods.add(
                 ImmutableMethod(
                     behaviorClass.type,
-                    "r",
+                    preScroll.name,
                     preScrollParameterTypes.map { type ->
                         ImmutableMethodParameter(type, null, null)
                     },
@@ -142,11 +129,11 @@ val fixFabNestedScrollFallbackPatch = bytecodePatch(
                     addInstructions(
                         0,
                         """
-                            invoke-super/range {p0 .. p7}, $COORDINATOR_BEHAVIOR->r($COORDINATOR_LAYOUT$VIEW${VIEW}II[II)V
+                            invoke-super/range {p0 .. p7}, $preScroll
                             check-cast p2, ${target.childType}
                             const/4 p6, 0x0
                             const/4 p7, 0x0
-                            invoke-virtual/range {p0 .. p7}, ${behaviorClass.type}->${target.nestedScrollMethodName}($COORDINATOR_LAYOUT$VIEW${VIEW}IIII)V
+                            invoke-virtual/range {p0 .. p7}, $nestedScroll
                             const-string p3, "${target.preScrollMarker}"
                             return-void
                         """,

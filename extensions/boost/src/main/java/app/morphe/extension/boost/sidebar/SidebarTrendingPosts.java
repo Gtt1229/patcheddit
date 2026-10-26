@@ -36,7 +36,7 @@ import java.util.WeakHashMap;
  *
  * The native loader still runs first. Only an empty/non-renderable native
  * result falls back to public HOT listings, converted into Boost's own
- * TrendingSearch and SubmissionModel objects through typed 1.14.0 bindings.
+ * TrendingSearch and SubmissionModel objects through typed 1.14.1 bindings.
  */
 public final class SidebarTrendingPosts {
     private static final String TAG = "MorpheSidebarTrending";

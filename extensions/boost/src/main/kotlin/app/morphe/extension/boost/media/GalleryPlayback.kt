@@ -13,16 +13,16 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.view.View
-import com.google.android.exoplayer2.i as ExoPlayerImpl
-import com.google.android.exoplayer2.source.a as BaseMediaSource
+import com.google.android.exoplayer2.ExoPlayerImpl
+import com.google.android.exoplayer2.source.BaseMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
-import com.google.android.exoplayer2.source.m.b as ProgressiveMediaSourceFactory
+import com.google.android.exoplayer2.source.ProgressiveMediaSource.Factory as ProgressiveMediaSourceFactory
 import com.google.android.exoplayer2.ui.PlayerView
-import nt
-import sb0 as DefaultExtractorsFactory
-import sq0 as ExoPlayerBuilder
-import y12.a as OkHttpDataSourceFactory
+import app.morphe.extension.boost.api.HttpClient
+import app.morphe.extension.boost.api.DefaultExtractorsFactory
+import app.morphe.extension.boost.api.ExoPlayerBuilder
+import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSource.Factory as OkHttpDataSourceFactory
 
 class GalleryPlayback private constructor(private val player: ExoPlayerImpl) {
     fun attach(view: View) {
@@ -30,32 +30,32 @@ class GalleryPlayback private constructor(private val player: ExoPlayerImpl) {
     }
 
     fun prepare(context: Context, url: String, sourceType: Int) {
-        val dataSource = OkHttpDataSourceFactory(nt.a)
-        dataSource.c = userAgent(context)
-        val item = requireNotNull(MorpheBoostNativeStatics.o_a(Uri.parse(url)))
+        val dataSource = OkHttpDataSourceFactory(HttpClient.client)
+        dataSource.userAgent = userAgent(context)
+        val item = requireNotNull(MorpheBoostNativeStatics.MediaItem_fromUri(Uri.parse(url)))
         val source = when (sourceType) {
-            2 -> DashMediaSource.Factory(dataSource).b(item)
-            3 -> HlsMediaSource.Factory(dataSource).b(item)
-            else -> ProgressiveMediaSourceFactory(dataSource, DefaultExtractorsFactory()).a(item)
+            2 -> DashMediaSource.Factory(dataSource).createMediaSource(item)
+            3 -> HlsMediaSource.Factory(dataSource).createMediaSource(item)
+            else -> ProgressiveMediaSourceFactory(dataSource, DefaultExtractorsFactory()).createMediaSource(item)
         }
 
-        player.o0(0.0f)
-        player.y(2)
-        player.i0(source as BaseMediaSource)
-        player.a()
-        player.l0(true)
+        player.setVolume(0.0f)
+        player.setRepeatMode(2)
+        player.setMediaSource(source as BaseMediaSource)
+        player.prepare()
+        player.setPlayWhenReady(true)
     }
 
-    fun getPlaybackState(): Int = player.q()
+    fun getPlaybackState(): Int = player.getPlaybackState()
 
     fun release() {
-        player.f0()
+        player.release()
     }
 
     companion object {
         @JvmStatic
         fun create(context: Context): GalleryPlayback =
-            GalleryPlayback(requireNotNull(ExoPlayerBuilder(context).a()))
+            GalleryPlayback(requireNotNull(ExoPlayerBuilder(context).build()))
 
         @JvmStatic
         fun createView(context: Context): View =

@@ -1,8 +1,8 @@
 /*
  * Copyright 2026 wchill.
  *
- * Compile-only declarations for the verified Boost 1.14.0 API.
- * These placeholder implementations must never be packaged with the extension.
+ * Stable compile-only Boost adapter API. Native targets are in boost/bindings.json.
+ * These declarations must never be packaged with the extension.
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -11,19 +11,15 @@
 
 package androidx.coordinatorlayout.widget
 
-import androidx.coordinatorlayout.widget.CoordinatorLayout.c as CoordinatorBehavior
-import lz1 as NestedScrollingParent2
-import mz1 as NestedScrollingParent3
+private fun <T> boostApiStub(): T = throw UnsupportedOperationException("Compile-only Boost adapter stub")
 
-private fun <T> boost114Stub(): T = throw UnsupportedOperationException("Compile-only Boost 1.14 API stub")
-
-abstract class CoordinatorLayout protected constructor(stub: Unit) : android.view.ViewGroup(boost114Stub<android.content.Context>()), NestedScrollingParent2, NestedScrollingParent3 {
-    interface b {
+abstract class CoordinatorLayout protected constructor(stub: Unit) : android.view.ViewGroup(boostApiStub<android.content.Context>()), androidx.core.view.NestedScrollingParent2, androidx.core.view.NestedScrollingParent3 {
+    interface AttachedBehavior {
     }
-    abstract class c protected constructor(stub: Unit) {
+    abstract class Behavior protected constructor(stub: Unit) {
     }
-    abstract class f protected constructor(stub: Unit) : android.view.ViewGroup.MarginLayoutParams(0, 0) {
-        @JvmField var a: CoordinatorBehavior? = boost114Stub()
-        fun b(p0: CoordinatorBehavior?): Unit = boost114Stub()
+    abstract class LayoutParams protected constructor(stub: Unit) : android.view.ViewGroup.MarginLayoutParams(0, 0) {
+        @JvmField var mBehavior: androidx.coordinatorlayout.widget.CoordinatorLayout.Behavior? = boostApiStub()
+        fun setBehavior(p0: androidx.coordinatorlayout.widget.CoordinatorLayout.Behavior?): Unit = boostApiStub()
     }
 }

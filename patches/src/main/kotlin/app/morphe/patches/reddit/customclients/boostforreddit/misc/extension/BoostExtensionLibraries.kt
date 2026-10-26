@@ -8,6 +8,7 @@ package app.morphe.patches.reddit.customclients.boostforreddit.misc.extension
 
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostBindings
 import app.morphe.patches.reddit.customclients.boostforreddit.misc.extension.mapping.DexMappingRewriter
 import app.morphe.patches.reddit.customclients.boostforreddit.misc.extension.mapping.ProguardMapping
 import app.morphe.patches.reddit.customclients.boostforreddit.misc.extension.mapping.forEachReference
@@ -73,16 +74,20 @@ internal fun prepareBoostExtension(input: InputStream): InputStream {
         .associate { cls ->
             cls.type to "$privateLibraryTypePrefix${cls.type.removePrefix("L")}"
         }
-    val isolation = DexMappingRewriter(ProguardMapping.classNames(privateNames), sourceDefinitions)
+    val isolation = DexMappingRewriter(
+        ProguardMapping.classNames(privateNames), sourceDefinitions, resolveReflectiveFields = false,
+    )
     val definitions = isolation.rewrite(sourceDefinitions)
-    val mapping = BoostNativeLibraries.mapping
+    val libraries = BoostNativeLibraries.mapping
         .withNestedClasses(BoostNativeLibraries.classes.map { it.type })
         .reversed()
+    val mapping = BoostBindings.table.mapping(libraries)
         .withNestedClasses(definitions.map { it.type })
+    val adapterDefinitions = BoostBindings.table.sourceDefinitions(BoostNativeLibraries.classes, libraries)
     val nativeTypes = BoostNativeLibraries.classes.mapTo(HashSet()) { it.type }
     check(nativeTypes.isNotEmpty()) { "Boost extension loaded before native library preparation" }
     val kept = definitions.filterNot { mapping.type(it.type) in nativeTypes }
-    val rewriter = DexMappingRewriter(mapping, BoostNativeLibraries.classes + definitions)
+    val rewriter = DexMappingRewriter(mapping, adapterDefinitions + definitions)
     val rewritten = reachableExtensionClasses(rewriter.rewrite(kept))
     val pool = DexPool(dex.opcodes)
     rewritten.forEach(pool::internClass)

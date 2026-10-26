@@ -7,6 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.hide
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
@@ -57,7 +59,7 @@ val fixHideInvalidIndexPatch = bytecodePatch(
             val callbackIndex = indexOfFirstInstructionOrThrow {
                 opcode == Opcode.INVOKE_INTERFACE &&
                     getReference<MethodReference>()?.toString() ==
-                    "Lcom/rubenmayayo/reddit/ui/fragments/p\$a;->o0(ILcom/rubenmayayo/reddit/models/reddit/SubmissionModel;Z)V"
+                    BoostApi.ThingFragmentListener.onHideToggle.toString()
             }
             val removeIndex = indexOfFirstInstructionOrThrow {
                 opcode == Opcode.INVOKE_VIRTUAL &&
@@ -71,7 +73,7 @@ val fixHideInvalidIndexPatch = bytecodePatch(
             addInstructionsWithLabels(
                 removeIndex,
                 """
-                    invoke-static {v1, p1}, Lba0;->f(Ljava/util/List;Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;)I
+                    invoke-static {v1, p1}, ${BoostApi.CodecSpecificDataUtil.findSubmissionIndex}
                     move-result v0
                     if-ltz v0, :morphe_skip_fragment_hide_remove
                     invoke-virtual {v1}, Ljava/util/ArrayList;->size()I
@@ -93,7 +95,7 @@ val fixHideInvalidIndexPatch = bytecodePatch(
                 0,
                 """
                     if-ltz p1, :morphe_skip_s1_invalid_index
-                    iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/fragments/d;->c:Ljava/util/ArrayList;
+                    iget-object v0, p0, ${BoostApi.SubmissionFragment.submissions}
                     if-eqz v0, :morphe_skip_s1_invalid_index
                     invoke-virtual {v0}, Ljava/util/ArrayList;->size()I
                     move-result v1

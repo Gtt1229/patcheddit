@@ -22,7 +22,6 @@ import app.morphe.util.returnEarly
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import app.morphe.patches.all.misc.PatchCategory
 
-
 internal const val OKHTTP_EXTENSION_CLASS_DESCRIPTOR = "Lapp/morphe/extension/boost/http/OkHttpRequestHook;"
 
 @Suppress("unused")

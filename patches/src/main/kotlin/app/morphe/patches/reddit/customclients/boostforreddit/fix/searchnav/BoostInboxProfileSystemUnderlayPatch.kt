@@ -6,7 +6,8 @@
  */
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.searchnav
-import app.morphe.patcher.Fingerprint
+
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
@@ -16,32 +17,15 @@ import app.morphe.patches.all.misc.PatchCategory
 private const val UNIFIED_MATERIAL_NAV_PATCH_MARKER =
     "MORPHE_BOOST_UNIFIED_MATERIAL_BOTTOM_NAV_V771"
 
-
 private const val INBOX_PROFILE_UNDERLAY_MARKER =
     "MORPHE_BOOST_INBOX_PROFILE_UNDERLAY_LIFECYCLE_V74"
 
 private const val INBOX_PROFILE_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostSearchBottomNavigation;"
 
-private val messagesActivityUnderlayLifecycleFingerprint = Fingerprint(
-    returnType = "V",
-    parameters = emptyList(),
-    custom = { method, classDef ->
-        classDef.type ==
-            "Lcom/rubenmayayo/reddit/ui/messages/MessagesActivity;" &&
-            method.name == "onResume"
-    },
-)
+private val messagesActivityUnderlayLifecycleFingerprint = BoostApi.MessagesActivity.onResume.fingerprint()
 
-private val userActivityUnderlayLifecycleFingerprint = Fingerprint(
-    returnType = "V",
-    parameters = listOf("Landroid/os/Bundle;"),
-    custom = { method, classDef ->
-        classDef.type ==
-            "Lcom/rubenmayayo/reddit/ui/profile/UserActivity;" &&
-            method.name == "onCreate"
-    },
-)
+private val userActivityUnderlayLifecycleFingerprint = BoostApi.UserActivity.onCreate.fingerprint()
 
 @Suppress("unused")
 val boostInboxProfileSystemUnderlayPatch = bytecodePatch(

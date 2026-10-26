@@ -7,11 +7,6 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.crashlytics
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal val boostApplicationOnCreateFingerprint = Fingerprint(
-    custom = { method, classDef ->
-        classDef.type == "Lcom/rubenmayayo/reddit/MyApplication;" &&
-            method.name == "onCreate"
-    }
-)
+internal val boostApplicationOnCreateFingerprint = BoostApi.MyApplication.onCreate.fingerprint()

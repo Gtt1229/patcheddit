@@ -9,6 +9,9 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.http.reddit
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostFieldBinding
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
@@ -33,51 +36,42 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableField
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import app.morphe.patches.all.misc.PatchCategory
 
-
 internal const val OKHTTP_EXTENSION_CLASS_DESCRIPTOR = "Lapp/morphe/extension/boost/http/OkHttpRequestHook;"
 private const val GLIDE_REDDIT_MEDIA_WAYBACK_DESCRIPTOR =
     "Lapp/morphe/extension/boost/http/reddit/GlideRedditMediaWayback;"
 internal const val EXTRA_EMOJI_CONTEXT_KEY = "extraEmoji"
 internal const val EXTRA_EMOJI_GETTER = "getExtraEmoji"
 
-private const val BABUSHKA_TEXT =
-    "Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText;"
-private const val BABUSHKA_PART =
-    "Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText\$a;"
-private const val BABUSHKA_PART_BUILDER =
-    "Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText\$a\$a;"
-
 private fun extraEmojiInstructions(
-    holder: String,
-    viewField: String,
-    separatorField: String? = null,
+    viewField: BoostFieldBinding,
+    separatorField: BoostFieldBinding? = null,
 ): String {
     val separator = separatorField?.let {
         """
-            iget-object v2, v1, $BABUSHKA_TEXT->C:Ljava/util/ArrayList;
+            iget-object v2, v1, ${BoostApi.BabushkaText.parts}
             invoke-virtual {v2}, Ljava/util/ArrayList;->isEmpty()Z
             move-result v2
             if-nez v2, :morphe_extra_emoji_separator_done
-            iget-object v2, p0, $holder->$it:$BABUSHKA_PART
-            invoke-virtual {v1, v2}, $BABUSHKA_TEXT->h($BABUSHKA_PART)V
+            iget-object v2, p0, $it
+            invoke-virtual {v1, v2}, ${BoostApi.BabushkaText.addPart}
             :morphe_extra_emoji_separator_done
         """
     }.orEmpty()
     return """
-        invoke-virtual {p1}, Lcom/rubenmayayo/reddit/models/reddit/ContributionModel;->$EXTRA_EMOJI_GETTER()Ljava/lang/String;
+        invoke-virtual {p1}, ${BoostApi.ContributionModel.type}->$EXTRA_EMOJI_GETTER()Ljava/lang/String;
         move-result-object v0
         invoke-static {v0}, Landroid/text/TextUtils;->isEmpty(Ljava/lang/CharSequence;)Z
         move-result v1
         if-nez v1, :morphe_extra_emoji_done
-        iget-object v1, p0, $holder->$viewField:$BABUSHKA_TEXT
+        iget-object v1, p0, $viewField
         if-eqz v1, :morphe_extra_emoji_done
         $separator
-        new-instance v2, $BABUSHKA_PART_BUILDER
-        invoke-direct {v2, v0}, $BABUSHKA_PART_BUILDER-><init>(Ljava/lang/String;)V
-        new-instance v0, $BABUSHKA_PART
-        invoke-direct {v0, v2}, $BABUSHKA_PART-><init>($BABUSHKA_PART_BUILDER)V
-        invoke-virtual {v1, v0}, $BABUSHKA_TEXT->h($BABUSHKA_PART)V
-        invoke-virtual {v1}, $BABUSHKA_TEXT->i()V
+        new-instance v2, ${BoostApi.BabushkaTextPartBuilder.type}
+        invoke-direct {v2, v0}, ${BoostApi.BabushkaTextPartBuilder.construct}
+        new-instance v0, ${BoostApi.BabushkaTextPart.type}
+        invoke-direct {v0, v2}, ${BoostApi.BabushkaTextPart.construct}
+        invoke-virtual {v1, v0}, ${BoostApi.BabushkaText.addPart}
+        invoke-virtual {v1}, ${BoostApi.BabushkaText.updateText}
         const/4 v0, 0x0
         invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
         :morphe_extra_emoji_done
@@ -101,7 +95,7 @@ val undeleteRedditPatch = bytecodePatch(
             val responseCodeIndices = nativeInstructions.withIndex().filter { (_, instruction) ->
                 instruction.opcode == Opcode.INVOKE_STATIC &&
                     instruction.getReference<MethodReference>()?.toString() ==
-                    "Lm81;->d(Ljava/net/HttpURLConnection;)I"
+                    BoostApi.HttpUrlFetcher.responseCode.toString()
             }.map { it.index }
             check(responseCodeIndices.size == 3) {
                 "Unexpected Glide response handling: $responseCodeIndices"
@@ -118,13 +112,13 @@ val undeleteRedditPatch = bytecodePatch(
             addInstructionsWithLabels(
                 errorHandlerStart,
                 """
-                    iget-object v3, p0, Lm81;->c:Ljava/net/HttpURLConnection;
-                    invoke-static {v3}, Lm81;->d(Ljava/net/HttpURLConnection;)I
+                    iget-object v3, p0, ${BoostApi.HttpUrlFetcher.connection}
+                    invoke-static {v3}, ${BoostApi.HttpUrlFetcher.responseCode}
                     move-result v4
-                    invoke-static {v3, v4}, $GLIDE_REDDIT_MEDIA_WAYBACK_DESCRIPTOR->open(Ljava/net/HttpURLConnection;I)Ljava/io/InputStream;
+                    invoke-static {v3, v4}, Lapp/morphe/extension/boost/http/reddit/GlideRedditMediaWayback;->open(Ljava/net/HttpURLConnection;I)Ljava/io/InputStream;
                     move-result-object v3
                     if-eqz v3, :morphe_native_glide_error
-                    iput-object v3, p0, Lm81;->y:Ljava/io/InputStream;
+                    iput-object v3, p0, ${BoostApi.HttpUrlFetcher.stream}
                     return-object v3
                 """,
                 ExternalLabel("morphe_native_glide_error", getInstruction(errorHandlerStart)),
@@ -132,11 +126,11 @@ val undeleteRedditPatch = bytecodePatch(
             addInstructionsWithLabels(
                 normalResponseIndex + 2,
                 """
-                    iget-object v3, p0, Lm81;->c:Ljava/net/HttpURLConnection;
-                    invoke-static {v3, v$statusRegister}, $GLIDE_REDDIT_MEDIA_WAYBACK_DESCRIPTOR->open(Ljava/net/HttpURLConnection;I)Ljava/io/InputStream;
+                    iget-object v3, p0, ${BoostApi.HttpUrlFetcher.connection}
+                    invoke-static {v3, v$statusRegister}, Lapp/morphe/extension/boost/http/reddit/GlideRedditMediaWayback;->open(Ljava/net/HttpURLConnection;I)Ljava/io/InputStream;
                     move-result-object v3
                     if-eqz v3, :morphe_native_glide_response
-                    iput-object v3, p0, Lm81;->y:Ljava/io/InputStream;
+                    iput-object v3, p0, ${BoostApi.HttpUrlFetcher.stream}
                     return-object v3
                 """,
                 ExternalLabel("morphe_native_glide_response", getInstruction(normalResponseIndex + 2)),
@@ -202,10 +196,10 @@ val undeleteRedditPatch = bytecodePatch(
             fingerprint.wrapHook(
                 after = """
                     if-eqz v0, :morphe_extra_emoji_deserialized
-                    const-string        v1, "$EXTRA_EMOJI_CONTEXT_KEY"
-                    invoke-virtual      {p0, v1}, Lnet/dean/jraw/models/JsonModel;->data(Ljava/lang/String;)Ljava/lang/String;
+                    const-string        v1, "extraEmoji"
+                    invoke-virtual      {p0, v1}, ${BoostApi.JsonModel.data}
                     move-result-object  v1
-                    iput-object         v1, v0, Lcom/rubenmayayo/reddit/models/reddit/ContributionModel;->$EXTRA_EMOJI_CONTEXT_KEY:$fieldType
+                    iput-object         v1, v0, ${BoostApi.ContributionModel.type}->extraEmoji:Ljava/lang/String;
                     :morphe_extra_emoji_deserialized
                 """,
             )
@@ -215,15 +209,13 @@ val undeleteRedditPatch = bytecodePatch(
         // region Extend emojis used for BabushkaText.
         SetCommentBabushkaTextFingerprint.wrapHook(
             after = extraEmojiInstructions(
-                "Lcom/rubenmayayo/reddit/ui/adapters/CommentViewHolder;",
-                "distinguishedTv",
+                BoostApi.CommentViewHolder.distinguishedTv,
             ),
         )
         SetSubmissionBabushkaTextFingerprint.wrapHook(
             after = extraEmojiInstructions(
-                "Lcom/rubenmayayo/reddit/ui/adapters/SubmissionViewHolder;",
-                "infoTop",
-                "Y",
+                BoostApi.SubmissionViewHolder.infoTop,
+                BoostApi.SubmissionViewHolder.infoSeparator,
             ),
         )
 
@@ -234,7 +226,7 @@ val undeleteRedditPatch = bytecodePatch(
             addInstructionsWithLabels(
                 0,
                 """
-                    iget-object v0, p1, Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;->u0:Ljava/lang/String;
+                    iget-object v0, p1, ${BoostApi.SubmissionModel.removalCategory}
                     const-string v1, "copyright_takedown"
                     invoke-virtual {v1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
                     move-result v1
@@ -250,9 +242,9 @@ val undeleteRedditPatch = bytecodePatch(
                     const v1, 0x7f130578
                     const v2, 0x7f130579
                     :morphe_show_removal_reason
-                    iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/customviews/StateSubmissionView;->headerText:Landroid/widget/TextView;
+                    iget-object v0, p0, ${BoostApi.StateSubmissionView.headerText}
                     invoke-virtual {v0, v1}, Landroid/widget/TextView;->setText(I)V
-                    iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/customviews/StateSubmissionView;->summaryText:Landroid/widget/TextView;
+                    iget-object v0, p0, ${BoostApi.StateSubmissionView.summaryText}
                     invoke-virtual {v0, v2}, Landroid/widget/TextView;->setText(I)V
                     const/4 v0, 0x0
                     invoke-virtual {p0, v0}, Landroid/view/View;->setVisibility(I)V

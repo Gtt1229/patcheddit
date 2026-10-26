@@ -7,6 +7,8 @@
 
 package app.morphe.extension.boost.settings;
 
+import app.morphe.extension.boost.api.BoostFieldNames;
+
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
@@ -384,13 +386,13 @@ public final class MorpheSettingsV4ToolbarFragment extends Fragment {
         if (KEY_MAIN_ACTION.equals(key)) {
             requireValue(MAIN_ACTION_VALUES, value, key);
             preferences.edit().putString(key, value).apply();
-            setBoostStaticBoolean("h");
+            setBoostStaticBoolean(BoostFieldNames.BoostPreferencesThemeDirty);
             return;
         }
         if (KEY_HEADER_TYPE.equals(key)) {
             requireValue(HEADER_TYPE_VALUES, value, key);
             preferences.edit().putString(key, value).apply();
-            setBoostStaticBoolean("d");
+            setBoostStaticBoolean(BoostFieldNames.BoostPreferencesLayoutDirty);
             return;
         }
         throw new IllegalArgumentException("unsupported toolbar choice " + key);
@@ -403,7 +405,7 @@ public final class MorpheSettingsV4ToolbarFragment extends Fragment {
             throw new IllegalArgumentException("unsupported toolbar boolean " + key);
         }
         preferences.edit().putBoolean(key, value).apply();
-        setBoostStaticBoolean("d");
+        setBoostStaticBoolean(BoostFieldNames.BoostPreferencesLayoutDirty);
     }
 
     private void updateSummaries() {

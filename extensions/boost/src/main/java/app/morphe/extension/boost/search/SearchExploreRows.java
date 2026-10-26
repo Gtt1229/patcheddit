@@ -672,11 +672,11 @@ public final class SearchExploreRows {
     }
 
     private static String extractIconUrl(Object item) {
-        return item == null ? null : ((SubredditModel) item).y;
+        return item == null ? null : ((SubredditModel) item).iconUrl;
     }
 
     private static String extractColor(Object item) {
-        return item == null ? null : ((SubredditModel) item).z;
+        return item == null ? null : ((SubredditModel) item).themeColor;
     }
 
     private static String extractDescription(Object item) {
@@ -685,7 +685,7 @@ public final class SearchExploreRows {
         }
 
         SubredditModel model = (SubredditModel) item;
-        return firstNonEmpty(model.I, model.C);
+        return firstNonEmpty(model.publicDescription, model.description);
     }
 
     private static void applySubscriptionVisuals(Object model, String iconUrl, String color) {
@@ -694,11 +694,11 @@ public final class SearchExploreRows {
         }
 
         if (hasHttp(iconUrl)) {
-            ((SubredditModel) model).y = iconUrl;
+            ((SubredditModel) model).iconUrl = iconUrl;
         }
 
         if (hasColor(color)) {
-            ((SubredditModel) model).z = color;
+            ((SubredditModel) model).themeColor = color;
         }
     }
 
@@ -707,12 +707,12 @@ public final class SearchExploreRows {
             return;
         }
 
-        ((SubredditModel) model).C = description;
-        ((SubredditModel) model).I = description;
+        ((SubredditModel) model).description = description;
+        ((SubredditModel) model).publicDescription = description;
     }
 
     private static long extractSubscriberCount(Object item) {
-        return item == null ? 0L : ((SubredditModel) item).L;
+        return item == null ? 0L : ((SubredditModel) item).subscribers;
     }
 
     private static void applySubscriberCount(Object subredditModel, long count) {
@@ -720,7 +720,7 @@ public final class SearchExploreRows {
             return;
         }
 
-        ((SubredditModel) subredditModel).L = count;
+        ((SubredditModel) subredditModel).subscribers = count;
     }
 
     private static long parseLong(String value) {

@@ -7,6 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.profiletabs
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
@@ -36,7 +38,7 @@ val removeObsoleteProfileTabsPatch = bytecodePatch(
                 candidate.implementation?.instructions?.any { instruction ->
                     instruction.opcode == Opcode.IPUT_OBJECT &&
                         (instruction as? ReferenceInstruction)?.reference?.toString() ==
-                        "Lcom/rubenmayayo/reddit/ui/profile/UserActivity;->P:[Ljava/lang/String;"
+                        BoostApi.UserActivity.tabRoutes.toString()
                 } == true
         }.apply {
             val routeAssignmentIndices =
@@ -47,7 +49,7 @@ val removeObsoleteProfileTabsPatch = bytecodePatch(
                             (instruction as? ReferenceInstruction)
                                 ?.reference
                                 ?.toString() ==
-                            "Lcom/rubenmayayo/reddit/ui/profile/UserActivity;->P:[Ljava/lang/String;"
+                            BoostApi.UserActivity.tabRoutes.toString()
                     }
                     .map { (index, _) -> index }
 

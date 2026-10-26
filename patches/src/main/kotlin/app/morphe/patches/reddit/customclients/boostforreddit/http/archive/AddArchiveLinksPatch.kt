@@ -9,6 +9,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.http.archive
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
@@ -21,9 +23,7 @@ import app.morphe.util.indexOfFirstInstructionOrThrow
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
-
 internal val SETTINGS_UTILS_EXTENSION_CLASS_DESCRIPTOR = "Lapp/morphe/extension/boost/utils/SettingsUtils;"
-
 
 @Suppress("unused")
 val addArchiveLinks = bytecodePatch(
@@ -38,7 +38,7 @@ val addArchiveLinks = bytecodePatch(
         LinkBuildContextMenuFingerprint.method.apply {
             val index = indexOfFirstInstructionOrThrow {
                 getReference<MethodReference>()?.toString() ==
-                    "Lcom/rubenmayayo/reddit/ui/customviews/menu/MenuView;->setMenuOptions(Ljava/util/List;)V"
+                    BoostApi.BoostMenuView.setMenuOptions.toString()
             }
             val listRegister = getInstruction<FiveRegisterInstruction>(index).registerD
             addInstructions(
@@ -51,7 +51,7 @@ val addArchiveLinks = bytecodePatch(
 
         OnClickContextMenuFingerprint.wrapHook(
             before = """
-                iget v0, p1, Lcom/rubenmayayo/reddit/ui/customviews/menu/MenuOption;->a:I
+                iget v0, p1, ${BoostApi.MenuOption.id}
                 const/16 v1, 101
                 if-eq v0, v1, :morphe_wayback
                 const/16 v1, 102
@@ -63,16 +63,16 @@ val addArchiveLinks = bytecodePatch(
                 :morphe_archive
                 const-string v2, "https://archive.is/"
                 :morphe_open_archive
-                iget-object v0, p0, Lj32${'$'}a;->a:Lj32;
-                iget-object v1, v0, Lj32;->a:Landroid/content/Context;
-                iget-object v0, v0, Lj32;->c:Ljava/lang/String;
+                iget-object v0, p0, ${BoostApi.LinkMenuListener.linkMenu}
+                iget-object v1, v0, ${BoostApi.LinkMenu.context}
+                iget-object v0, v0, ${BoostApi.LinkMenu.url}
                 invoke-virtual {v2, v0}, Ljava/lang/String;->concat(Ljava/lang/String;)Ljava/lang/String;
                 move-result-object v0
-                invoke-static {v1, v0}, Lxy1;->t(Landroid/content/Context;Ljava/lang/String;)V
-                iget-object v0, p0, Lj32${'$'}a;->a:Lj32;
-                iget-object v0, v0, Lj32;->b:Ldp1;
+                invoke-static {v1, v0}, ${BoostApi.Navigation.openUrl}
+                iget-object v0, p0, ${BoostApi.LinkMenuListener.linkMenu}
+                iget-object v0, v0, ${BoostApi.LinkMenu.dialog}
                 if-eqz v0, :morphe_archive_menu_closed
-                invoke-virtual {v0}, Ldp1;->dismiss()V
+                invoke-virtual {v0}, ${BoostApi.MaterialDialog.dismiss}
                 :morphe_archive_menu_closed
                 return-void
                 :morphe_native_context_menu

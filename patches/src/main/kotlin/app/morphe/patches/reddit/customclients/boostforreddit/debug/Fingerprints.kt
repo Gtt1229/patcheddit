@@ -7,17 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.debug
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal object ExceptionHandlerFingerprint : Fingerprint(
-    definingClass = "Lr93;",
-    name = "d",
-    parameters = listOf("Ljava/lang/Throwable;"),
-    returnType = "V",
-)
+internal val ExceptionHandlerFingerprint = BoostApi.Timber.exceptionHandler.fingerprint()
 
-internal object TimberFingerprint : Fingerprint(
-    custom = { method, _ ->
-        method.definingClass == "Lr93;" && method.name == "a"
-    }
-)
+internal val TimberFingerprint = BoostApi.Timber.timber.fingerprint()

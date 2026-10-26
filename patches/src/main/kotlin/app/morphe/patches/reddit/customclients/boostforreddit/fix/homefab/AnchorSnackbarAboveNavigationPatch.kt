@@ -7,7 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.homefab
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
@@ -19,32 +20,17 @@ import app.morphe.patches.all.misc.PatchCategory
 private const val SNACKBAR_ANCHOR_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostSnackbarAnchor;"
 
-private const val BASE_TRANSIENT_BOTTOM_BAR =
-    "Lcom/google/android/material/snackbar/BaseTransientBottomBar;"
-
 // SnackbarBaseLayout: the Snackbar's own view.
-private const val SNACKBAR_VIEW =
-    "Lcom/google/android/material/snackbar/BaseTransientBottomBar\$h;"
 
 // BaseTransientBottomBar.show() is inlined into Snackbar.m() in 1.14.0.
-private val snackbarShowFingerprint = Fingerprint(
-    definingClass = "Lcom/google/android/material/snackbar/Snackbar;",
-    name = "m",
-    returnType = "V",
-    parameters = emptyList(),
-)
+private val snackbarShowFingerprint = BoostApi.Snackbar.snackbarShow.fingerprint()
 
 // AHBottomNavigationBehavior.updateSnackbar(View child, View snackbar): runs
 // from layoutDependsOn on every layout and sets the Snackbar's bottom margin
 // to the legacy AHBottomNavigation height. That navigation is hidden by the
 // canonical bottom navigation patches, so the margin is forced to 0 (dropping
 // Material's anchor offset) and a layout is requested on every frame.
-private val legacyNavigationSnackbarMarginFingerprint = Fingerprint(
-    definingClass = "Lcom/aurelhubert/ahbottomnavigation/AHBottomNavigationBehavior;",
-    name = "f",
-    returnType = "Z",
-    parameters = listOf("Landroid/view/View;", "Landroid/view/View;"),
-)
+private val legacyNavigationSnackbarMarginFingerprint = BoostApi.AHBottomNavigationBehavior.legacyNavigationSnackbarMargin.fingerprint()
 
 @Suppress("unused")
 val anchorSnackbarAboveNavigationPatch = bytecodePatch(
@@ -75,14 +61,14 @@ val anchorSnackbarAboveNavigationPatch = bytecodePatch(
             addInstructionsWithLabels(
                 0,
                 """
-                    invoke-virtual {p0}, $BASE_TRANSIENT_BOTTOM_BAR->c()Landroid/view/View;
+                    invoke-virtual {p0}, ${BoostApi.BaseTransientBottomBar.getAnchorView}
                     move-result-object v1
-                    iget-object v0, p0, $BASE_TRANSIENT_BOTTOM_BAR->g:Landroid/view/ViewGroup;
-                    iget-object v2, p0, $BASE_TRANSIENT_BOTTOM_BAR->i:$SNACKBAR_VIEW
-                    invoke-static {v0, v1, v2}, $SNACKBAR_ANCHOR_EXTENSION_DESCRIPTOR->anchorFor(Landroid/view/ViewGroup;Landroid/view/View;Landroid/view/View;)Landroid/view/View;
+                    iget-object v0, p0, ${BoostApi.BaseTransientBottomBar.targetParent}
+                    iget-object v2, p0, ${BoostApi.BaseTransientBottomBar.view}
+                    invoke-static {v0, v1, v2}, Lapp/morphe/extension/boost/utils/BoostSnackbarAnchor;->anchorFor(Landroid/view/ViewGroup;Landroid/view/View;Landroid/view/View;)Landroid/view/View;
                     move-result-object v0
                     if-eqz v0, :morphe_show_snackbar
-                    invoke-virtual {p0, v0}, $BASE_TRANSIENT_BOTTOM_BAR->f(Landroid/view/View;)V
+                    invoke-virtual {p0, v0}, ${BoostApi.BaseTransientBottomBar.setAnchorView}
                 """,
                 ExternalLabel("morphe_show_snackbar", getInstruction(0)),
             )

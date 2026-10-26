@@ -7,21 +7,14 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.gallery
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import app.morphe.patches.reddit.customclients.boostforreddit.wrapHook
 import app.morphe.patches.all.misc.PatchCategory
-
-private const val GALLERY_ACTIVITY_DESCRIPTOR =
-    "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity;"
-
-private const val GALLERY_PAGE_LISTENER_DESCRIPTOR =
-    "Lg21;"
-
-private const val GALLERY_PAGE_ADAPTER_DESCRIPTOR =
-    "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity\$b;"
 
 private const val GALLERY_PREVIEW_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/gallery/GalleryAnimatedPreview;"
@@ -46,8 +39,8 @@ val galleryAnimatedPreviewPatch = bytecodePatch(
         galleryPageSelectedFingerprint.method.addInstructions(
             0,
             """
-                iget-object v0, p0, $GALLERY_PAGE_LISTENER_DESCRIPTOR->a:$GALLERY_ACTIVITY_DESCRIPTOR
-                invoke-static {v0, p1}, $GALLERY_PREVIEW_EXTENSION_DESCRIPTOR->selectPage(Ljava/lang/Object;I)V
+                iget-object v0, p0, ${BoostApi.GalleryPageListener.activity}
+                invoke-static {v0, p1}, Lapp/morphe/extension/boost/gallery/GalleryAnimatedPreview;->selectPage(Ljava/lang/Object;I)V
             """.trimIndent(),
         )
 
@@ -59,19 +52,19 @@ val galleryAnimatedPreviewPatch = bytecodePatch(
         galleryPagerStateFingerprint.method.addInstructions(
             0,
             """
-                iget-object p0, p0, $GALLERY_PAGE_LISTENER_DESCRIPTOR->a:$GALLERY_ACTIVITY_DESCRIPTOR
-                invoke-static {p0, p1}, $GALLERY_PREVIEW_EXTENSION_DESCRIPTOR->setPagerState(Ljava/lang/Object;I)V
+                iget-object p0, p0, ${BoostApi.GalleryPageListener.activity}
+                invoke-static {p0, p1}, Lapp/morphe/extension/boost/gallery/GalleryAnimatedPreview;->setPagerState(Ljava/lang/Object;I)V
             """.trimIndent(),
         )
 
         galleryPageFactoryFingerprint.wrapHook(
             before = """
-                iget-object v1, p0, $GALLERY_PAGE_ADAPTER_DESCRIPTOR->i:$GALLERY_ACTIVITY_DESCRIPTOR
-                invoke-static {v1, p1}, $GALLERY_PREVIEW_EXTENSION_DESCRIPTOR->beginPage(Ljava/lang/Object;I)V
+                iget-object v1, p0, ${BoostApi.GalleryActivityImagePagerAdapter.activity}
+                invoke-static {v1, p1}, Lapp/morphe/extension/boost/gallery/GalleryAnimatedPreview;->beginPage(Ljava/lang/Object;I)V
             """,
             after = """
-                iget-object v1, p0, $GALLERY_PAGE_ADAPTER_DESCRIPTOR->i:$GALLERY_ACTIVITY_DESCRIPTOR
-                invoke-static {v1, v0}, $GALLERY_PREVIEW_EXTENSION_DESCRIPTOR->registerPage(Ljava/lang/Object;Ljava/lang/Object;)V
+                iget-object v1, p0, ${BoostApi.GalleryActivityImagePagerAdapter.activity}
+                invoke-static {v1, v0}, Lapp/morphe/extension/boost/gallery/GalleryAnimatedPreview;->registerPage(Ljava/lang/Object;Ljava/lang/Object;)V
             """,
         )
 

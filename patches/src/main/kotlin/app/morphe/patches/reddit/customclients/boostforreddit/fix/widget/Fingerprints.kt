@@ -7,16 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.widget
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal val imageWidgetProviderUpdateWithSubmissionFingerprint = Fingerprint(
-    definingClass = "Lqg3;",
-    name = "c",
-    returnType = "V",
-    parameters = listOf(
-        "I",
-        "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;",
-        "Ljava/lang/String;",
-    ),
+internal val imageWidgetProviderUpdateWithSubmissionFingerprint = BoostApi.UpdateImageWidget.imageWidgetProviderUpdateWithSubmission.fingerprint(
     strings = listOf("Widget updateWithSubmissions %d"),
 )

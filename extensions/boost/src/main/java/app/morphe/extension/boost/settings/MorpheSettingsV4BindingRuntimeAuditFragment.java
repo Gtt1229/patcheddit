@@ -7,6 +7,8 @@
 
 package app.morphe.extension.boost.settings;
 
+import app.morphe.extension.boost.api.BoostFieldNames;
+
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
@@ -603,7 +605,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
                 ? null
                 : boostStaticField(effectField);
         boolean prefix = "pref_show_subreddit_prefix".equals(key);
-        Object originalPrefix = prefix ? boostStaticField("c") : null;
+        Object originalPrefix = prefix ? boostStaticField(BoostFieldNames.BoostPreferencesSubredditPrefix) : null;
         boolean expected = expectedAuditBoolean(snapshot, key);
         try {
             assertBooleanDomainValue(
@@ -622,7 +624,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             );
         } finally {
             if (prefix) {
-                setBoostStaticField("c", originalPrefix);
+                setBoostStaticField(BoostFieldNames.BoostPreferencesSubredditPrefix, originalPrefix);
             }
             if (effectField != null) {
                 setBoostStaticField(effectField, originalEffect);
@@ -642,14 +644,14 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             setBoostStaticField(effectField, false);
         }
         if (prefix) {
-            setBoostStaticField("c", "__morphe_effect_audit__");
+            setBoostStaticField(BoostFieldNames.BoostPreferencesSubredditPrefix, "__morphe_effect_audit__");
         }
         applyBooleanUiAction(defaults, key, value);
         assertNativeBoolean(key, value);
         assertEffectState(key, effectField);
         if (prefix) {
             String expectedPrefix = value ? "r/" : "";
-            if (!expectedPrefix.equals(boostStaticField("c"))) {
+            if (!expectedPrefix.equals(boostStaticField(BoostFieldNames.BoostPreferencesSubredditPrefix))) {
                 throw new IllegalStateException(
                         "subreddit prefix cache mismatch"
                 );
@@ -668,7 +670,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
                 : boostStaticField(effectField);
         boolean fontSize = "pref_font_size".equals(key)
                 || "pref_font_size_title".equals(key);
-        Object originalCommentsEffect = fontSize ? boostStaticField("i") : null;
+        Object originalCommentsEffect = fontSize ? boostStaticField(BoostFieldNames.BoostPreferencesCommentTypographyDirty) : null;
         String expected = expectedAuditString(snapshot, key);
         String[] domain = stringDomain(key);
         try {
@@ -693,7 +695,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
                 setBoostStaticField(effectField, originalEffect);
             }
             if (fontSize) {
-                setBoostStaticField("i", originalCommentsEffect);
+                setBoostStaticField(BoostFieldNames.BoostPreferencesCommentTypographyDirty, originalCommentsEffect);
             }
         }
         return domain.length;
@@ -718,7 +720,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             SharedPreferences snapshot,
             String key
     ) throws Exception {
-        Object originalEffect = boostStaticField("f");
+        Object originalEffect = boostStaticField(BoostFieldNames.BoostPreferencesPostViewsDirty);
         int expected = expectedAuditInteger(snapshot, key);
         try {
             for (int value = INTEGER_MINIMUM;
@@ -730,7 +732,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             }
             assertIntegerDomainValue(defaults, key, expected);
         } finally {
-            setBoostStaticField("f", originalEffect);
+            setBoostStaticField(BoostFieldNames.BoostPreferencesPostViewsDirty, originalEffect);
         }
         return INTEGER_MAXIMUM - INTEGER_MINIMUM + 1;
     }
@@ -740,13 +742,13 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             String key,
             int value
     ) throws Exception {
-        setBoostStaticField("f", false);
+        setBoostStaticField(BoostFieldNames.BoostPreferencesPostViewsDirty, false);
         MorpheSettingsV4PostViewsFragment.applyPreviewLinesPreference(
                 defaults,
                 value
         );
         assertNativeInteger(key, value);
-        assertEffectState(key, "f");
+        assertEffectState(key, BoostFieldNames.BoostPreferencesPostViewsDirty);
     }
 
     private static int exerciseSavedViewDomain(
@@ -1337,13 +1339,13 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             case "pref_dynamic_colors":
             case "pref_lock_sidebar":
             case "pref_show_subreddit_prefix":
-                return "h";
+                return BoostFieldNames.BoostPreferencesThemeDirty;
             case "pref_colored_status_bar":
             case "pref_colored_nav_bar":
             case "pref_left_handed":
             case "pref_dense_buttons_visible":
             case "pref_title_font":
-                return "g";
+                return BoostFieldNames.BoostPreferencesPostTypographyDirty;
             case "pref_cards_rounded_corners":
             case "pref_cards_full_preview":
             case "pref_cards_subreddit_icon":
@@ -1354,12 +1356,12 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             case "pref_mini_cards_rounded_corners":
             case "pref_mini_cards_truncate_title":
             case "pref_mini_cards_buttons_visible":
-                return "f";
+                return BoostFieldNames.BoostPreferencesPostViewsDirty;
             case "pref_font_size_title":
             case "pref_font_size":
-                return "g";
+                return BoostFieldNames.BoostPreferencesPostTypographyDirty;
             case "pref_comments_font":
-                return "i";
+                return BoostFieldNames.BoostPreferencesCommentTypographyDirty;
             default:
                 return null;
         }
@@ -1367,9 +1369,9 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
 
     private static String nativeConsumerForKey(String key) {
         switch (key) {
-            case "pref_left_handed": return "ns2.I";
-            case "pref_cards_rounded_corners": return "ns2.t";
-            case "pref_cards_full_preview": return "ns2.r";
+            case "pref_left_handed": return "BoostPreferences.leftHanded";
+            case "pref_cards_rounded_corners": return "BoostPreferences.roundedCorners";
+            case "pref_cards_full_preview": return "BoostPreferences.fullPreview";
             case "pref_dynamic_colors":
             case "pref_colored_status_bar":
             case "pref_colored_nav_bar":
@@ -1391,7 +1393,7 @@ public final class MorpheSettingsV4BindingRuntimeAuditFragment extends Fragment 
             case "pref_font_size_title":
             case "pref_comments_font":
             case "pref_font_size":
-                return "ns2.a.SharedPreferences[" + key + "]";
+                return "BoostPreferences.preferences[" + key + "]";
             default:
                 throw new IllegalArgumentException(
                         "missing native consumer for " + key

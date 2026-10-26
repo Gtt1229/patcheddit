@@ -21,6 +21,9 @@ internal class ProguardMapping private constructor(
     val classes: Map<String, String>,
     val methods: Map<MethodId, String>,
     val fields: Map<FieldId, String>,
+    val methodOwners: Map<MethodId, String> = emptyMap(),
+    val fieldOwners: Map<FieldId, String> = emptyMap(),
+    private val referenceAliases: Boolean = false,
 ) {
     fun type(type: String): String {
         val dimensions = type.takeWhile { it == '[' }.length
@@ -43,11 +46,16 @@ internal class ProguardMapping private constructor(
                 separator = type.lastIndexOf('$', separator - 1)
             }
         }
-        require(names.values.toSet().size == names.size) { "Nested class relocation creates a class collision" }
-        return ProguardMapping(names, methods, fields)
+        require(referenceAliases || names.values.toSet().size == names.size) {
+            "Nested class relocation creates a class collision"
+        }
+        return ProguardMapping(names, methods, fields, methodOwners, fieldOwners, referenceAliases)
     }
 
     fun reversed(): ProguardMapping {
+        require(!referenceAliases && methodOwners.isEmpty() && fieldOwners.isEmpty()) {
+            "Reference-only adapter bindings cannot be reversed"
+        }
         val reverseClasses = classes.entries.associate { (source, target) -> target to source }
         val reverseMethods = methods.entries.associate { (source, target) ->
             MethodId(
@@ -64,6 +72,41 @@ internal class ProguardMapping private constructor(
             "Mapping has conflicting reverse member names"
         }
         return ProguardMapping(reverseClasses, reverseMethods, reverseFields)
+    }
+
+    fun withBindings(
+        types: Map<String, String>,
+        boundMethods: Map<MethodId, MethodId>,
+        boundFields: Map<FieldId, FieldId>,
+    ): ProguardMapping {
+        val names = LinkedHashMap(classes)
+        for ((source, target) in types) {
+            val previous = names.put(source, target)
+            require(previous == null || previous == target) { "Conflicting adapter type binding for $source" }
+        }
+        fun type(value: String): String {
+            val element = value.trimStart('[')
+            return value.take(value.length - element.length) + (names[element] ?: element)
+        }
+        val newMethods = LinkedHashMap(methods)
+        val newMethodOwners = LinkedHashMap(methodOwners)
+        for ((source, target) in boundMethods) {
+            require(source.parameters.map(::type) == target.parameters && type(source.returnType) == target.returnType) {
+                "Adapter method changes its prototype: $source -> $target"
+            }
+            val previous = newMethods.put(source, target.name)
+            require(previous == null || previous == target.name) { "Conflicting adapter method binding for $source" }
+            newMethodOwners[source] = target.owner
+        }
+        val newFields = LinkedHashMap(fields)
+        val newFieldOwners = LinkedHashMap(fieldOwners)
+        for ((source, target) in boundFields) {
+            require(type(source.type) == target.type) { "Adapter field changes its type: $source -> $target" }
+            val previous = newFields.put(source, target.name)
+            require(previous == null || previous == target.name) { "Conflicting adapter field binding for $source" }
+            newFieldOwners[source] = target.owner
+        }
+        return ProguardMapping(names, newMethods, newFields, newMethodOwners, newFieldOwners, true)
     }
 
     companion object {

@@ -58,6 +58,7 @@ import com.android.tools.smali.dexlib2.rewriter.Rewriters
 internal class DexMappingRewriter(
     sourceMapping: ProguardMapping,
     definitions: Collection<ClassDef>,
+    private val resolveReflectiveFields: Boolean = true,
 ) {
     private val mapping = sourceMapping.withNestedClasses(definitions.map { it.type })
     private val classes = definitions.associateBy { it.type }
@@ -74,6 +75,9 @@ internal class DexMappingRewriter(
     private val publicClasses = mutableSetOf<String>()
     private val publicMethods = mutableSetOf<MethodId>()
     private val publicFields = mutableSetOf<FieldId>()
+    private val reflectiveFields = mapping.fields.entries.associate { (field, name) ->
+        "@boost-field:${field.owner}->${field.name}:${field.type}" to name
+    }
 
     private fun MethodReference.id() =
         MethodId(definingClass, name, parameterTypes.map(CharSequence::toString), returnType)
@@ -230,7 +234,28 @@ internal class DexMappingRewriter(
         mapping.fields[declared] ?: declared.name
     }
 
+    private fun methodOwner(key: MethodId): String {
+        mapping.methodOwners[key]?.let { return it }
+        if (key.owner in mapping.classes && methods[key.owner]?.containsKey(key) != true) {
+            val owners = inheritedMethods(key).mapNotNull { mapping.methodOwners[it.id()] }.distinct()
+            require(owners.size <= 1) { "Ambiguous inherited adapter method owner for $key: $owners" }
+            owners.singleOrNull()?.let { return it }
+        }
+        return mapping.type(key.owner)
+    }
+
+    private fun fieldOwner(key: FieldId): String {
+        mapping.fieldOwners[key]?.let { return it }
+        if (key.owner in mapping.classes) {
+            resolveField(key)?.id()?.let { mapping.fieldOwners[it] }?.let { return it }
+        }
+        return mapping.type(key.owner)
+    }
+
     fun rewriteClassName(value: String): String {
+        if (resolveReflectiveFields && value.startsWith("@boost-field:")) {
+            return checkNotNull(reflectiveFields[value]) { "Missing reflective Boost adapter field: $value" }
+        }
         mapping.classes[value]?.let { return it }
         if (value.startsWith("[")) return mapping.type(value)
         // A bare obfuscated token can also be a preference key, field name or ordinary text.
@@ -351,14 +376,14 @@ internal class DexMappingRewriter(
         override fun getFieldReferenceRewriter(rewriters: Rewriters): Rewriter<FieldReference> =
             Rewriter { field ->
                 ImmutableFieldReference(
-                    mapping.type(field.definingClass), fieldName(field.id()), mapping.type(field.type),
+                    fieldOwner(field.id()), fieldName(field.id()), mapping.type(field.type),
                 )
             }
 
         override fun getMethodReferenceRewriter(rewriters: Rewriters): Rewriter<MethodReference> =
             Rewriter { method ->
                 ImmutableMethodReference(
-                    mapping.type(method.definingClass), methodName(method.id()),
+                    methodOwner(method.id()), methodName(method.id()),
                     method.parameterTypes.map { mapping.type(it.toString()) }, mapping.type(method.returnType),
                 )
             }

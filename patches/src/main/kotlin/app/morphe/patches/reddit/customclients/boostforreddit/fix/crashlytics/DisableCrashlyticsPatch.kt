@@ -7,6 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.crashlytics
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
@@ -22,11 +24,11 @@ import app.morphe.patches.all.misc.PatchCategory
 private const val CRASHLYTICS_REGISTRAR_META_DATA =
     "com.google.firebase.components:com.google.firebase.crashlytics.CrashlyticsRegistrar"
 
-private const val CRASHLYTICS_GET_INSTANCE_REFERENCE =
-    "Lsu0;->b()Lsu0;"
+private val CRASHLYTICS_GET_INSTANCE_REFERENCE =
+    BoostApi.FirebaseApp.getInstance.toString()
 
-private const val CRASHLYTICS_SET_COLLECTION_REFERENCE =
-    "Luu0;->a(Z)V"
+private val CRASHLYTICS_SET_COLLECTION_REFERENCE =
+    BoostApi.FirebaseCrashlytics.setCollectionEnabled.toString()
 
 private val removeBoostCrashlyticsRegistrarPatch = resourcePatch(
     name = "Remove Boost Crashlytics registrar",
@@ -67,7 +69,7 @@ val disableBoostCrashlyticsPatch = bytecodePatch(
 
             val crashlyticsTypeIndex = indexOfFirstInstructionOrThrow {
                 opcode == Opcode.CONST_CLASS &&
-                    getReference<TypeReference>()?.type == "Luu0;"
+                    getReference<TypeReference>()?.type == BoostApi.FirebaseCrashlytics.type
             }
             val getInstanceIndex = instructions.withIndex().last { (index, instruction) ->
                 index < crashlyticsTypeIndex &&

@@ -6,6 +6,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.misc.extension
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
@@ -29,19 +31,14 @@ internal val boostExtensionPatch = bytecodePatch {
 
     execute {
         classDefBy(SHARED_UTILS_EXTENSION_CLASS)
-        val factory = Fingerprint(
-            definingClass = "Lfl1;",
-            name = "g",
-            parameters = listOf("Ljava/lang/String;"),
-            returnType = "Lcs1;"
-        )
+        val factory = BoostApi.MediaUploadFactory.create.fingerprint()
         val original = factory.method
-        val bridgeName = "morpheCreateOriginalUploader"
+        val bridgeName = BoostApi.MediaUploadFactory.createOriginal.name
         require(factory.classDef.methods.none { it.name == bridgeName }) {
             "Boost already contains the original uploader bridge"
         }
 
-        // Preserve R8's constructor-inlined allocations before the upload patch replaces g().
+        // Preserve R8's constructor-inlined allocations before replacing the factory.
         factory.classDef.methods.add(
             ImmutableMethod(
                 original.definingClass,
@@ -59,7 +56,7 @@ internal val boostExtensionPatch = bytecodePatch {
     }
 
     finalize {
-        activityOnCreateExtensionHook("Lcom/rubenmayayo/reddit/MyApplication;")(SHARED_UTILS_EXTENSION_CLASS)
+        activityOnCreateExtensionHook(BoostApi.MyApplication.type)(SHARED_UTILS_EXTENSION_CLASS)
         val marker = object {}.javaClass
         val resource = checkNotNull(marker.classLoader.getResource(marker.name.replace('.', '/') + ".class")) {
             "Cannot locate the patch bundle for its version"

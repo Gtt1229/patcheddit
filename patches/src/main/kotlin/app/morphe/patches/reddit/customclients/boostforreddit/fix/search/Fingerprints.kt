@@ -7,32 +7,12 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.search
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal val searchSubredditActivityOnCreateFingerprint = Fingerprint(
-    returnType = "V",
-    parameters = listOf("Landroid/os/Bundle;"),
-    custom = { method, classDef ->
-        classDef.type == "Lcom/rubenmayayo/reddit/ui/subreddits/SearchSubredditActivity;" &&
-            method.name == "onCreate"
-    },
-)
+internal val searchSubredditActivityOnCreateFingerprint = BoostApi.SearchSubredditActivity.onCreate.fingerprint()
 
-internal val searchGenericActivityOnCreateFingerprint = Fingerprint(
-    returnType = "V",
-    parameters = listOf("Landroid/os/Bundle;"),
-    custom = { method, classDef ->
-        classDef.type == "Lcom/rubenmayayo/reddit/ui/search/SearchGenericActivity;" &&
-            method.name == "onCreate"
-    },
-)
+internal val searchGenericActivityOnCreateFingerprint = BoostApi.SearchGenericActivity.onCreate.fingerprint()
 
-internal val searchGenericActivityDefaultGoToFingerprint = Fingerprint(
-    returnType = "V",
-    parameters = emptyList(),
+internal val searchGenericActivityDefaultGoToFingerprint = BoostApi.SearchGenericActivity.searchGenericActivityDefaultGoTo.fingerprint(
     strings = listOf("random", "randnsfw"),
-    custom = { method, classDef ->
-        classDef.type == "Lcom/rubenmayayo/reddit/ui/search/SearchGenericActivity;" &&
-            method.name == "s1"
-    },
 )

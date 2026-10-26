@@ -16,24 +16,24 @@ import android.graphics.drawable.Drawable
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import androidx.appcompat.view.menu.f as MenuBuilder
-import androidx.appcompat.view.menu.f.a as MenuBuilderCallback
+import androidx.appcompat.view.menu.MenuBuilder
+import androidx.appcompat.view.menu.MenuBuilder.Callback as MenuBuilderCallback
 import androidx.appcompat.widget.Toolbar
-import androidx.coordinatorlayout.widget.CoordinatorLayout.f as CoordinatorLayoutParams
-import az1 as NavigationBarItemView
-import com.google.android.material.badge.a as BadgeDrawable
+import androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams as CoordinatorLayoutParams
+import com.google.android.material.navigation.NavigationBarItemView
+import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.behavior.HideBottomViewOnScrollBehavior
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.rubenmayayo.reddit.aa.User
-import com.rubenmayayo.reddit.ui.activities.a as BoostActivity
+import com.rubenmayayo.reddit.ui.activities.BaseActivity as BoostActivity
 import com.rubenmayayo.reddit.ui.customviews.dialogs.UserSelectorView
 import com.rubenmayayo.reddit.ui.submissions.subreddit.SubredditActivity
-import dp1.b as MaterialDialogBuilder
-import lp1 as MaterialShapeDrawable
-import pd2
-import pj0 as DrawerActivity
+import com.afollestad.materialdialogs.MaterialDialog.Builder as MaterialDialogBuilder
+import com.google.android.material.shape.MaterialShapeDrawable
+import app.morphe.extension.boost.api.RedditJraw
+import app.morphe.extension.boost.api.DrawerActivity
 
-/** Typed bindings to the official Boost 1.14.0 UI, not upstream library headers. */
+/** Typed bindings to the official Boost 1.14.1 UI, not upstream library headers. */
 object BoostNativeNavigation {
     interface SelectionCallback {
         fun onSelected(item: MenuItem): Boolean
@@ -71,7 +71,7 @@ object BoostNativeNavigation {
 
     @JvmStatic
     fun fillColor(drawable: Drawable): ColorStateList? =
-        (drawable as? MaterialShapeDrawable)?.b?.c
+        (drawable as? MaterialShapeDrawable)?.drawableState?.fillColor
 
     @JvmStatic
     fun setSelectionCallback(view: View, callback: SelectionCallback) {
@@ -79,8 +79,8 @@ object BoostNativeNavigation {
         val nativeMenu = menu(view) as MenuBuilder
         // R8 erased NavigationBarView's listener methods and hard-casts their
         // implementations. The retained MenuBuilder callback is extensible.
-        nativeMenu.u(object : MenuBuilderCallback {
-            override fun a(menu: MenuBuilder?, item: MenuItem?): Boolean {
+        nativeMenu.setCallback(object : MenuBuilderCallback {
+            override fun onMenuItemSelected(menu: MenuBuilder?, item: MenuItem?): Boolean {
                 val selected = checkNotNull(item) {
                     "Boost navigation callback did not supply a menu item"
                 }
@@ -91,20 +91,20 @@ object BoostNativeNavigation {
                 return !callback.onSelected(selected)
             }
 
-            override fun b(menu: MenuBuilder?) = Unit
+            override fun onMenuModeChange(menu: MenuBuilder?) = Unit
         })
     }
 
     @JvmStatic
     fun coordinatorBehavior(view: View): Any? =
-        (view.layoutParams as CoordinatorLayoutParams).a
+        (view.layoutParams as CoordinatorLayoutParams).mBehavior
 
     @JvmStatic
     fun applyHideOnScroll(view: View, revealScrolledBar: Boolean): Boolean {
-        val enabled = MorpheBoostNativeStatics.ns2_m().a
+        val enabled = MorpheBoostNativeStatics.BoostPreferences_getInstance().preferences
             .getBoolean("pref_bottom_navigation_hide_on_scroll", true)
         val params = view.layoutParams as CoordinatorLayoutParams
-        var behavior = params.a
+        var behavior = params.mBehavior
         if (enabled) {
             if (revealScrolledBar && view.translationY != 0f) {
                 view.clearAnimation()
@@ -113,12 +113,12 @@ object BoostNativeNavigation {
                 behavior = null
             }
             if (behavior !is HideBottomViewOnScrollBehavior) {
-                params.b(HideBottomViewOnScrollBehavior())
+                params.setBehavior(HideBottomViewOnScrollBehavior())
             }
         } else {
             view.clearAnimation()
             view.animate().cancel()
-            params.b(null)
+            params.setBehavior(null)
             view.translationY = 0f
         }
         view.layoutParams = params
@@ -128,44 +128,44 @@ object BoostNativeNavigation {
     @JvmStatic
     fun applyInboxBadge(view: View, itemId: Int, count: Int) {
         val navigation = view as BottomNavigationView
-        val menuView = navigation.b
+        val menuView = navigation.menuView
         val itemView = navigation.findViewById<View>(itemId) as NavigationBarItemView?
         if (count <= 0) {
-            val badge = itemView?.v0
+            val badge = itemView?.badgeDrawable
             if (itemView != null && badge != null) {
                 itemView.setClipChildren(true)
                 itemView.setClipToPadding(true)
-                val parent = badge.e()
+                val parent = badge.getCustomBadgeParent()
                 if (parent == null) {
-                    itemView.O.overlay.remove(badge)
+                    itemView.icon.overlay.remove(badge)
                 } else {
                     parent.foreground = null
                 }
-                itemView.v0 = null
+                itemView.badgeDrawable = null
             }
-            menuView.Q.put(itemId, null)
+            menuView.badges.put(itemId, null)
             return
         }
 
-        val badge = (menuView.Q.get(itemId) as BadgeDrawable?)
-            ?: BadgeDrawable(navigation.context, null).also { menuView.Q.put(itemId, it) }
+        val badge = (menuView.badges.get(itemId) as BadgeDrawable?)
+            ?: BadgeDrawable(navigation.context, null).also { menuView.badges.put(itemId, it) }
         itemView?.setBadge(badge)
 
         // Boost inlined BadgeDrawable.setNumber/setVisible into DrawerActivity.d2.
-        val state = badge.z
+        val state = badge.state
         val number = maxOf(0, count)
-        if (state.b.F != number) {
-            state.a.F = number
-            state.b.F = number
-            if (!state.a()) {
-                badge.c.e = true
-                badge.i()
-                badge.l()
+        if (state.currentState.number != number) {
+            state.overridingState.number = number
+            state.currentState.number = number
+            if (!state.hasNumber()) {
+                badge.textDrawableHelper.textSizeDirty = true
+                badge.refreshNumberGeometry()
+                badge.refreshNumberRendering()
                 badge.invalidateSelf()
             }
         }
-        state.a.O = true
-        state.b.O = true
+        state.overridingState.visible = true
+        state.currentState.visible = true
         badge.setVisible(true, false)
     }
 
@@ -175,14 +175,14 @@ object BoostNativeNavigation {
     @JvmStatic
     fun profileLongPress(activity: Activity): View.OnLongClickListener =
         View.OnLongClickListener {
-            (activity as DrawerActivity).G1(4, false)
+            (activity as DrawerActivity).onNavigationLongPress(4, false)
             true
         }
 
     @JvmStatic
     fun subscriptionsLongPress(activity: Activity): View.OnLongClickListener =
         View.OnLongClickListener {
-            (activity as DrawerActivity).G1(2, false)
+            (activity as DrawerActivity).onNavigationLongPress(2, false)
             true
         }
 
@@ -193,32 +193,32 @@ object BoostNativeNavigation {
         callback: ProfileCallback,
     ): Dialog {
         val selector = UserSelectorView(activity, true)
-        selector.setCallback(object : UserSelectorView.a {
-            override fun U() = callback.onAddAccount()
+        selector.setCallback(object : UserSelectorView.Callback {
+            override fun onAddAccount() = callback.onAddAccount()
 
-            override fun h(user: User?, index: Int) =
+            override fun onAccountSelected(user: User?, index: Int) =
                 callback.onAccountSelected(user?.name, user == null, index)
         })
         val builder = MaterialDialogBuilder(activity)
-        builder.q(titleResource)
-        builder.e(selector, false)
-        return checkNotNull(builder.p()) {
+        builder.title(titleResource)
+        builder.customView(selector, false)
+        return checkNotNull(builder.show()) {
             "Boost profile selector dialog was not created"
         }
     }
 
     @JvmStatic
-    fun addAccount(activity: Activity) = MorpheBoostNativeStatics.xy1_x(activity)
+    fun addAccount(activity: Activity) = MorpheBoostNativeStatics.Navigation_addAccount(activity)
 
     @JvmStatic
     fun selectAccount(activity: Activity, index: Int) =
-        (activity as DrawerActivity).K1(index)
+        (activity as DrawerActivity).selectAccount(index)
 
     @JvmStatic
-    fun isLoggedIn(): Boolean = pd2.r.a != null
+    fun isLoggedIn(): Boolean = RedditJraw.instance.user != null
 
     @JvmStatic
-    fun currentUsername(): String? = pd2.r.a()
+    fun currentUsername(): String? = RedditJraw.instance.username()
 
     @JvmStatic
     fun openProfile(activity: Activity, username: String) =
@@ -226,11 +226,11 @@ object BoostNativeNavigation {
 
     @JvmStatic
     fun currentCommunity(activity: Activity?): String? =
-        if (activity is DrawerActivity) activity.o1() else null
+        if (activity is DrawerActivity) activity.currentCommunity() else null
 
     @JvmStatic
     fun openCurrentSubredditSubscriptions(activity: Activity): Boolean =
-        (activity as SubredditActivity).F1()
+        (activity as SubredditActivity).openSubscriptions()
 
     @JvmStatic
     fun tintToolbar(view: View, color: Int) {

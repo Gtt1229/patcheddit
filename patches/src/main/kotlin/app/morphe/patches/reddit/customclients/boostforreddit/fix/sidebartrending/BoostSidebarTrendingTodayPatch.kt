@@ -7,6 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.sidebartrending
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
@@ -56,7 +58,7 @@ val boostSidebarTrendingTodayPatch = bytecodePatch(
          */
         trendingTodayViewHolderBindFingerprint.wrapHook(
             before = """
-                iget-object v0, p0, Lcom/rubenmayayo/reddit/ui/sidebar/today/TrendingTodayAdapter;->b:Ljava/util/List;
+                iget-object v0, p0, ${BoostApi.TrendingTodayAdapter.rows}
                 invoke-interface {v0, p2}, Ljava/util/List;->get(I)Ljava/lang/Object;
                 move-result-object v0
                 invoke-static {p1, v0}, Lapp/morphe/extension/boost/sidebar/SidebarTrendingPosts;->recordBoundRow(Ljava/lang/Object;Ljava/lang/Object;)V

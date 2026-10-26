@@ -7,7 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.flair
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
@@ -22,18 +23,7 @@ import app.morphe.patches.all.misc.PatchCategory
 private const val FLAIR_CONTRAST_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostFlairContrast;"
 
-private const val RICH_FLAIR_VIEW =
-    "Lcom/rubenmayayo/reddit/models/reddit/RichFlairView;"
-
-private val flairColorsFingerprint = Fingerprint(
-    definingClass = RICH_FLAIR_VIEW,
-    name = "c",
-    returnType = "V",
-    parameters = listOf(
-        "Lcom/rubenmayayo/reddit/models/reddit/FlairModel;",
-        "Z",
-    ),
-)
+private val flairColorsFingerprint = BoostApi.RichFlairView.flairColors.fingerprint()
 
 @Suppress("unused")
 val readableFlairLabelsPatch = bytecodePatch(
@@ -53,7 +43,7 @@ val readableFlairLabelsPatch = bytecodePatch(
                     "Landroid/graphics/drawable/GradientDrawable;->setColor(I)V"
             }
             val textIndex = indexOfFirstInstructionOrThrow {
-                getReference<MethodReference>()?.toString() == "$RICH_FLAIR_VIEW->setTextColor(I)V"
+                getReference<MethodReference>()?.toString() == BoostApi.RichFlairView.setTextColor.toString()
             }
             check(backgroundIndex < textIndex)
             val backgroundRegister = getInstruction<FiveRegisterInstruction>(backgroundIndex).registerD

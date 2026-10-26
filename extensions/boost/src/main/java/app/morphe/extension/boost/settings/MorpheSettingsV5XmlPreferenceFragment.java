@@ -7,6 +7,8 @@
 
 package app.morphe.extension.boost.settings;
 
+import app.morphe.extension.boost.api.BoostFieldNames;
+
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
@@ -894,7 +896,7 @@ abstract class MorpheSettingsV5XmlPreferenceFragment extends Fragment {
                     showUnavailable();
                     return;
                 }
-                setBoostStaticBoolean("i");
+                setBoostStaticBoolean(BoostFieldNames.BoostPreferencesCommentTypographyDirty);
                 page.dismiss();
             });
             addGroupedRow(group, row);
@@ -1497,6 +1499,22 @@ abstract class MorpheSettingsV5XmlPreferenceFragment extends Fragment {
 
         addSpace(content, 18);
         LinearLayout registration = addGroup(content);
+        LinearLayout server = baseRow();
+        addLabels(
+                server,
+                "Server settings",
+                "Open Boost's native Synccit server and account settings"
+        );
+        addChevron(server);
+        server.setOnClickListener(view -> {
+            try {
+                startActivity(BoostSettingsNative.synccitSettingsIntent(requireContext()));
+            } catch (RuntimeException exception) {
+                showUnavailable();
+            }
+        });
+        addGroupedRow(registration, server);
+
         LinearLayout account = baseRow();
         addLabels(
                 account,
@@ -1676,12 +1694,12 @@ abstract class MorpheSettingsV5XmlPreferenceFragment extends Fragment {
         // These are Boost's existing invalidation flags. Setting a broader
         // superset is safe and keeps changes visible without a hidden
         // PreferenceFragment listener.
-        setBoostStaticBoolean("d");
-        setBoostStaticBoolean("e");
-        setBoostStaticBoolean("f");
-        setBoostStaticBoolean("g");
-        setBoostStaticBoolean("h");
-        setBoostStaticBoolean("i");
+        setBoostStaticBoolean(BoostFieldNames.BoostPreferencesLayoutDirty);
+        setBoostStaticBoolean(BoostFieldNames.BoostPreferencesToolbarDirty);
+        setBoostStaticBoolean(BoostFieldNames.BoostPreferencesPostViewsDirty);
+        setBoostStaticBoolean(BoostFieldNames.BoostPreferencesPostTypographyDirty);
+        setBoostStaticBoolean(BoostFieldNames.BoostPreferencesThemeDirty);
+        setBoostStaticBoolean(BoostFieldNames.BoostPreferencesCommentTypographyDirty);
 
         if ("pref_subscriptions_drawer".equals(key)
                 || "pref_subscriptions_drawer_show_icon".equals(key)
@@ -1914,7 +1932,7 @@ abstract class MorpheSettingsV5XmlPreferenceFragment extends Fragment {
     private void revokeGdprConsent() {
         Toast.makeText(
                 requireContext(),
-                "Boost 1.14.0 does not include a GDPR revocation action.",
+                "Boost 1.14.1 does not include a GDPR revocation action.",
                 Toast.LENGTH_LONG
         ).show();
     }

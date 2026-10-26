@@ -1,8 +1,8 @@
 /*
  * Copyright 2026 wchill.
  *
- * Compile-only declarations for the verified Boost 1.14.0 API.
- * These placeholder implementations must never be packaged with the extension.
+ * Stable compile-only Boost adapter API. Native targets are in boost/bindings.json.
+ * These declarations must never be packaged with the extension.
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -11,21 +11,17 @@
 
 package androidx.appcompat.view.menu
 
-import androidx.appcompat.view.menu.f as MenuBuilder
-import androidx.appcompat.view.menu.f.a as MenuBuilderCallback
-import x53 as SupportMenu
+private fun <T> boostApiStub(): T = throw UnsupportedOperationException("Compile-only Boost adapter stub")
 
-private fun <T> boost114Stub(): T = throw UnsupportedOperationException("Compile-only Boost 1.14 API stub")
-
-abstract class f protected constructor(stub: Unit) : SupportMenu {
-    open fun u(p0: MenuBuilderCallback?): Unit = boost114Stub()
-    interface a {
-        fun a(p0: MenuBuilder?, p1: android.view.MenuItem?): Boolean
-        fun b(p0: MenuBuilder?): Unit
+abstract class MenuBuilder protected constructor(stub: Unit) : androidx.core.internal.view.SupportMenu {
+    open fun setCallback(p0: androidx.appcompat.view.menu.MenuBuilder.Callback?): Unit = boostApiStub()
+    interface Callback {
+        fun onMenuItemSelected(p0: androidx.appcompat.view.menu.MenuBuilder?, p1: android.view.MenuItem?): Boolean
+        fun onMenuModeChange(p0: androidx.appcompat.view.menu.MenuBuilder?): Unit
     }
 }
 
-interface k {
-    interface a {
+interface MenuView {
+    interface ItemView {
     }
 }

@@ -7,7 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.refresh
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
@@ -22,10 +23,7 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 private const val ADAPTIVE_REFRESH_RATE_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/AdaptiveRefreshRate;"
 
-private val boostApplicationOnCreateFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/MyApplication;",
-    name = "onCreate",
-)
+private val boostApplicationOnCreateFingerprint = BoostApi.MyApplication.onCreate.fingerprint()
 
 @Suppress("unused")
 val preferHighRefreshRatePatch = bytecodePatch(

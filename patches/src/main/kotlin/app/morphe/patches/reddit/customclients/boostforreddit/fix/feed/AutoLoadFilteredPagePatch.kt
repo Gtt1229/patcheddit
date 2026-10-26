@@ -7,7 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.feed
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
@@ -21,24 +22,11 @@ import app.morphe.patches.all.misc.PatchCategory
 private const val FILTERED_PAGE_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostFilteredPageAutoLoad;"
 
-private const val THING_FRAGMENT =
-    "Lcom/rubenmayayo/reddit/ui/fragments/p;"
-
 // Native "Load next" Snackbar action: calls Callbacks.m0() (next page).
-private const val LOAD_NEXT_LISTENER =
-    "Lcom/rubenmayayo/reddit/ui/fragments/o;"
-
-private const val SUBMISSION_FRAGMENT =
-    "Lcom/rubenmayayo/reddit/ui/fragments/d;"
 
 // ThingFragment.showFilteredNextPageSnackbar(View): shown when content-type
 // filters removed every post on a page.
-private val filteredNextPageSnackbarFingerprint = Fingerprint(
-    definingClass = THING_FRAGMENT,
-    name = "q1",
-    returnType = "V",
-    parameters = listOf("Landroid/view/View;"),
-)
+private val filteredNextPageSnackbarFingerprint = BoostApi.ThingFragment.filteredNextPageSnackbar.fingerprint()
 
 @Suppress("unused")
 val autoLoadFilteredPagePatch = bytecodePatch(
@@ -58,15 +46,15 @@ val autoLoadFilteredPagePatch = bytecodePatch(
             val nextPageIndex = indexOfFirstInstructionOrThrow {
                 opcode == Opcode.SGET_OBJECT &&
                     getReference<FieldReference>()?.toString() ==
-                    "Lcom/google/android/material/snackbar/Snackbar;->E:[I"
+                    BoostApi.Snackbar.styleAttributes.toString()
             }
             addInstructionsAtControlFlowLabel(
                 nextPageIndex,
                 """
-                    check-cast p0, $SUBMISSION_FRAGMENT
-                    new-instance v0, $LOAD_NEXT_LISTENER
-                    invoke-direct {v0, p0}, $LOAD_NEXT_LISTENER-><init>($SUBMISSION_FRAGMENT)V
-                    invoke-static {p1, v0}, $FILTERED_PAGE_EXTENSION_DESCRIPTOR->onPageFiltered(Landroid/view/View;Landroid/view/View${'$'}OnClickListener;)Z
+                    check-cast p0, ${BoostApi.SubmissionFragment.type}
+                    new-instance v0, ${BoostApi.SubmissionRemoveClickListener.type}
+                    invoke-direct {v0, p0}, ${BoostApi.SubmissionRemoveClickListener.construct}
+                    invoke-static {p1, v0}, Lapp/morphe/extension/boost/utils/BoostFilteredPageAutoLoad;->onPageFiltered(Landroid/view/View;Landroid/view/View${'$'}OnClickListener;)Z
                     move-result v0
                     if-eqz v0, :morphe_show_native_snackbar
                     return-void

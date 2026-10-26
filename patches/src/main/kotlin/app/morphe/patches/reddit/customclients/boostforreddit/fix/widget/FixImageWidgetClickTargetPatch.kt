@@ -7,6 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.widget
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
@@ -21,8 +23,8 @@ import app.morphe.patches.all.misc.PatchCategory
 private const val PENDING_INTENT_GET_ACTIVITY_REFERENCE =
     "Landroid/app/PendingIntent;->getActivity(Landroid/content/Context;ILandroid/content/Intent;I)Landroid/app/PendingIntent;"
 
-private const val BOOST_PENDING_INTENT_FLAGS_REFERENCE =
-    "Lhk3;->o()I"
+private val BOOST_PENDING_INTENT_FLAGS_REFERENCE =
+    BoostApi.Utils.imageWidgetThumbnailSize.toString()
 
 @Suppress("unused")
 val fixImageWidgetClickTargetPatch = bytecodePatch(

@@ -7,6 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.searchnav
 
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
+
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
@@ -23,12 +25,6 @@ private const val MATERIAL_BOTTOM_NAVIGATION =
 
 private const val EXTENSION_CLASS_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostSearchBottomNavigation;"
-
-private const val SEARCH_ABSTRACT_SUBREDDITS_ERROR_CALLBACK_DESCRIPTOR =
-    "Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity\$c;"
-
-private const val SEARCH_ABSTRACT_ACTIVITY_DESCRIPTOR =
-    "Lcom/rubenmayayo/reddit/ui/search/SearchAbstractActivity;"
 
 private val addSearchBottomNavigationHostPatch = resourcePatch(
     name = "Add Boost Search bottom navigation host",
@@ -138,11 +134,9 @@ val boostSearchBottomNavigationPatch = bytecodePatch(
             )
         }
 
-
-
         searchAbstractSubredditsErrorCallbackFingerprint.wrapHook(
             before = """
-                iget-object v0, p0, $SEARCH_ABSTRACT_SUBREDDITS_ERROR_CALLBACK_DESCRIPTOR->a:$SEARCH_ABSTRACT_ACTIVITY_DESCRIPTOR
+                iget-object v0, p0, ${BoostApi.SearchAbstractActivitySubredditErrorCallback.activity}
                 invoke-virtual {v0}, Landroid/app/Activity;->isFinishing()Z
                 move-result v0
                 if-eqz v0, :morphe_search_subreddits_error_live

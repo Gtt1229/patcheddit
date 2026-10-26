@@ -1,8 +1,8 @@
 /*
  * Copyright 2026 wchill.
  *
- * Compile-only declarations for the verified Boost 1.14.0 API.
- * These placeholder implementations must never be packaged with the extension.
+ * Stable compile-only Boost adapter API. Native targets are in boost/bindings.json.
+ * These declarations must never be packaged with the extension.
  *
  * See the included NOTICE file for GPLv3 section 7 terms.
  */
@@ -11,11 +11,11 @@
 
 package com.google.android.material.appbar
 
-private fun <T> boost114Stub(): T = throw UnsupportedOperationException("Compile-only Boost 1.14 API stub")
+private fun <T> boostApiStub(): T = throw UnsupportedOperationException("Compile-only Boost adapter stub")
 
-abstract class AppBarLayout protected constructor(stub: Unit) : android.widget.LinearLayout(boost114Stub<android.content.Context>()), androidx.coordinatorlayout.widget.CoordinatorLayout.b {
-    interface a {
+abstract class AppBarLayout protected constructor(stub: Unit) : android.widget.LinearLayout(boostApiStub<android.content.Context>()), androidx.coordinatorlayout.widget.CoordinatorLayout.AttachedBehavior {
+    interface BaseOnOffsetChangedListener {
     }
-    interface g : com.google.android.material.appbar.AppBarLayout.a {
+    interface OnOffsetChangedListener : com.google.android.material.appbar.AppBarLayout.BaseOnOffsetChangedListener {
     }
 }

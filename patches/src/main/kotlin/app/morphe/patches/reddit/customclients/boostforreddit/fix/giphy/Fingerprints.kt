@@ -9,36 +9,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.giphy
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal val resolveGiphyApiFingerprint = Fingerprint(
-    definingClass = "Lw31;",
-    name = "b",
-    returnType = "V",
-    parameters = listOf(
-        "Landroid/content/Context;",
-        "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;",
-        "Lw31\$b;",
-    ),
-    strings = listOf("dc6zaTOxFJmzC"),
-)
+internal val commentViewHolderBindFingerprint = BoostApi.CommentViewHolder.bind.fingerprint()
 
-internal val commentViewHolderBindFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/adapters/CommentViewHolder;",
-    name = "w",
-    returnType = "V",
-    parameters = listOf(
-        "Lcom/rubenmayayo/reddit/models/reddit/CommentModel;",
-        "Z",
-        "Z",
-        "Z",
-        "Lig2;"
-    )
-)
-
-internal val commentViewHolderCollapseFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/adapters/CommentViewHolder;",
-    name = "A",
-    returnType = "Z",
-    parameters = emptyList(),
-)
+internal val commentViewHolderCollapseFingerprint = BoostApi.CommentViewHolder.isCollapsed.fingerprint()

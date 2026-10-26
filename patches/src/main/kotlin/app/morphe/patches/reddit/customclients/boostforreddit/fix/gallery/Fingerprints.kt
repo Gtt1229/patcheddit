@@ -7,43 +7,14 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.gallery
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal val galleryPageSelectedFingerprint = Fingerprint(
-    definingClass = "Lg21;",
-    name = "c",
-    returnType = "V",
-    parameters = listOf("I"),
-)
+internal val galleryPageSelectedFingerprint = BoostApi.GalleryPageListener.galleryPageSelected.fingerprint()
 
-internal val galleryPagerStateFingerprint = Fingerprint(
-    definingClass = "Lg21;",
-    name = "b",
-    returnType = "V",
-    parameters = listOf("I"),
-)
+internal val galleryPagerStateFingerprint = BoostApi.GalleryPageListener.galleryPagerState.fingerprint()
 
-internal val galleryPageFactoryFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity\$b;",
-    name = "m",
-    returnType = "Landroidx/fragment/app/Fragment;",
-    parameters = listOf("I"),
-)
+internal val galleryPageFactoryFingerprint = BoostApi.GalleryActivityImagePagerAdapter.galleryPageFactory.fingerprint()
 
-internal val imageModelFragmentOnCreateViewFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/fragments/imagemodel/ImageModelFragment;",
-    name = "onCreateView",
-    returnType = "Landroid/view/View;",
-    parameters = listOf(
-        "Landroid/view/LayoutInflater;",
-        "Landroid/view/ViewGroup;",
-        "Landroid/os/Bundle;",
-    ),
-)
+internal val imageModelFragmentOnCreateViewFingerprint = BoostApi.ImageModelFragment.onCreateView.fingerprint()
 
-internal val imageModelFragmentOnDestroyFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/fragments/imagemodel/ImageModelFragment;",
-    name = "onDestroy",
-    returnType = "V",
-    parameters = emptyList(),
-)
+internal val imageModelFragmentOnDestroyFingerprint = BoostApi.ImageModelFragment.onDestroy.fingerprint()

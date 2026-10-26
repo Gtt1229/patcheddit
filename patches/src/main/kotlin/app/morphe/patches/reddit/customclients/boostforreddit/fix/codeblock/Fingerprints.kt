@@ -7,36 +7,8 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.codeblock
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal val boostHtmlSanitizerFingerprint = Fingerprint(
-    definingClass = "Lqd2;",
-    name = "a",
-    returnType = "Ljava/lang/String;",
-    parameters = listOf("Ljava/lang/String;"),
-    strings = listOf("<code>", "<tt>", "<pre>", "</pre>")
-)
+internal val boostLinkTextViewSetTextHtmlParsedFingerprint = BoostApi.LinkTextView.setTextHtmlParsed.fingerprint()
 
-internal val boostTableTextViewSetTextHtmlFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/customviews/TableTextView;",
-    name = "setTextHtml",
-    returnType = "V",
-    parameters = listOf("Ljava/lang/String;")
-)
-
-internal val boostLinkTextViewSetTextHtmlParsedFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/customviews/LinkTextView;",
-    name = "setTextHtmlParsed",
-    parameters = listOf("Ljava/lang/String;"),
-    returnType = "V",
-)
-
-internal val boostSubmissionViewHolderSelfPreviewHtmlFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/adapters/SubmissionViewHolder;",
-    name = "w",
-    returnType = "V",
-    parameters = listOf(
-        "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;",
-        "Z", "Z", "Z", "Lig2;",
-    ),
-)
+internal val boostSubmissionViewHolderSelfPreviewHtmlFingerprint = BoostApi.SubmissionViewHolder.bind.fingerprint()

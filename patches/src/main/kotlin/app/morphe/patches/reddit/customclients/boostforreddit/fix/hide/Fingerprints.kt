@@ -7,34 +7,11 @@
 
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.hide
 
-import app.morphe.patcher.Fingerprint
+import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostApi
 
-internal val subredditBaseHideToggleFingerprint = Fingerprint(
-    returnType = "V",
-    parameters = listOf(
-        "I",
-        "Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;",
-        "Z",
-    ),
-    custom = { method, classDef ->
-        classDef.type == "Lcom/rubenmayayo/reddit/ui/submissions/subreddit/SubredditBaseActivity;" &&
-            method.name == "o0"
-    },
-)
+internal val subredditBaseHideToggleFingerprint = BoostApi.SubredditBaseActivity.onHideToggle.fingerprint()
 
 // All feed layouts now share identity-based hiding in this base fragment.
-internal val hideFragmentFingerprint = Fingerprint(
-    definingClass = "Lcom/rubenmayayo/reddit/ui/fragments/SubmissionRecyclerViewFragment;",
-    name = "o0",
-    returnType = "V",
-    parameters = listOf("Lcom/rubenmayayo/reddit/models/reddit/SubmissionModel;"),
-)
+internal val hideFragmentFingerprint = BoostApi.SubmissionRecyclerViewFragment.hideFragment.fingerprint()
 
-internal val feedActionS1InvalidIndexFingerprint = Fingerprint(
-    returnType = "V",
-    parameters = listOf("I"),
-    custom = { method, classDef ->
-        classDef.type == "Lcom/rubenmayayo/reddit/ui/fragments/SubmissionRecyclerViewFragment;" &&
-            method.name == "W0"
-    },
-)
+internal val feedActionS1InvalidIndexFingerprint = BoostApi.SubmissionRecyclerViewFragment.feedActionS1InvalidIndex.fingerprint()
