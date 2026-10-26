@@ -326,7 +326,6 @@
     "Lcom/rubenmayayo/reddit/ui/submit/v2/SubmitVideoFragment;": "Lcom/rubenmayayo/reddit/ui/submit/v2/SubmitVideoFragment;",
     "Lcom/rubenmayayo/reddit/ui/subreddits/SearchSubredditActivity;": "Lcom/rubenmayayo/reddit/ui/subreddits/SearchSubredditActivity;",
     "Lcom/rubenmayayo/reddit/ui/subscriptions/SubscriptionsActivity;": "Lcom/rubenmayayo/reddit/ui/subscriptions/SubscriptionsActivity;",
-    "Lcom/rubenmayayo/reddit/ui/synccit/SynccitCreateActivity;": "Lcom/rubenmayayo/reddit/ui/synccit/SynccitCreateActivity;",
     "Lcom/rubenmayayo/reddit/ui/upload/ManageUploadsActivity;": "Lcom/rubenmayayo/reddit/ui/upload/ManageUploadsActivity;",
     "Lcom/rubenmayayo/reddit/work/notifications/CheckNotificationsWorker;": "Lcom/rubenmayayo/reddit/work/notifications/CheckNotificationsWorker;",
     "Lcom/rubenmayayo/reddit/work/trending/TrendingWorker;": "Lcom/rubenmayayo/reddit/work/trending/TrendingWorker;",

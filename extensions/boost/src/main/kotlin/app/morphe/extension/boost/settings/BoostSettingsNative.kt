@@ -35,7 +35,6 @@ import com.rubenmayayo.reddit.ui.activities.LicensesActivity
 import com.rubenmayayo.reddit.ui.customviews.menu.MenuOption
 import com.rubenmayayo.reddit.ui.drafts.ManageDraftsActivity
 import com.rubenmayayo.reddit.ui.subscriptions.SubscriptionsActivity
-import com.rubenmayayo.reddit.ui.synccit.SynccitCreateActivity
 import com.rubenmayayo.reddit.ui.upload.ManageUploadsActivity
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import app.morphe.extension.boost.api.BoostPreferences
@@ -309,25 +308,6 @@ object BoostSettingsNative {
         require(context is ContextWrapper) { "Boost media cache needs an activity context" }
         MorpheBoostNativeStatics.DiskCacheAdapter_resizeMediaCache(context)
     }
-
-    @JvmStatic
-    fun synccitUsername(): String = preferences().getString("synccit_username", "") ?: ""
-
-    @JvmStatic
-    fun synccitAuth(): String = preferences().getString("synccit_auth", "") ?: ""
-
-    @JvmStatic
-    fun saveSynccitCredentials(username: String, auth: String) {
-        preferences().edit().putString("synccit_username", username)
-            .putString("synccit_auth", auth).apply()
-    }
-
-    @JvmStatic
-    fun synccitIntent(context: Context): Intent = Intent(context, SynccitCreateActivity::class.java)
-
-    @JvmStatic
-    fun synccitSettingsIntent(context: Context): Intent =
-        Intent().setClassName(context, "com.rubenmayayo.reddit.ui.synccit.SynccitActivity")
 
     @JvmStatic
     fun deleteHistory(key: String) {

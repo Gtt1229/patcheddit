@@ -522,6 +522,11 @@ public final class MorpheSettingsV4NativePages {
         public Privacy() {
             super("History & privacy", "pref_privacy_v2");
         }
+
+        @Override
+        protected boolean includeControl(String resourceName, String key) {
+            return !"synncit_config".equals(key);
+        }
     }
 
     public static final class General extends NativePage {
@@ -565,8 +570,6 @@ public final class MorpheSettingsV4NativePages {
         private static final String EXTRA_SHOW_FRAGMENT = "extra_show_fragment";
         private static final String BOOST_FRAGMENT_PREFIX =
                 "com.rubenmayayo.reddit.ui.preferences.v2.";
-        private static final int REQUEST_SYNCCIT_DEVICE = 1001;
-        private static final int REQUEST_SYNCCIT_ACCOUNT = 1002;
 
         private final String pageTitle;
         private final String[] resourceNames;
@@ -575,8 +578,6 @@ public final class MorpheSettingsV4NativePages {
 
         private MorpheSettingsV4Theme.Tokens tokens;
         private SharedPreferences preferences;
-        private EditText synccitUsernameInput;
-        private EditText synccitAuthInput;
         private BoostSettingsNative.SearchObservation savedSearchObserver;
         private FrameLayout pageHost;
         private View settingsPage;
@@ -677,8 +678,6 @@ public final class MorpheSettingsV4NativePages {
         public void onDestroyView() {
             bindings.clear();
             controlsByKey.clear();
-            synccitUsernameInput = null;
-            synccitAuthInput = null;
             if (savedSearchObserver != null) {
                 savedSearchObserver.close();
                 savedSearchObserver = null;
@@ -692,33 +691,6 @@ public final class MorpheSettingsV4NativePages {
             settingsPage = null;
             editorBackStackBaseCount = -1;
             super.onDestroyView();
-        }
-
-        @Override
-        public void onActivityResult(
-                int requestCode,
-                int resultCode,
-                Intent data
-        ) {
-            super.onActivityResult(requestCode, resultCode, data);
-            if ((requestCode != REQUEST_SYNCCIT_DEVICE
-                    && requestCode != REQUEST_SYNCCIT_ACCOUNT)
-                    || resultCode != Activity.RESULT_OK
-                    || data == null) {
-                return;
-            }
-            String username = data.getStringExtra("username");
-            String auth = data.getStringExtra("auth");
-            if (username == null || auth == null) {
-                return;
-            }
-            saveSynccitCredentials(username, auth);
-            if (synccitUsernameInput != null) {
-                synccitUsernameInput.setText(username);
-            }
-            if (synccitAuthInput != null) {
-                synccitAuthInput.setText(auth);
-            }
         }
 
         @Override
@@ -1131,9 +1103,7 @@ public final class MorpheSettingsV4NativePages {
             }
 
             String key = control.key;
-            if ("synncit_config".equals(key)) {
-                showSynccitEditor();
-            } else if ("pref_sort_per_sub".equals(key)) {
+            if ("pref_sort_per_sub".equals(key)) {
                 showSavedSortsEditor();
             } else if ("pref_frontpage_sort".equals(key)) {
                 showSortEditor(false, frontpageSubscription(), null);
@@ -1927,125 +1897,6 @@ public final class MorpheSettingsV4NativePages {
                 });
                 addGroupedRow(group, option);
             }
-        }
-
-        private void showSynccitEditor() {
-            Context context = requireContext();
-            EditorPage page = openEditorPage("Configure Synccit");
-            LinearLayout content = page.content;
-
-            TextView explanation = textView(
-                    "Synchronize read posts between supported Reddit clients. "
-                            + "Credentials are stored in Boost on this device.",
-                    14,
-                    tokens.textSecondary
-            );
-            explanation.setLineSpacing(0, 1.08f);
-            content.addView(explanation, spacedMatchWrapParams(4));
-
-            synccitUsernameInput = addEditorInput(
-                    content,
-                    "Synccit username",
-                    BoostSettingsNative.synccitUsername(),
-                    14
-            );
-            synccitAuthInput = addEditorInput(
-                    content,
-                    "Device auth token",
-                    BoostSettingsNative.synccitAuth(),
-                    12
-            );
-
-            addSpace(content, 18);
-            LinearLayout registration = addGroup(content);
-            LinearLayout server = baseRow();
-            addLabels(
-                    server,
-                    "Server settings",
-                    "Open Boost's native Synccit server and account settings"
-            );
-            addChevron(server);
-            server.setOnClickListener(view -> {
-                try {
-                    startActivity(BoostSettingsNative.synccitSettingsIntent(requireContext()));
-                } catch (RuntimeException exception) {
-                    showUnavailable();
-                }
-            });
-            addGroupedRow(registration, server);
-
-            LinearLayout account = baseRow();
-            addLabels(
-                    account,
-                    "Create Synccit account",
-                    "Register a new account through Boost"
-            );
-            addChevron(account);
-            account.setOnClickListener(view -> startSynccitCreate(true));
-            addGroupedRow(registration, account);
-
-            LinearLayout device = baseRow();
-            addLabels(
-                    device,
-                    "Add this device",
-                    "Generate a device auth token for the username above"
-            );
-            addChevron(device);
-            device.setOnClickListener(view -> startSynccitCreate(false));
-            addGroupedRow(registration, device);
-
-            LinearLayout actions = endAlignedActions();
-            TextView disconnect = actionLabel("Disconnect", false);
-            disconnect.setOnClickListener(view -> showConfirmationPage(
-                    "Disconnect Synccit?",
-                    "The saved Synccit username and token will be removed.",
-                    "Disconnect",
-                    () -> {
-                        saveSynccitCredentials("", "");
-                        synccitUsernameInput.setText("");
-                        synccitAuthInput.setText("");
-                    }
-            ));
-            actions.addView(disconnect, wrapParams());
-
-            TextView save = actionLabel("Save", true);
-            LinearLayout.LayoutParams saveParams = wrapParams();
-            saveParams.setMarginStart(dp(8));
-            actions.addView(save, saveParams);
-            save.setOnClickListener(view -> {
-                saveSynccitCredentials(
-                        synccitUsernameInput.getText().toString().trim(),
-                        synccitAuthInput.getText().toString().trim()
-                );
-                Toast.makeText(context, "Synccit settings saved", Toast.LENGTH_SHORT)
-                        .show();
-                page.dismiss();
-            });
-            content.addView(actions, matchWrapParams());
-        }
-
-        private void startSynccitCreate(boolean accountMode) {
-            try {
-                Intent intent = BoostSettingsNative.synccitIntent(requireContext());
-                int requestCode;
-                if (accountMode) {
-                    intent.putExtra("account_mode", true);
-                    requestCode = REQUEST_SYNCCIT_ACCOUNT;
-                } else {
-                    String username = synccitUsernameInput == null
-                            ? BoostSettingsNative.synccitUsername()
-                            : synccitUsernameInput.getText().toString().trim();
-                    intent.putExtra("username", username);
-                    requestCode = REQUEST_SYNCCIT_DEVICE;
-                }
-                startActivityForResult(intent, requestCode);
-            } catch (RuntimeException exception) {
-                showUnavailable();
-            }
-        }
-
-        private void saveSynccitCredentials(String username, String auth) {
-            BoostSettingsNative.saveSynccitCredentials(username, auth);
         }
 
         private void showFieldSearchHelp() {

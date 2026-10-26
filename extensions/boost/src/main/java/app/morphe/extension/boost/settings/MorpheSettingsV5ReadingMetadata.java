@@ -138,8 +138,6 @@ final class MorpheSettingsV5ReadingMetadata {
                 return "Tap flair to search";
             case "pref_post_clickable_username":
                 return "Tap username to view profile";
-            case "synncit_config":
-                return "Configure Synccit";
             case "pref_mark_read_dim_images":
                 return "Dim images in read posts";
             case "pref_hide_read_permanently":
@@ -258,8 +256,6 @@ final class MorpheSettingsV5ReadingMetadata {
                 return "Choose the default sort used for Home.";
             case "pref_sort_per_sub":
                 return "Edit sorts remembered for individual communities.";
-            case "synncit_config":
-                return "Sync read-post state between supported clients.";
             case "pref_history_delete_read":
                 return "Clear the read-post history stored on this device.";
             case "pref_saved_searches":

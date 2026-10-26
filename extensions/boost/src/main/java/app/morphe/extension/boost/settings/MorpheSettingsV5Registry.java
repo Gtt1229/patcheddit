@@ -82,7 +82,7 @@ final class MorpheSettingsV5Registry {
             new V5PageSpec("v5/reading_and_interaction/posts/feed_behavior", "MorpheSettingsV5ReadingLeafFragment", new String[]{"pref_default_sort", "pref_sort_per_subscription", "pref_frontpage_sort"}),
             new V5PageSpec("v5/reading_and_interaction/posts/post_actions", "MorpheSettingsV5ReadingLeafFragment", new String[]{"pref_post_show_comments_button", "pref_show_hide", "pref_sort_per_sub", "pref_show_read", "pref_post_show_open_button", "pref_post_show_share_button", "pref_posts_floating_button", "pref_upvote_on_save"}),
             new V5PageSpec("v5/reading_and_interaction/posts/post_behavior", "MorpheSettingsV5ReadingLeafFragment", new String[]{"pref_clickable_awards_posts", "pref_info_username", "pref_show_awards_posts", "pref_flair_emojis", "pref_flair_colors", "pref_info_post_flair", "pref_post_clickable_subreddit", "pref_flair_clickable", "pref_post_clickable_username"}),
-            new V5PageSpec("v5/reading_and_interaction/posts/reading_state", "MorpheSettingsV5ReadingLeafFragment", new String[]{"synncit_config", "pref_mark_read_dim_images", "pref_hide_read_permanently", "pref_mark_read_on_scroll", "pref_mark_read", "pref_history_delete_read"}),
+            new V5PageSpec("v5/reading_and_interaction/posts/reading_state", "MorpheSettingsV5ReadingLeafFragment", new String[]{"pref_mark_read_dim_images", "pref_hide_read_permanently", "pref_mark_read_on_scroll", "pref_mark_read", "pref_history_delete_read"}),
             new V5PageSpec("v5/reading_and_interaction/search_and_filters/content_filters", "MorpheSettingsV5ReadingFragment", new String[]{}),
             new V5PageSpec("v5/reading_and_interaction/search_and_filters/search", "MorpheSettingsV5ReadingFragment", new String[]{}),
             new V5PageSpec("v5/reading_and_interaction/search_and_filters/content_filters/filter_behavior", "MorpheSettingsV5ReadingLeafFragment", new String[]{"pref_blur_nsfw_images", "pref_load_nsfw_images", "pref_nsfw"}),
@@ -507,7 +507,7 @@ final class MorpheSettingsV5Registry {
             case "v5/reading_and_interaction/posts/post_behavior":
                 return "Choose post identity, flair, awards, and tap behavior.";
             case "v5/reading_and_interaction/posts/reading_state":
-                return "Control read-state tracking, hiding, Synccit, and local reset.";
+                return "Control read-state tracking, hiding, and local reset.";
             case "v5/reading_and_interaction/search_and_filters/content_filters":
                 return "Control NSFW visibility, muted content, and matching post types.";
             case "v5/reading_and_interaction/search_and_filters/search":

@@ -1089,8 +1089,9 @@ final class MorpheSettingsV4Catalog {
 
                 String summary = attributeText(resources, parser, "summary");
                 String key = attributeText(resources, parser, "key");
-                if ("pref_general_v2".equals(leaf.resourceName)
-                        && isNavigationExposedKey(key)) {
+                if ("synncit_config".equals(key)
+                        || ("pref_general_v2".equals(leaf.resourceName)
+                        && isNavigationExposedKey(key))) {
                     continue;
                 }
                 String nestedFragment = parser.getAttributeValue(
