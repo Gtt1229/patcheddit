@@ -1,3 +1,17 @@
+# [2.0.0-dev.1](https://github.com/wchill/patcheddit/compare/v1.5.0-dev.1...v2.0.0-dev.1) (2026-10-26)
+
+
+### Features
+
+* Support Boost 1.14.0 ([6ced72b](https://github.com/wchill/patcheddit/commit/6ced72b3a8adc43424ae3960eed3a85a3610cfe6))
+
+
+### BREAKING CHANGES
+
+* Uses morphe-patcher 2.x, and many obsolete patches have
+been removed. Existing patches have been reworked. This version may not
+be fully functional yet.
+
 # [1.5.0-dev.1](https://github.com/wchill/patcheddit/compare/v1.4.1-dev.1...v1.5.0-dev.1) (2026-10-23)
 
 
