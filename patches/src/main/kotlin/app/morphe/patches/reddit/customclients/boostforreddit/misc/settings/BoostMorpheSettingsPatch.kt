@@ -27,36 +27,6 @@ internal val boostMorpheSettingsResourcesPatch = resourcePatch(
                 <PreferenceScreen
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:app="http://schemas.android.com/apk/res-auto">
-                    <PreferenceCategory android:title="Media previews">
-                        <CheckBoxPreference
-                            android:key="morphe_boost_inline_media_previews_enabled"
-                            android:title="Enable inline media previews"
-                            android:summary="Show supported media previews directly in comments."
-                            android:defaultValue="true" />
-
-                        <app.morphe.extension.boost.giphy.PreviewSizePreference
-                            android:icon="@drawable/ic_photo_outline_24dp"
-                            android:key="morphe_boost_inline_media_preview_size"
-                            android:title="Preview size"
-                            android:summary="Balanced"
-                            android:dialogTitle="Preview size"
-                            android:defaultValue="balanced" />
-
-                        <app.morphe.extension.boost.giphy.PreviewAlignmentPreference
-                            android:icon="@drawable/ic_photo_outline_24dp"
-                            android:key="morphe_boost_inline_media_preview_alignment"
-                            android:title="Preview alignment"
-                            android:summary="Center"
-                            android:dialogTitle="Preview alignment"
-                            android:defaultValue="center" />
-
-                        <CheckBoxPreference
-                            android:key="morphe_boost_inline_media_preview_show_source_text"
-                            android:title="Show source text with preview"
-                            android:summary="Keep the original link text visible with the preview."
-                            android:defaultValue="false" />
-                    </PreferenceCategory>
-
                     <PreferenceCategory android:title="Image viewer">
                         <androidx.preference.SeekBarPreference
                             android:key="morphe_boost_image_dismiss_sensitivity"
@@ -67,32 +37,6 @@ internal val boostMorpheSettingsResourcesPatch = resourcePatch(
                             android:max="100"
                             app:min="12"
                             app:showSeekBarValue="true" />
-                    </PreferenceCategory>
-
-                    <PreferenceCategory android:title="Open behavior">
-                        <app.morphe.extension.boost.giphy.MediaTapActionPreference
-                            android:icon="@drawable/ic_photo_outline_24dp"
-                            android:key="morphe_boost_direct_reddit_gif_tap_action"
-                            android:title="Direct Reddit GIF tap action"
-                            android:summary="Image viewer"
-                            android:dialogTitle="Direct Reddit GIF tap action"
-                            android:defaultValue="image_viewer" />
-
-                        <app.morphe.extension.boost.giphy.MediaTapActionPreference
-                            android:icon="@drawable/ic_photo_outline_24dp"
-                            android:key="morphe_boost_giphy_preview_tap_action"
-                            android:title="Giphy preview tap action"
-                            android:summary="Video viewer"
-                            android:dialogTitle="Giphy preview tap action"
-                            android:defaultValue="video_viewer" />
-
-                        <app.morphe.extension.boost.giphy.MediaTapActionPreference
-                            android:icon="@drawable/ic_photo_outline_24dp"
-                            android:key="morphe_boost_static_preview_tap_action"
-                            android:title="Static preview tap action"
-                            android:summary="Image viewer"
-                            android:dialogTitle="Static preview tap action"
-                            android:defaultValue="image_viewer" />
                     </PreferenceCategory>
 
                     <PreferenceCategory android:title="Search">

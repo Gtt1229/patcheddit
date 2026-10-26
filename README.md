@@ -17,6 +17,7 @@ In addition, patches for some apps contain additional features that were not pre
 
 ### Boost for Reddit
 * Morphe options use Boost's native preference UI. Boost's original settings pages, theme and navigation are kept; no replacement settings menu is installed.
+* Comment GIFs and images use Boost's native inline rendering; no duplicate comment-media preview is added.
 * **Import and export OAuth tokens** is an opt-in patch that adds **Settings > Morphe > OAuth tokens**. It supports local JSON files and copy/paste, including signing in or adding an account without the browser login flow.
     * Import checks the access-token owner with Reddit, validates the refresh token using Boost's configured OAuth client, and obtains fresh tokens before adding or updating the verified account. An expired access token can be restored with a valid refresh token. Boost then restarts with that account selected.
     * Tokens are bound to their OAuth client. Configure the same client ID in Boost's native API settings before importing; the patch does not change API settings automatically.

@@ -140,7 +140,7 @@
     {
       "name": "Automatically undelete Imgur images",
       "description": "Loads deleted Imgur images from the Wayback Machine.",
-      "default": false,
+      "default": true,
       "category": "Undelete",
       "compatiblePackages": [
         {
@@ -167,7 +167,7 @@
     {
       "name": "Automatically undelete Reddit content",
       "description": "Restores deleted and removed posts and comments from Arctic Shift, and their media from the Wayback Machine.",
-      "default": false,
+      "default": true,
       "category": "Undelete",
       "compatiblePackages": [
         {
@@ -193,7 +193,7 @@
     },
     {
       "name": "Boost Morphe settings",
-      "description": "Adds a Morphe section and a reorganized settings screen with search. The classic settings stay available.",
+      "description": "Adds a native-style Morphe section while keeping Boost's original settings screens.",
       "default": false,
       "category": "Interface",
       "compatiblePackages": [
@@ -642,7 +642,11 @@
     },
     {
       "name": "Fix Boost code block rendering",
+<<<<<<< HEAD
       "description": "Fixes fenced code and parenthesized links in feed previews and directly rendered HTML.",
+=======
+      "description": "Fixes fenced code and parenthesized links in feed previews that bypass Boost's HTML preprocessing.",
+>>>>>>> c356655 (chore: Remove obsolete inline Giphy patch)
       "default": true,
       "category": "Comments & posting",
       "compatiblePackages": [
@@ -684,6 +688,7 @@
           "targets": [
             {
               "version": "1.14.1",
+<<<<<<< HEAD
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
@@ -711,6 +716,8 @@
           "targets": [
             {
               "version": "1.14.1",
+=======
+>>>>>>> c356655 (chore: Remove obsolete inline Giphy patch)
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
@@ -1026,6 +1033,36 @@
           "targets": [
             {
               "version": "1.14.1",
+<<<<<<< HEAD
+=======
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Import and export OAuth tokens",
+      "description": "Adds native-style Morphe settings to transfer Reddit account tokens using JSON files or the clipboard.",
+      "default": false,
+      "category": "Login & API",
+      "compatiblePackages": [
+        {
+          "packageName": "com.rubenmayayo.reddit",
+          "name": "Boost for Reddit",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "formFactor": "MOBILE",
+          "targets": [
+            {
+              "version": "1.14.1",
+>>>>>>> c356655 (chore: Remove obsolete inline Giphy patch)
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
@@ -1386,6 +1423,36 @@
           "targets": [
             {
               "version": "1.14.1",
+<<<<<<< HEAD
+=======
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Preview images in the editor",
+      "description": "Shows previews of supported image URLs above the comment or text-post editor.",
+      "default": false,
+      "category": "Comments & posting",
+      "compatiblePackages": [
+        {
+          "packageName": "com.rubenmayayo.reddit",
+          "name": "Boost for Reddit",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "formFactor": "MOBILE",
+          "targets": [
+            {
+              "version": "1.14.1",
+>>>>>>> c356655 (chore: Remove obsolete inline Giphy patch)
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
@@ -1521,6 +1588,7 @@
           "targets": [
             {
               "version": "1.14.1",
+<<<<<<< HEAD
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
@@ -1548,6 +1616,8 @@
           "targets": [
             {
               "version": "1.14.1",
+=======
+>>>>>>> c356655 (chore: Remove obsolete inline Giphy patch)
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
@@ -2329,6 +2399,33 @@
           "targets": [
             {
               "version": null,
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Use Reddit for image uploads",
+      "description": "Uses Boost's native Reddit uploader for image posts and galleries.",
+      "default": false,
+      "category": "Comments & posting",
+      "compatiblePackages": [
+        {
+          "packageName": "com.rubenmayayo.reddit",
+          "name": "Boost for Reddit",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "formFactor": "MOBILE",
+          "targets": [
+            {
+              "version": "1.14.1",
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
