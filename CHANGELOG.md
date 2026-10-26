@@ -1,3 +1,10 @@
+# [2.0.0-dev.3](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.2...v2.0.0-dev.3) (2026-10-26)
+
+
+### Features
+
+* Add OAuth token export + remove reskinned settings menus ([9a7aca3](https://github.com/wchill/patcheddit/commit/9a7aca3d187441da9de80b75344fa3303ffcc22b))
+
 # [2.0.0-dev.2](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.1...v2.0.0-dev.2) (2026-10-26)
 
 

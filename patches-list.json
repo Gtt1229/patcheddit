@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "2.0.0-dev.2",
+  "version": "2.0.0-dev.3",
   "patches": [
     {
       "name": "Add Boost Search bottom navigation",
@@ -223,6 +223,33 @@
       "description": "Opens Search right away on a list of active subreddits.",
       "default": true,
       "category": "Feed",
+      "compatiblePackages": [
+        {
+          "packageName": "com.rubenmayayo.reddit",
+          "name": "Boost for Reddit",
+          "description": null,
+          "apkFileType": null,
+          "appIconColor": null,
+          "signatures": null,
+          "formFactor": "MOBILE",
+          "targets": [
+            {
+              "version": "1.14.1",
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Configure editor image hosting",
+      "description": "Uses Imgur Free or your configured ImgBB account for images attached to comments and text posts.",
+      "default": false,
+      "category": "Comments & posting",
       "compatiblePackages": [
         {
           "packageName": "com.rubenmayayo.reddit",
@@ -642,11 +669,7 @@
     },
     {
       "name": "Fix Boost code block rendering",
-<<<<<<< HEAD
-      "description": "Fixes fenced code and parenthesized links in feed previews and directly rendered HTML.",
-=======
       "description": "Fixes fenced code and parenthesized links in feed previews that bypass Boost's HTML preprocessing.",
->>>>>>> c356655 (chore: Remove obsolete inline Giphy patch)
       "default": true,
       "category": "Comments & posting",
       "compatiblePackages": [
@@ -688,36 +711,6 @@
           "targets": [
             {
               "version": "1.14.1",
-<<<<<<< HEAD
-              "versionCodes": null,
-              "isExperimental": false,
-              "minSdk": null,
-              "description": null
-            }
-          ]
-        }
-      ],
-      "options": []
-    },
-    {
-      "name": "Fix Boost native image upload",
-      "description": "Uploads image posts and galleries to Reddit, and images in comments or text posts to Imgur, or ImgBB if you choose it. GIF and video uploads are unchanged.",
-      "default": false,
-      "category": "Comments & posting",
-      "compatiblePackages": [
-        {
-          "packageName": "com.rubenmayayo.reddit",
-          "name": "Boost for Reddit",
-          "description": null,
-          "apkFileType": null,
-          "appIconColor": null,
-          "signatures": null,
-          "formFactor": "MOBILE",
-          "targets": [
-            {
-              "version": "1.14.1",
-=======
->>>>>>> c356655 (chore: Remove obsolete inline Giphy patch)
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
@@ -1033,8 +1026,6 @@
           "targets": [
             {
               "version": "1.14.1",
-<<<<<<< HEAD
-=======
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
@@ -1062,7 +1053,6 @@
           "targets": [
             {
               "version": "1.14.1",
->>>>>>> c356655 (chore: Remove obsolete inline Giphy patch)
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
@@ -1423,8 +1413,6 @@
           "targets": [
             {
               "version": "1.14.1",
-<<<<<<< HEAD
-=======
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
@@ -1452,7 +1440,6 @@
           "targets": [
             {
               "version": "1.14.1",
->>>>>>> c356655 (chore: Remove obsolete inline Giphy patch)
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
@@ -1588,36 +1575,6 @@
           "targets": [
             {
               "version": "1.14.1",
-<<<<<<< HEAD
-              "versionCodes": null,
-              "isExperimental": false,
-              "minSdk": null,
-              "description": null
-            }
-          ]
-        }
-      ],
-      "options": []
-    },
-    {
-      "name": "Show inline Giphy previews in comments",
-      "description": "Adds inline media previews below Boost comment text for Giphy links and direct static image URLs.",
-      "default": true,
-      "category": "Comments & posting",
-      "compatiblePackages": [
-        {
-          "packageName": "com.rubenmayayo.reddit",
-          "name": "Boost for Reddit",
-          "description": null,
-          "apkFileType": null,
-          "appIconColor": null,
-          "signatures": null,
-          "formFactor": "MOBILE",
-          "targets": [
-            {
-              "version": "1.14.1",
-=======
->>>>>>> c356655 (chore: Remove obsolete inline Giphy patch)
               "versionCodes": null,
               "isExperimental": false,
               "minSdk": null,
