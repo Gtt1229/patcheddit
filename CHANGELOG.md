@@ -1,3 +1,10 @@
+# [2.0.0-dev.2](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.1...v2.0.0-dev.2) (2026-10-26)
+
+
+### Features
+
+* Boost 1.14.1 support ([1b17fe0](https://github.com/wchill/patcheddit/commit/1b17fe06970465247d989d510bc837ff6788aa3e))
+
 # [2.0.0-dev.1](https://github.com/wchill/patcheddit/compare/v1.5.0-dev.1...v2.0.0-dev.1) (2026-10-26)
 
 
