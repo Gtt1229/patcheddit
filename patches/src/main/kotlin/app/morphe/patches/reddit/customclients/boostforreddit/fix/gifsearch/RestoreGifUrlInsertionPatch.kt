@@ -24,7 +24,7 @@ import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 val restoreGifUrlInsertionPatch = bytecodePatch(
     name = "Restore GIF URL insertion",
     description = "Adds an option to the image menu to insert a GIF from its URL.",
-    default = false
+    default = true
 ) {
     category(PatchCategory.COMMENTS)
     dependsOn(ExtensionPatches.Boost)

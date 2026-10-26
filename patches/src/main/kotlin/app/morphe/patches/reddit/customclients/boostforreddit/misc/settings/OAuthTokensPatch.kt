@@ -15,7 +15,7 @@ import app.morphe.patches.reddit.customclients.AppCompatibility
 val oauthTokensPatch = resourcePatch(
     name = "Import and export OAuth tokens",
     description = "Adds native-style Morphe settings to transfer Reddit account tokens using JSON files or the clipboard.",
-    default = false,
+    default = true,
 ) {
     category(PatchCategory.LOGIN)
     dependsOn(boostMorpheSettingsPatch)

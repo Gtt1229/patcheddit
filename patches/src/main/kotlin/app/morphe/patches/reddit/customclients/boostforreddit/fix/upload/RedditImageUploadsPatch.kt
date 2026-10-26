@@ -22,7 +22,7 @@ val redditImageUploadsPatch = bytecodePatch(
     name = "Use Reddit for image uploads",
     description =
         "Uses Boost's native Reddit uploader for image posts and galleries.",
-    default = false
+    default = true
 ) {
     category(PatchCategory.COMMENTS)
     dependsOn(ExtensionPatches.Boost)

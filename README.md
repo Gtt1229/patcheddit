@@ -16,14 +16,19 @@ In addition, patches for some apps contain additional features that were not pre
     * Custom patch options override these defaults. In Boost 1.14.0 and up, saved values in the native API settings override the patch-provided defaults.
 
 ### Boost for Reddit
+* All Boost patches are selected by default. Individual patches can be deselected before patching and also disabled in the app settings. Patch-selection defaults do not change saved settings or runtime preference defaults.
 * Morphe options use Boost's native preference UI. Boost's original settings pages, theme and navigation are kept; no replacement settings menu is installed.
 * Comment GIFs and images use Boost's native inline rendering; no duplicate comment-media preview is added.
-* **Import and export OAuth tokens** is an opt-in patch that adds **Settings > Morphe > OAuth tokens**. It supports local JSON files and copy/paste, including signing in or adding an account without the browser login flow.
+* **Log non-fatal exceptions** records errors reported through Boost's existing exception handler to a private file instead of showing error toasts. **Settings > Morphe > Exception log** lets you view, save or clear the log.
+    * Entries include UTC timestamps, thread names and stack traces. Two rotating 4 MiB files retain up to 8 MiB across app restarts; individual entries are bounded. The viewer shows the latest 64 Ki characters, while saving includes all retained entries.
+    * Logs are excluded from Android app backups. Common credential-bearing lines are redacted, but other personal or request data can remain, so review saved copies before sharing. This patch does not capture every uncaught crash or replace Boost's own error handling.
+    * If app initialization or private storage is unavailable, logging failures are reported to Logcat without showing a toast.
+* **Import and export OAuth tokens** adds **Settings > Morphe > OAuth tokens**. It supports local JSON files and copy/paste, including signing in or adding an account without the browser login flow.
     * Import checks the access-token owner with Reddit, validates the refresh token using Boost's configured OAuth client, and obtains fresh tokens before adding or updating the verified account. An expired access token can be restored with a valid refresh token. Boost then restarts with that account selected.
     * Tokens are bound to their OAuth client. Configure the same client ID in Boost's native API settings before importing; the patch does not change API settings automatically.
     * Exports are **unencrypted account credentials**. Keep them private and delete files and clipboard copies after use. Clipboard exports are marked sensitive; Boost attempts to clear its own copy after one minute and retries when the token screen resumes if Android blocked background clipboard access.
     * The JSON requires string fields `access_token` and `refresh_token`. Exports also include `version: 1`, `username` and `client_id`; these metadata fields are optional when importing. Duplicate fields, unsupported fields and files larger than 64 KiB of text are rejected. Tokens are stored in Boost's native account database, not Morphe preferences.
-* Image-upload features are separate opt-in patches:
+* Image-upload features are separate patches:
     * **Use Reddit for image uploads** selects Reddit hosting for image posts and galleries, without changing editor attachments.
     * **Configure editor image hosting** adds an editor-hosting setting for Imgur Free or ImgBB. It does not change post or gallery hosting.
     * **Preview images in the editor** adds previews of supported image URLs without changing upload providers.

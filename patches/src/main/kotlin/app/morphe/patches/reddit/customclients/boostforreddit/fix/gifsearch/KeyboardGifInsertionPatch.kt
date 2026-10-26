@@ -17,7 +17,7 @@ import app.morphe.patches.all.misc.PatchCategory
 val supportKeyboardGifInsertionPatch = bytecodePatch(
     name = "Support keyboard GIF insertion",
     description = "Lets you insert GIFs and images from your keyboard while writing, when the keyboard provides a public link.",
-    default = false
+    default = true
 ) {
     category(PatchCategory.COMMENTS)
     dependsOn(ExtensionPatches.Boost)

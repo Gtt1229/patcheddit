@@ -104,7 +104,7 @@ internal val boostMorpheSettingsResourcesPatch = resourcePatch(
 val boostMorpheSettingsPatch = resourcePatch(
     name = "Boost Morphe settings",
     description = "Adds a native-style Morphe section while keeping Boost's original settings screens.",
-    default = false,
+    default = true,
 ) {
     category(PatchCategory.INTERFACE)
     dependsOn(ExtensionPatches.Boost, boostMorpheSettingsResourcesPatch)

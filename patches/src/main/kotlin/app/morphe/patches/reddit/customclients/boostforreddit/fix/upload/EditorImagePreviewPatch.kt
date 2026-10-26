@@ -18,7 +18,7 @@ import app.morphe.patches.reddit.customclients.ExtensionPatches
 val editorImagePreviewPatch = bytecodePatch(
     name = "Preview images in the editor",
     description = "Shows previews of supported image URLs above the comment or text-post editor.",
-    default = false,
+    default = true,
 ) {
     category(PatchCategory.COMMENTS)
     dependsOn(ExtensionPatches.Boost)

@@ -29,7 +29,7 @@ private val boostApplicationOnCreateFingerprint = BoostApi.MyApplication.onCreat
 val preferHighRefreshRatePatch = bytecodePatch(
     name = "Prefer high refresh rate",
     description = "Requests a high display refresh rate for Boost on adaptive-refresh devices.",
-    default = false,
+    default = true,
 ) {
     category(PatchCategory.INTERFACE)
     dependsOn(ExtensionPatches.Boost, boostMorpheSettingsPatch)

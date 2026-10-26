@@ -84,7 +84,7 @@ val editorImageHostingPatch = bytecodePatch(
     name = "Configure editor image hosting",
     description =
         "Uses Imgur Free or your configured ImgBB account for images attached to comments and text posts.",
-    default = false,
+    default = true,
 ) {
     category(PatchCategory.COMMENTS)
     dependsOn(ExtensionPatches.Boost, boostMorpheSettingsPatch, editorImageHostingResourcesPatch)
