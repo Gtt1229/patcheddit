@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-10-26T16:55:52",
-  "description": "# [2.0.0-dev.3](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.2...v2.0.0-dev.3) (2026-10-26)\n\n\n### Features\n\n* Add OAuth token export + remove reskinned settings menus ([9a7aca3](https://github.com/wchill/patcheddit/commit/9a7aca3d187441da9de80b75344fa3303ffcc22b))",
-  "download_url": "https://github.com/wchill/patcheddit/releases/download/v2.0.0-dev.3/patches-2.0.0-dev.3.mpp",
-  "signature_download_url": "https://github.com/wchill/patcheddit/releases/download/v2.0.0-dev.3/patches-2.0.0-dev.3.mpp.asc",
-  "version": "2.0.0-dev.3"
+  "created_at": "2026-10-26T18:57:02",
+  "description": "# [2.0.0-dev.4](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.3...v2.0.0-dev.4) (2026-10-26)\n\n\n### Features\n\n* Add patch to log exceptions to file ([d572890](https://github.com/wchill/patcheddit/commit/d5728903682e734a985290e8bda3d1d8c5d4ef9a))",
+  "download_url": "https://github.com/wchill/patcheddit/releases/download/v2.0.0-dev.4/patches-2.0.0-dev.4.mpp",
+  "signature_download_url": "https://github.com/wchill/patcheddit/releases/download/v2.0.0-dev.4/patches-2.0.0-dev.4.mpp.asc",
+  "version": "2.0.0-dev.4"
 }

@@ -1,3 +1,10 @@
+# [2.0.0-dev.4](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.3...v2.0.0-dev.4) (2026-10-26)
+
+
+### Features
+
+* Add patch to log exceptions to file ([d572890](https://github.com/wchill/patcheddit/commit/d5728903682e734a985290e8bda3d1d8c5d4ef9a))
+
 # [2.0.0-dev.3](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.2...v2.0.0-dev.3) (2026-10-26)
 
 
