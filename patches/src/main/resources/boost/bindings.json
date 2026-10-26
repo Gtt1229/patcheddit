@@ -748,6 +748,7 @@
     "Lcom/rubenmayayo/reddit/models/reddit/SubscriptionViewModel;->describeContents()I": "Lcom/rubenmayayo/reddit/models/reddit/SubscriptionViewModel;->describeContents()I",
     "Lcom/rubenmayayo/reddit/models/reddit/SubscriptionViewModel;->frontpage()Lcom/rubenmayayo/reddit/models/reddit/SubscriptionViewModel;": "Lcom/rubenmayayo/reddit/models/reddit/SubscriptionViewModel;->c()Lcom/rubenmayayo/reddit/models/reddit/SubscriptionViewModel;",
     "Lcom/rubenmayayo/reddit/models/reddit/SubscriptionViewModel;->writeToParcel(Landroid/os/Parcel;I)V": "Lcom/rubenmayayo/reddit/models/reddit/SubscriptionViewModel;->writeToParcel(Landroid/os/Parcel;I)V",
+    "Lcom/rubenmayayo/reddit/ui/activities/BaseActivity;->onCreate(Landroid/os/Bundle;)V": "Lcom/rubenmayayo/reddit/ui/activities/a;->onCreate(Landroid/os/Bundle;)V",
     "Lcom/rubenmayayo/reddit/ui/activities/BaseActivity;->openProfile(Ljava/lang/String;)V": "Lcom/rubenmayayo/reddit/ui/activities/a;->openProfile(Ljava/lang/String;)V",
     "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity$ImagePagerAdapter;->galleryPageFactory(I)Landroidx/fragment/app/Fragment;": "Lcom/rubenmayayo/reddit/ui/activities/GalleryActivity$b;->m(I)Landroidx/fragment/app/Fragment;",
     "Lcom/rubenmayayo/reddit/ui/activities/ImageActivity2;->onCreate(Landroid/os/Bundle;)V": "Lcom/rubenmayayo/reddit/ui/activities/ImageActivity2;->onCreate(Landroid/os/Bundle;)V",

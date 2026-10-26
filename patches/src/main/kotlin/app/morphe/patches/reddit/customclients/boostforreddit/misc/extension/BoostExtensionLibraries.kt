@@ -102,6 +102,8 @@ internal fun prepareBoostExtension(input: InputStream): InputStream {
 
 private fun <T : ClassDef> reachableExtensionClasses(definitions: List<T>): List<T> {
     val classes = definitions.associateBy { it.type }
+    // The crash-log dependency injects this entry point after extension preparation.
+    val sharedPatchEntryPoints = setOf("Lapp/morphe/extension/shared/patches/CrashLogPatch;")
     val providers = coroutineServices.values.mapTo(HashSet()) {
         "$privateLibraryTypePrefix${it.replace('.', '/')};"
     }
@@ -110,7 +112,8 @@ private fun <T : ClassDef> reachableExtensionClasses(definitions: List<T>): List
     }
     val pending = ArrayDeque(
         definitions.filter {
-            it.type in providers || it.type.startsWith("Lapp/morphe/extension/boost/") &&
+            it.type in providers || it.type in sharedPatchEntryPoints ||
+                it.type.startsWith("Lapp/morphe/extension/boost/") &&
                 !it.type.startsWith(privateLibraryTypePrefix)
         }.map { it.type }
     )

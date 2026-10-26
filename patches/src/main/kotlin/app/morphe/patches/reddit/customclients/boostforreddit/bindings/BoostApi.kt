@@ -24,6 +24,9 @@ internal object BoostApi {
     object BabushkaTextPartBuilder : BoostTypeBinding("Lcom/rubenmayayo/reddit/ui/customviews/BabushkaText\$Part\$Builder;") {
         val construct get() = method("<init>(Ljava/lang/String;)V")
     }
+    object BaseActivity : BoostTypeBinding("Lcom/rubenmayayo/reddit/ui/activities/BaseActivity;") {
+        val onCreate get() = method("onCreate(Landroid/os/Bundle;)V")
+    }
     object BaseTransientBottomBar : BoostTypeBinding("Lcom/google/android/material/snackbar/BaseTransientBottomBar;") {
         val getAnchorView get() = method("getAnchorView()Landroid/view/View;")
         val setAnchorView get() = method("setAnchorView(Landroid/view/View;)V")
