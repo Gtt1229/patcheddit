@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-10-26T19:49:46",
-  "description": "# [2.0.0-dev.5](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.4...v2.0.0-dev.5) (2026-10-26)\n\n\n### Features\n\n* Add CrashLogPatch from morphe-patches-library as a dependency and expose it in app settings ([0b2d4be](https://github.com/wchill/patcheddit/commit/0b2d4be869d632508e18476f028d9033741711ff))",
-  "download_url": "https://github.com/wchill/patcheddit/releases/download/v2.0.0-dev.5/patches-2.0.0-dev.5.mpp",
-  "signature_download_url": "https://github.com/wchill/patcheddit/releases/download/v2.0.0-dev.5/patches-2.0.0-dev.5.mpp.asc",
-  "version": "2.0.0-dev.5"
+  "created_at": "2026-10-27T02:35:50",
+  "description": "# [2.0.0-dev.6](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.5...v2.0.0-dev.6) (2026-10-27)\n\n\n### Bug Fixes\n\n* Use shaded copy of Jackson ([5ea1b1e](https://github.com/wchill/patcheddit/commit/5ea1b1e8d2eac4abbc397a7a16875d12bbd41c79))",
+  "download_url": "https://github.com/wchill/patcheddit/releases/download/v2.0.0-dev.6/patches-2.0.0-dev.6.mpp",
+  "signature_download_url": "https://github.com/wchill/patcheddit/releases/download/v2.0.0-dev.6/patches-2.0.0-dev.6.mpp.asc",
+  "version": "2.0.0-dev.6"
 }

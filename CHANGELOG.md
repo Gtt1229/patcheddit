@@ -1,3 +1,10 @@
+# [2.0.0-dev.6](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.5...v2.0.0-dev.6) (2026-10-27)
+
+
+### Bug Fixes
+
+* Use shaded copy of Jackson ([5ea1b1e](https://github.com/wchill/patcheddit/commit/5ea1b1e8d2eac4abbc397a7a16875d12bbd41c79))
+
 # [2.0.0-dev.5](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.4...v2.0.0-dev.5) (2026-10-26)
 
 
