@@ -1,3 +1,10 @@
+# [2.0.0-dev.8](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.7...v2.0.0-dev.8) (2026-10-27)
+
+
+### Features
+
+* Add patch to fix scrolling on user profiles ([75e4cc9](https://github.com/wchill/patcheddit/commit/75e4cc9d318193bcdcc29a635dee8ad228f11c58))
+
 # [2.0.0-dev.7](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.6...v2.0.0-dev.7) (2026-10-27)
 
 
