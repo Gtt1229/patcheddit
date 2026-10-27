@@ -1,3 +1,10 @@
+# [2.0.0-dev.7](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.6...v2.0.0-dev.7) (2026-10-27)
+
+
+### Bug Fixes
+
+* Clean up OAuth token import/export ([3749e21](https://github.com/wchill/patcheddit/commit/3749e214e05d04d086c99f01041b602b9ee46e54))
+
 # [2.0.0-dev.6](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.5...v2.0.0-dev.6) (2026-10-27)
 
 
