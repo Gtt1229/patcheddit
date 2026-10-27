@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <Preference
+        android:title="Non-fatal exceptions"
+        android:summary="Reported errors stay in private app storage in two rotating 4 MiB files (8 MiB total). Common credential fields are redacted, but messages may still contain personal or request data. Review before sharing."
+        android:selectable="false" />
+    <Preference
+        android:key="morphe_boost_exception_log_view"
+        android:title="View non-fatal log"
+        android:summary="View the most recent saved exceptions"
+        android:persistent="false" />
+    <Preference
+        android:key="morphe_boost_exception_log_save"
+        android:title="Save non-fatal log"
+        android:summary="Save a copy using Android's document picker"
+        android:persistent="false" />
+    <Preference
+        android:key="morphe_boost_exception_log_clear"
+        android:title="Clear non-fatal log"
+        android:summary="Delete all saved exception log entries"
+        android:persistent="false" />
+    <Preference
+        android:key="morphe_boost_crash_log_view"
+        android:title="Fatal crash logs"
+        android:summary="Browse saved fatal reports on a separate screen"
+        android:fragment="app.morphe.extension.boost.settings.FatalCrashLogsFragment"
+        android:persistent="false" />
+</PreferenceScreen>

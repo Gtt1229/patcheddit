@@ -26,31 +26,34 @@ public class MorpheSettingsFragment extends PreferenceFragmentCompat {
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+        setPreferencesFromResource(resourceId("xml", resourceName()), rootKey);
+    }
+
+    protected final int resourceId(String type, String name) {
         Context context = requireContext();
         Resources resources = context.getResources();
-        String resourceName = resourceName();
 
         int resourceId = resources.getIdentifier(
-                resourceName,
-                "xml",
+                name,
+                type,
                 context.getPackageName()
         );
 
         if (resourceId == 0) {
             resourceId = resources.getIdentifier(
-                    resourceName,
-                    "xml",
+                    name,
+                    type,
                     BOOST_PACKAGE
             );
         }
 
         if (resourceId == 0) {
             throw new IllegalStateException(
-                    "Missing Morphe settings resource: " + resourceName
+                    "Missing Morphe settings resource: " + type + "/" + name
             );
         }
 
-        setPreferencesFromResource(resourceId, rootKey);
+        return resourceId;
     }
 
 }

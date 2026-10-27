@@ -82,6 +82,16 @@ internal fun verifyBoostLibraryReferences(
             errors += "$caller references missing class $element"
         }
     }
+    for (cls in definitions) {
+        if (cls.type in extensionTypes) continue
+        cls.forEachReference(runtimeOnly = true) { reference ->
+            if (reference is TypeReference &&
+                reference.type.trimStart('[').startsWith("Lapp/morphe/extension/")
+            ) {
+                checkType(reference.type, cls.type)
+            }
+        }
+    }
     fun resolve(owner: String, match: (ClassDef) -> Int?): Int? {
         val pending = ArrayDeque(listOf(owner))
         val seen = mutableSetOf<String>()

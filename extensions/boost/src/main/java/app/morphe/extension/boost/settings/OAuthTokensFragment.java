@@ -59,15 +59,6 @@ public final class OAuthTokensFragment extends MorpheSettingsFragment {
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         super.onCreatePreferences(savedInstanceState, rootKey);
-        int layout = getResources().getIdentifier(
-                "morphe_boost_oauth_editor", "layout", requireContext().getPackageName());
-        if (layout == 0) {
-            layout = getResources().getIdentifier(
-                    "morphe_boost_oauth_editor", "layout", "com.rubenmayayo.reddit");
-        }
-        if (layout == 0) {
-            throw new IllegalStateException("Missing OAuth token editor layout.");
-        }
         Preference editor = new Preference(requireContext(), null) {
             @Override
             public void onBindViewHolder(PreferenceViewHolder holder) {
@@ -78,7 +69,7 @@ public final class OAuthTokensFragment extends MorpheSettingsFragment {
         editor.setKey("morphe_boost_oauth_editor");
         editor.setPersistent(false);
         editor.setSelectable(false);
-        editor.setLayoutResource(layout);
+        editor.setLayoutResource(resourceId("layout", "morphe_boost_oauth_editor"));
         getPreferenceScreen().addPreference(editor);
         String username = OAuthTokenAccounts.currentUsername();
         if (username != null) {

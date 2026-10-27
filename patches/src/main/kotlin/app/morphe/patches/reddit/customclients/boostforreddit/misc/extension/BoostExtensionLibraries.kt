@@ -11,12 +11,9 @@ import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patches.reddit.customclients.boostforreddit.bindings.BoostBindings
 import app.morphe.patches.reddit.customclients.boostforreddit.misc.extension.mapping.DexMappingRewriter
 import app.morphe.patches.reddit.customclients.boostforreddit.misc.extension.mapping.ProguardMapping
-import app.morphe.patches.reddit.customclients.boostforreddit.misc.extension.mapping.forEachReference
 
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile
 import com.android.tools.smali.dexlib2.iface.ClassDef
-import com.android.tools.smali.dexlib2.iface.reference.StringReference
-import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import com.android.tools.smali.dexlib2.writer.io.MemoryDataStore
 import com.android.tools.smali.dexlib2.writer.pool.DexPool
 import java.io.ByteArrayInputStream
@@ -89,53 +86,14 @@ internal fun prepareBoostExtension(input: InputStream): InputStream {
     check(nativeTypes.isNotEmpty()) { "Boost extension loaded before native library preparation" }
     val kept = definitions.filterNot { mapping.type(it.type) in nativeTypes }
     val rewriter = DexMappingRewriter(mapping, adapterDefinitions + definitions)
-    val rewritten = reachableExtensionClasses(rewriter.rewrite(kept))
+    val rewritten = rewriter.rewrite(kept)
     val pool = DexPool(dex.opcodes)
     rewritten.forEach(pool::internClass)
     val output = MemoryDataStore()
     pool.writeTo(output)
     Logger.getLogger("BoostExtensionLibraries").info(
         "Using ${definitions.size - kept.size} app-provided library classes; " +
-            "binding ${rewritten.size} reachable extension classes to Boost's native API",
+            "binding ${rewritten.size} extension classes to Boost's native API",
     )
     return ByteArrayInputStream(output.data)
-}
-
-private fun <T : ClassDef> reachableExtensionClasses(definitions: List<T>): List<T> {
-    val classes = definitions.associateBy { it.type }
-    // The crash-log dependency injects this entry point after extension preparation.
-    val sharedPatchEntryPoints = setOf("Lapp/morphe/extension/shared/patches/CrashLogPatch;")
-    val providers = coroutineServices.values.mapTo(HashSet()) {
-        "$privateLibraryTypePrefix${it.replace('.', '/')};"
-    }
-    check(providers.all(classes::containsKey)) {
-        "Boost extension is missing private coroutine service providers: ${providers - classes.keys}"
-    }
-    val pending = ArrayDeque(
-        definitions.filter {
-            it.type in providers || it.type in sharedPatchEntryPoints ||
-                it.type.startsWith("Lapp/morphe/extension/boost/") &&
-                !it.type.startsWith(privateLibraryTypePrefix)
-        }.map { it.type }
-    )
-    val visited = mutableSetOf<String>()
-    fun type(value: String) {
-        val element = value.trimStart('[')
-        if (element in classes && element !in visited) pending.add(element)
-    }
-    while (pending.isNotEmpty()) {
-        val name = pending.removeFirst()
-        if (!visited.add(name)) continue
-        val cls = classes[name] ?: continue
-        cls.forEachReference { reference ->
-            when (reference) {
-                is TypeReference -> type(reference.type)
-                is StringReference -> {
-                    type(reference.string)
-                    type("L${reference.string.replace('.', '/')};")
-                }
-            }
-        }
-    }
-    return definitions.filter { it.type in visited }
 }

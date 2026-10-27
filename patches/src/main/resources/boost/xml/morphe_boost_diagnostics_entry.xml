@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceCategory xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="Diagnostics">
+    <Preference
+        android:key="morphe_boost_exception_log"
+        android:title="Exception log"
+        android:summary="View reported errors and saved fatal-crash reports"
+        android:fragment="app.morphe.extension.boost.settings.ExceptionLogFragment" />
+</PreferenceCategory>

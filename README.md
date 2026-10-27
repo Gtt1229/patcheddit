@@ -19,12 +19,13 @@ In addition, patches for some apps contain additional features that were not pre
 * All Boost patches are selected by default. Individual patches can be deselected before patching and also disabled in the app settings. Patch-selection defaults do not change saved settings or runtime preference defaults.
 * Morphe options use Boost's native preference UI. Boost's original settings pages, theme and navigation are kept; no replacement settings menu is installed.
 * Comment GIFs and images use Boost's native inline rendering; no duplicate comment-media preview is added.
-* **Log non-fatal exceptions** records errors reported through Boost's existing exception handler to a private file instead of showing error toasts. It also depends on Morphe's upstream fatal-crash logger. **Settings > Morphe > Exception log** provides access to both kinds of report.
+* **Log exceptions** records errors reported through Boost's existing exception handler to a private file instead of showing error toasts. It also depends on Morphe's upstream fatal-crash logger. **Settings > Morphe > Exception log** provides access to both kinds of report.
     * Entries include UTC timestamps, thread names and stack traces. Two rotating 4 MiB files retain up to 8 MiB across app restarts; individual entries are bounded. The viewer shows the latest 64 Ki characters, while saving includes all retained entries.
     * The rotating non-fatal logs are excluded from Android app backups. Common credential-bearing lines are redacted, but other personal or request data can remain, so review saved copies before sharing.
     * If app initialization or private storage is unavailable, logging failures are reported to Logcat without showing a toast.
     * The fatal handler is installed when the first Boost screen opens, including notification and deep-link entry points, and delegates to the original crash handler. Upstream saves fatal reports in `Documents/Morphe`, or the app-specific external `Documents` folder when public storage is unavailable. It briefly shows a saved-report toast when the app crashes; non-fatal reporting remains silent.
-    * **View fatal crash logs** lists accessible reports for this app, newest first. **Browse for a crash log** uses Android's document picker if a report is not listed or was saved by a previous installation. Fatal previews are bounded to the latest 64 Ki characters, and **Save copy** streams the complete report without truncating it.
+    * **Fatal crash logs** opens a dedicated settings fragment listing all accessible reports for this app, newest first. Select a report to read it in its own scrollable fragment; Back returns to the list. Missing-report and partial-access notices appear on the list rather than in dialogs. **Browse for a crash log** uses Android's document picker if a report is not listed or was saved by a previous installation.
+    * Fatal previews are bounded to the latest 64 Ki characters, and **Save copy** streams the complete report without truncating it. Preview text is selectable, screenshots and screen recording are blocked, and only the report's location and name are kept in fragment arguments, not its contents.
     * Fatal reports contain device information, stack traces and recent Morphe logs. They are **not redacted**, are not part of the private log's 8 MiB rotation limit, and remain separate files managed by the upstream logger. Review them before sharing. No new storage permissions are requested.
 * **Import and export OAuth tokens** adds an editable JSON field and a **Save** button under **Settings > Morphe > OAuth tokens**. It displays the selected account's tokens for copying. Replace or edit the JSON to sign in or add an account without the browser login flow. There are no file import/export controls.
     * **Save** checks the access-token owner with Reddit, validates the refresh token using Boost's configured OAuth client, and obtains fresh tokens before adding or updating the verified account. An expired access token can be restored with a valid refresh token. Boost then restarts with that account selected.
@@ -138,6 +139,8 @@ The `publish` task depends on the `buildAndroid` task, so it will be run automat
 
 ### Updating Boost bindings
 
+Boost settings XML and layouts are stored under `patches/src/main/resources/boost/`, in `xml/` and `layout/`. Each feature includes its files through the internal `AddResources` patch. Settings entries are imported from these XML resources only when their feature patch is selected; UI XML is not generated in Kotlin.
+
 The extension uses Jackson for all JSON processing, bundled and shadowed under `app.morphe.extension.boost.libraries`, with its APIs preserved during shrinking. It does not depend on Boost's R8-reduced JSON libraries or bundle Gson. Native JRAW JSON objects remain behind the `NativeJsonModel` / `NativeJsonNode` adapters; they are not cast to the private Jackson tree types. Boost's own JSON libraries and callers, and the patcher's build-time Gson dependency, are left unchanged.
 
 Boost's compile-only Kotlin API is in `extensions/boost/stub/src/main/kotlin`. Feature code uses stable class and member names; patches use the matching typed `BoostApi` catalog rather than loading Android stub classes on the patcher JVM:
@@ -151,6 +154,8 @@ val fingerprint = BoostApi.DrawerActivity.setupBottomNavigation.fingerprint()
 `staticMethods` and `staticFields` describe the adapter API's dispatch. `injectedMethods` identifies bridges cloned from native factories. All targets, prototypes, dispatch kinds and instance receivers are checked against the input APK. Missing or conflicting bindings stop patching. Native signature or behavior changes can still require adapter or patch changes.
 
 Only the extension payload is rebound; the app is not deobfuscated, and placeholder stubs are never packaged. Native callbacks are renamed through the same bindings. Reflective field access uses `BoostFieldNames`, whose non-constant values are resolved during binding, so callers do not embed obfuscated names or precompute hashes for renamed strings.
+
+Extension preparation does not prune classes by reachability. It retains all payload classes except duplicate copies supplied by Boost itself. The final verifier also checks native app references to extension classes so a missing helper stops patching instead of causing a runtime class-loading failure.
 
 ## 📚 Everything else
 

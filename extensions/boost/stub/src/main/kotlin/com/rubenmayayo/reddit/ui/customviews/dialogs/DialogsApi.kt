@@ -14,10 +14,10 @@ package com.rubenmayayo.reddit.ui.customviews.dialogs
 private fun <T> boostApiStub(): T = throw UnsupportedOperationException("Compile-only Boost adapter stub")
 
 open class UserSelectorView protected constructor(stub: Unit) : android.widget.LinearLayout(boostApiStub<android.content.Context>()) {
-    constructor(p0: android.content.Context?, p1: Boolean) : this(Unit) { boostApiStub<Unit>() }
-    open fun setCallback(p0: com.rubenmayayo.reddit.ui.customviews.dialogs.UserSelectorView.Callback?): Unit = boostApiStub()
+    constructor(context: android.content.Context?, p1: Boolean) : this(Unit) { boostApiStub<Unit>() }
+    open fun setCallback(callback: com.rubenmayayo.reddit.ui.customviews.dialogs.UserSelectorView.Callback?): Unit = boostApiStub()
     interface Callback {
         fun onAddAccount(): Unit
-        fun onAccountSelected(p0: com.rubenmayayo.reddit.aa.User?, p1: Int): Unit
+        fun onAccountSelected(user: com.rubenmayayo.reddit.aa.User?, index: Int): Unit
     }
 }
