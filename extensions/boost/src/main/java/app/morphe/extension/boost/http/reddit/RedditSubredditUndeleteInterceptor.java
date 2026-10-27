@@ -10,6 +10,8 @@
 
 package app.morphe.extension.boost.http.reddit;
 
+import static app.morphe.extension.boost.http.reddit.RedditApiUtils.setIfUnset;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
@@ -26,13 +28,13 @@ import java.net.HttpURLConnection;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import app.morphe.extension.boost.utils.EditableObjectNode;
 import app.morphe.extension.boost.http.arcticshift.ArcticShift;
 import app.morphe.extension.boost.http.AutoSavingCache;
 import app.morphe.extension.boost.http.HttpUtils;
@@ -130,12 +132,12 @@ public class RedditSubredditUndeleteInterceptor implements Interceptor {
         }
         response.close();
 
-        EditableObjectNode rulesNode = new EditableObjectNode(
-                Map.of(
+        ObjectNode rulesNode = new ObjectNode(
+                JsonNodeFactory.instance, new LinkedHashMap<>(Map.of(
                         "rules", new ArrayNode(JsonNodeFactory.instance),
                         "site_rules", new ArrayNode(JsonNodeFactory.instance),
                         "site_rules_flow", new ArrayNode(JsonNodeFactory.instance)
-                )
+                ))
         );
         return HttpUtils.makeJsonResponse(request, rulesNode);
     }
@@ -219,16 +221,17 @@ public class RedditSubredditUndeleteInterceptor implements Interceptor {
         long earliestTimestamp = 365241780471L;
         long latestTimestamp = 0L;
         for (JsonNode node : rootNode) {
-            EditableObjectNode child = EditableObjectNode.wrap(node);
+            ObjectNode child = JsonNodeFactory.instance.objectNode();
+            child.setAll((ObjectNode) node);
             child.set(Emojis.EXTRA_EMOJI_CONTEXT_KEY, new TextNode(Emojis.PROHIBITED_EMOJI));
             child.set("saved", BooleanNode.FALSE);
             child.set("likes", NullNode.instance);
             applyArchivedPostDefaults(child, subredditName);
 
-            children.add(new EditableObjectNode(Map.of(
+            children.add(new ObjectNode(JsonNodeFactory.instance, new LinkedHashMap<>(Map.of(
                     "kind", new TextNode("t3"),
                     "data", child
-            )));
+            ))));
 
             Long timestamp = parseCreatedUtcEpochSeconds(child.get("created_utc"));
             if (timestamp == null) {
@@ -262,27 +265,27 @@ public class RedditSubredditUndeleteInterceptor implements Interceptor {
      * Older archived posts (Pushshift-era) lack fields current Reddit listings always have.
      * Boost drops listing children without them, so a restored subreddit looked empty.
      */
-    static void applyArchivedPostDefaults(EditableObjectNode post, String subredditName) {
-        post.setIfUnset("archived", BooleanNode.TRUE);
-        post.setIfUnset("locked", BooleanNode.TRUE);
-        post.setIfUnset("hidden", BooleanNode.FALSE);
-        post.setIfUnset("clicked", BooleanNode.FALSE);
-        post.setIfUnset("visited", BooleanNode.FALSE);
-        post.setIfUnset("stickied", BooleanNode.FALSE);
-        post.setIfUnset("spoiler", BooleanNode.FALSE);
-        post.setIfUnset("over_18", BooleanNode.FALSE);
-        post.setIfUnset("is_self", BooleanNode.FALSE);
-        post.setIfUnset("score", new IntNode(0));
-        post.setIfUnset("num_comments", new IntNode(0));
-        post.setIfUnset("subreddit", new TextNode(subredditName));
-        post.setIfUnset("subreddit_name_prefixed", new TextNode("r/" + subredditName));
+    static void applyArchivedPostDefaults(ObjectNode post, String subredditName) {
+        setIfUnset(post, "archived", BooleanNode.TRUE);
+        setIfUnset(post, "locked", BooleanNode.TRUE);
+        setIfUnset(post, "hidden", BooleanNode.FALSE);
+        setIfUnset(post, "clicked", BooleanNode.FALSE);
+        setIfUnset(post, "visited", BooleanNode.FALSE);
+        setIfUnset(post, "stickied", BooleanNode.FALSE);
+        setIfUnset(post, "spoiler", BooleanNode.FALSE);
+        setIfUnset(post, "over_18", BooleanNode.FALSE);
+        setIfUnset(post, "is_self", BooleanNode.FALSE);
+        setIfUnset(post, "score", new IntNode(0));
+        setIfUnset(post, "num_comments", new IntNode(0));
+        setIfUnset(post, "subreddit", new TextNode(subredditName));
+        setIfUnset(post, "subreddit_name_prefixed", new TextNode("r/" + subredditName));
         JsonNode id = post.get("id");
         if (id != null && id.isTextual()) {
-            post.setIfUnset("name", new TextNode("t3_" + id.asText()));
+            setIfUnset(post, "name", new TextNode("t3_" + id.asText()));
         }
         JsonNode created = post.get("created_utc");
         if (created != null) {
-            post.setIfUnset("created", created);
+            setIfUnset(post, "created", created);
         }
     }
 

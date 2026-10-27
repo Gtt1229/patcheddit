@@ -22,9 +22,11 @@ import com.rubenmayayo.reddit.ui.search.SearchAbstractActivity
 import com.rubenmayayo.reddit.ui.sidebar.today.TrendingTodayFragment
 import net.dean.jraw.RedditClient
 import net.dean.jraw.models.Submission
+import net.dean.jraw.models.JsonModel
 import net.dean.jraw.paginators.Sorting
 import net.dean.jraw.paginators.SubredditPaginator
 import app.morphe.extension.boost.api.RedditJraw
+import app.morphe.extension.boost.api.NativeJsonModel
 import app.morphe.extension.boost.api.TrendingSearch
 
 /** Typed bindings for Boost 1.14.1's native JRAW, search rows and sidebar loader. */
@@ -89,8 +91,8 @@ object BoostNativeListings {
     }
 
     @JvmStatic
-    fun isPromoted(submission: Submission): Boolean {
-        val data = submission.getDataNode()
+    fun isPromoted(submission: JsonModel): Boolean {
+        val data = (submission as NativeJsonModel).dataNode()
         return data.get("promoted")?.asBoolean() == true ||
             data.get("is_ad")?.asBoolean() == true
     }

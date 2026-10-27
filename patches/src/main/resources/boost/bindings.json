@@ -1,6 +1,8 @@
 {
   "version": "1.14.1",
   "classes": {
+    "Lapp/morphe/extension/boost/api/NativeJsonModel;": "Lnet/dean/jraw/models/JsonModel;",
+    "Lapp/morphe/extension/boost/api/NativeJsonNode;": "Lcom/fasterxml/jackson/databind/JsonNode;",
     "Lapp/morphe/extension/boost/api/AccountStore;": "Lbu;",
     "Lcom/activeandroid/ActiveAndroid;": "Lcom/activeandroid/ActiveAndroid;",
     "Landroidx/activity/ComponentActivity;": "Lpy;",
@@ -189,7 +191,6 @@
     "Lcom/bumptech/glide/load/engine/cache/DiskCache;": "Lug0;",
     "Lcom/bumptech/glide/manager/LifecycleListener;": "Lqi1;",
     "Lcom/bumptech/glide/request/BaseRequestOptions;": "Lyi;",
-    "Lcom/fasterxml/jackson/databind/JsonNode;": "Lcom/fasterxml/jackson/databind/JsonNode;",
     "Lcom/google/android/exoplayer2/BasePlayer;": "Lcom/google/android/exoplayer2/d;",
     "Lcom/google/android/exoplayer2/Bundleable;": "Lcom/google/android/exoplayer2/f;",
     "Lcom/google/android/exoplayer2/ExoPlayerImpl;": "Lcom/google/android/exoplayer2/i;",
@@ -348,6 +349,9 @@
     "Lokhttp3/OkHttpClient;": "Lokhttp3/OkHttpClient;"
   },
   "methods": {
+    "Lapp/morphe/extension/boost/api/NativeJsonModel;->dataNode()Lapp/morphe/extension/boost/api/NativeJsonNode;": "Lnet/dean/jraw/models/JsonModel;->getDataNode()Lcom/fasterxml/jackson/databind/JsonNode;",
+    "Lapp/morphe/extension/boost/api/NativeJsonNode;->get(Ljava/lang/String;)Lapp/morphe/extension/boost/api/NativeJsonNode;": "Lcom/fasterxml/jackson/databind/JsonNode;->get(Ljava/lang/String;)Lcom/fasterxml/jackson/databind/JsonNode;",
+    "Lapp/morphe/extension/boost/api/NativeJsonNode;->asBoolean()Z": "Lcom/fasterxml/jackson/databind/JsonNode;->asBoolean()Z",
     "Lapp/morphe/extension/boost/api/RedditJraw;->initialize()V": "Lpd2;->D()V",
     "Lapp/morphe/extension/boost/api/RedditJraw;->selectAccount(I)V": "Lpd2;->E(I)V",
     "Lapp/morphe/extension/boost/api/AccountStore;->users()Ljava/util/List;": "Lbu;->j()Ljava/util/List;",
@@ -678,8 +682,6 @@
     "Lcom/bumptech/glide/RequestManager;->load(Ljava/lang/String;)Lcom/bumptech/glide/RequestBuilder;": "Lhg2;->p(Ljava/lang/String;)Lxf2;",
     "Lcom/bumptech/glide/load/data/HttpUrlFetcher;->loadDataWithRedirects(Ljava/net/URL;ILjava/net/URL;Ljava/util/Map;)Ljava/io/InputStream;": "Lj81;->f(Ljava/net/URL;ILjava/net/URL;Ljava/util/Map;)Ljava/io/InputStream;",
     "Lcom/bumptech/glide/load/data/HttpUrlFetcher;->responseCode(Ljava/net/HttpURLConnection;)I": "Lj81;->d(Ljava/net/HttpURLConnection;)I",
-    "Lcom/fasterxml/jackson/databind/JsonNode;->asBoolean()Z": "Lcom/fasterxml/jackson/databind/JsonNode;->asBoolean()Z",
-    "Lcom/fasterxml/jackson/databind/JsonNode;->get(Ljava/lang/String;)Lcom/fasterxml/jackson/databind/JsonNode;": "Lcom/fasterxml/jackson/databind/JsonNode;->get(Ljava/lang/String;)Lcom/fasterxml/jackson/databind/JsonNode;",
     "Lcom/google/android/exoplayer2/ExoPlayerImpl;->getPlaybackState()I": "Lcom/google/android/exoplayer2/i;->q()I",
     "Lcom/google/android/exoplayer2/ExoPlayerImpl;->prepare()V": "Lcom/google/android/exoplayer2/i;->a()V",
     "Lcom/google/android/exoplayer2/ExoPlayerImpl;->release()V": "Lcom/google/android/exoplayer2/i;->f0()V",
@@ -825,7 +827,6 @@
     "Lnet/dean/jraw/RedditClient;->getSubreddit(Ljava/lang/String;)Lnet/dean/jraw/models/Subreddit;": "Lnet/dean/jraw/RedditClient;->getSubreddit(Ljava/lang/String;)Lnet/dean/jraw/models/Subreddit;",
     "Lnet/dean/jraw/http/oauth/OAuthData;->getAccessToken()Ljava/lang/String;": "Lnet/dean/jraw/http/oauth/OAuthData;->getAccessToken()Ljava/lang/String;",
     "Lnet/dean/jraw/models/JsonModel;->data(Ljava/lang/String;)Ljava/lang/String;": "Lnet/dean/jraw/models/JsonModel;->data(Ljava/lang/String;)Ljava/lang/String;",
-    "Lnet/dean/jraw/models/JsonModel;->getDataNode()Lcom/fasterxml/jackson/databind/JsonNode;": "Lnet/dean/jraw/models/JsonModel;->getDataNode()Lcom/fasterxml/jackson/databind/JsonNode;",
     "Lnet/dean/jraw/models/Submission;->getCommentCount()Ljava/lang/Integer;": "Lnet/dean/jraw/models/Submission;->getCommentCount()Ljava/lang/Integer;",
     "Lnet/dean/jraw/models/Submission;->getCreated()Ljava/util/Date;": "Lnet/dean/jraw/models/Submission;->getCreated()Ljava/util/Date;",
     "Lnet/dean/jraw/models/Submission;->getScore()Ljava/lang/Integer;": "Lnet/dean/jraw/models/Submission;->getScore()Ljava/lang/Integer;",

@@ -6,8 +6,8 @@
 
 package app.morphe.extension.boost.oauth;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.Test;
 
@@ -69,11 +69,11 @@ public class OAuthTokenValidatorTest {
         assertEquals("fixture-fresh-access", result.tokens.accessToken);
         assertEquals("fixture-refresh", result.tokens.refreshToken);
         assertEquals("fixture-client", result.tokens.clientId);
-        JsonObject data = new JsonParser().parse(result.oauthData).getAsJsonObject();
-        assertEquals("identity read", data.get("scope").getAsString());
-        assertEquals("fixture-refresh", data.get("refresh_token").getAsString());
-        assertEquals("bearer", data.get("token_type").getAsString());
-        assertEquals(3600, data.get("expires_in").getAsInt());
+        JsonNode data = new ObjectMapper().readTree(result.oauthData);
+        assertEquals("identity read", data.get("scope").asText());
+        assertEquals("fixture-refresh", data.get("refresh_token").asText());
+        assertEquals("bearer", data.get("token_type").asText());
+        assertEquals(3600, data.get("expires_in").asInt());
         assertTrue(result.expirationDate.getTime() >= started + 3600000);
         assertEquals("https://oauth.reddit.com/api/v1/me", requests.get(0).url().toString());
         assertEquals("bearer fixture-old-access", requests.get(0).header("Authorization"));
@@ -103,7 +103,7 @@ public class OAuthTokenValidatorTest {
                 .validate(input(null, null), "fixture-client", "fixture-agent");
         assertEquals("fixture-rotated-refresh", result.tokens.refreshToken);
         assertEquals("fixture-rotated-refresh",
-                new JsonParser().parse(result.oauthData).getAsJsonObject().get("refresh_token").getAsString());
+                new ObjectMapper().readTree(result.oauthData).get("refresh_token").asText());
     }
 
     @Test

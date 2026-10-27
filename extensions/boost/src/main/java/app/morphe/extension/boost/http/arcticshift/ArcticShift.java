@@ -12,17 +12,18 @@ package app.morphe.extension.boost.http.arcticshift;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import app.morphe.extension.boost.http.HttpUtils;
-import app.morphe.extension.boost.utils.EditableObjectNode;
 import app.morphe.extension.boost.utils.LoggingUtils;
 import app.morphe.extension.boost.utils.MarkdownRenderer;
 
@@ -121,11 +122,11 @@ public class ArcticShift {
     public static JsonNode getSubredditInfoById(String id) throws IOException {
         String url = ARCTIC_SHIFT_BASE_URL + "subreddits/ids?ids=" + id;
         JsonNode data = makeApiCall(url);
-        return new EditableObjectNode(
-                Map.of(
+        return new ObjectNode(
+                JsonNodeFactory.instance, new LinkedHashMap<>(Map.of(
                         "kind", new TextNode("t5"),
                         "data", data.get("data").get(0)
-                )
+                ))
         );
     }
 

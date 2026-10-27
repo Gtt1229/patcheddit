@@ -6,20 +6,20 @@
 
 package app.morphe.extension.boost.oauth;
 
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.JsonWriter;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.HashSet;
 import java.util.Set;
 
 public final class OAuthTokenPayload {
     public static final int MAX_CHARACTERS = 65536;
+    static final JsonFactory JSON_FACTORY = new JsonFactory();
 
     public final String accessToken;
     public final String refreshToken;
@@ -74,31 +74,38 @@ public final class OAuthTokenPayload {
         String username = null;
         String client = null;
         Set<String> fields = new HashSet<>();
-        try (JsonReader reader = new JsonReader(new StringReader(text))) {
-            reader.setLenient(false);
-            reader.beginObject();
-            while (reader.hasNext()) {
-                String name = reader.nextName();
+        try (JsonParser parser = JSON_FACTORY.createParser(text)) {
+            if (parser.nextToken() != JsonToken.START_OBJECT) {
+                throw new OAuthTokenException("Token JSON must contain an object.");
+            }
+            while (parser.nextToken() != JsonToken.END_OBJECT) {
+                if (parser.getCurrentToken() != JsonToken.FIELD_NAME) {
+                    throw new OAuthTokenException("Token JSON is incomplete or has an invalid field type.");
+                }
+                String name = parser.getCurrentName();
                 if (!fields.add(name)) {
                     throw new OAuthTokenException("Token JSON contains a duplicate field.");
                 }
+                if (parser.nextToken() == null) {
+                    throw new OAuthTokenException("Token JSON is incomplete.");
+                }
                 switch (name) {
                     case "version":
-                        if (reader.peek() != JsonToken.NUMBER || !"1".equals(reader.nextString())) {
+                        if (parser.getCurrentToken() != JsonToken.VALUE_NUMBER_INT || !"1".equals(parser.getText())) {
                             throw new OAuthTokenException("This token export version is not supported.");
                         }
                         break;
                     case "access_token":
-                        access = string(reader);
+                        access = string(parser);
                         break;
                     case "refresh_token":
-                        refresh = string(reader);
+                        refresh = string(parser);
                         break;
                     case "username":
-                        username = string(reader);
+                        username = string(parser);
                         break;
                     case "client_id":
-                        client = string(reader);
+                        client = string(parser);
                         break;
                     default:
                         throw new OAuthTokenException(
@@ -107,35 +114,33 @@ public final class OAuthTokenPayload {
                         );
                 }
             }
-            reader.endObject();
-            if (reader.peek() != JsonToken.END_DOCUMENT) {
+            if (parser.nextToken() != null) {
                 throw new OAuthTokenException("Token JSON contains trailing data.");
             }
-        } catch (EOFException | IllegalStateException error) {
-            throw new OAuthTokenException("Token JSON is incomplete or has an invalid field type.");
         } catch (IOException error) {
             throw new OAuthTokenException("Token JSON is not valid JSON.");
         }
         return new OAuthTokenPayload(access, refresh, username, client);
     }
 
-    private static String string(JsonReader reader) throws IOException, OAuthTokenException {
-        if (reader.peek() != JsonToken.STRING) {
+    private static String string(JsonParser parser) throws IOException, OAuthTokenException {
+        if (parser.getCurrentToken() != JsonToken.VALUE_STRING) {
             throw new OAuthTokenException("Token JSON fields must contain strings, not null or other types.");
         }
-        return reader.nextString();
+        return parser.getText();
     }
 
     public String toJson() throws IOException {
         StringWriter output = new StringWriter();
-        try (JsonWriter writer = new JsonWriter(output)) {
-            writer.setIndent("  ");
-            writer.beginObject().name("version").value(1);
-            if (username != null) writer.name("username").value(username);
-            if (clientId != null) writer.name("client_id").value(clientId);
-            writer.name("access_token").value(accessToken);
-            writer.name("refresh_token").value(refreshToken);
-            writer.endObject();
+        try (JsonGenerator writer = JSON_FACTORY.createGenerator(output)) {
+            writer.useDefaultPrettyPrinter();
+            writer.writeStartObject();
+            writer.writeNumberField("version", 1);
+            if (username != null) writer.writeStringField("username", username);
+            if (clientId != null) writer.writeStringField("client_id", clientId);
+            writer.writeStringField("access_token", accessToken);
+            writer.writeStringField("refresh_token", refreshToken);
+            writer.writeEndObject();
         }
         return output.toString();
     }

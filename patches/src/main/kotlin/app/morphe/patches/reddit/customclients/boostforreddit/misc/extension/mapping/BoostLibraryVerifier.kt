@@ -13,6 +13,50 @@ import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
+import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef
+import com.android.tools.smali.dexlib2.immutable.ImmutableField
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
+import java.lang.reflect.Modifier
+
+private fun Class<*>.descriptor(): String = when (name) {
+    "void" -> "V"
+    "boolean" -> "Z"
+    "byte" -> "B"
+    "short" -> "S"
+    "char" -> "C"
+    "int" -> "I"
+    "long" -> "J"
+    "float" -> "F"
+    "double" -> "D"
+    else -> if (isArray) name.replace('.', '/') else "L${name.replace('.', '/')};"
+}
+
+private fun frameworkInterfaceDefinition(type: String): ClassDef? {
+    if (!type.startsWith("Ljava/") && !type.startsWith("Ljavax/")) return null
+    val runtime = try {
+        Class.forName(type.removePrefix("L").removeSuffix(";").replace('/', '.'), false, ClassDef::class.java.classLoader)
+    } catch (_: ClassNotFoundException) {
+        return null
+    }
+    if (!runtime.isInterface && runtime != Any::class.java) return null
+    return ImmutableClassDef(
+        type, runtime.modifiers, runtime.superclass?.descriptor(),
+        runtime.interfaces.map { it.descriptor() }, null, emptyList(),
+        runtime.declaredFields.filter { Modifier.isPublic(it.modifiers) }.map {
+            ImmutableField(type, it.name, it.type.descriptor(), it.modifiers, null, emptyList(), emptySet())
+        },
+        runtime.declaredMethods.filter {
+            !Modifier.isPrivate(it.modifiers) && !Modifier.isStatic(it.modifiers)
+        }.map {
+            ImmutableMethod(
+                type, it.name,
+                it.parameterTypes.map { parameter -> ImmutableMethodParameter(parameter.descriptor(), emptySet(), null) },
+                it.returnType.descriptor(), it.modifiers, emptySet(), emptySet(), null,
+            )
+        },
+    )
+}
 
 private fun MethodReference.matches(other: MethodReference) =
     name == other.name && returnType == other.returnType &&
@@ -26,6 +70,7 @@ internal fun verifyBoostLibraryReferences(
     require(classes.size == definitions.size) { "Duplicate class definitions in patched Boost" }
     val extension = definitions.filter { it.type in extensionTypes }
     val errors = linkedSetOf<String>()
+    val frameworkInterfaces = mutableMapOf<String, ClassDef?>()
     val framework = listOf(
         "Ljava/", "Ljavax/", "Landroid/", "Ldalvik/",
         "Lorg/json/", "Lorg/xml/", "Lorg/xmlpull/", "Lorg/w3c/",
@@ -43,7 +88,10 @@ internal fun verifyBoostLibraryReferences(
         while (pending.isNotEmpty()) {
             val type = pending.removeFirst()
             if (!seen.add(type)) continue
-            val definition = classes[type]
+            val definition = classes[type] ?: run {
+                if (type !in frameworkInterfaces) frameworkInterfaces[type] = frameworkInterfaceDefinition(type)
+                frameworkInterfaces[type]
+            }
             if (definition == null) {
                 if (external(type) && type != "Ljava/lang/Object;") return -1
                 continue

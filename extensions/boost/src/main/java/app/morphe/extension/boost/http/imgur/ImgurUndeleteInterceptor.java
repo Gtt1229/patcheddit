@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import org.jetbrains.annotations.NotNull;
@@ -24,10 +25,10 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import app.morphe.extension.boost.utils.EditableObjectNode;
 import app.morphe.extension.boost.http.AutoSavingCache;
 import app.morphe.extension.boost.http.HttpUtils;
 import app.morphe.extension.boost.http.wayback.WaybackMachine;
@@ -214,8 +215,8 @@ public class ImgurUndeleteInterceptor extends PatchedditInterceptor {
         dataJson.put("datetime", new IntNode(0));
         dataJson.put("error", NullNode.instance);
 
-        responseJson.put("data", new EditableObjectNode(dataJson));
-        EditableObjectNode output = new EditableObjectNode(responseJson);
+        responseJson.put("data", new ObjectNode(JsonNodeFactory.instance, new LinkedHashMap<>(dataJson)));
+        ObjectNode output = new ObjectNode(JsonNodeFactory.instance, new LinkedHashMap<>(responseJson));
 
         return HttpUtils.makeJsonResponse(waybackResponse.request(), output);
     }
@@ -224,7 +225,8 @@ public class ImgurUndeleteInterceptor extends PatchedditInterceptor {
         ArrayNode newArray = new ArrayNode(JsonNodeFactory.instance);
         for (JsonNode node : array) {
             String ext = node.get("ext").asText();
-            EditableObjectNode newNode = new EditableObjectNode(node);
+            ObjectNode newNode = JsonNodeFactory.instance.objectNode();
+            newNode.setAll((ObjectNode) node);
             String imgurUrl = String.format("https://i.imgur.com/%s%s", node.get("hash").asText(), ext);
             String link = WaybackMachine.getWaybackContentUrl(imgurUrl, timestamp);
             newNode.set("datetime", new IntNode(0));

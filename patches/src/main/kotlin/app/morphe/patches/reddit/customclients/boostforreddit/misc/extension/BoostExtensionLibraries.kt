@@ -62,6 +62,7 @@ internal fun prepareBoostExtension(input: InputStream): InputStream {
     val privatePrefixes = listOf(
         "Landroidx/room/", "Landroidx/sqlite/", "Landroidx/arch/", "Landroidx/collection/",
         "Lkotlin/", "Lkotlinx/coroutines/",
+        "Lcom/fasterxml/jackson/",
     )
     // Keep callback interfaces and singleton values compatible with calls into Boost.
     val sharedKotlinTypes = setOf(

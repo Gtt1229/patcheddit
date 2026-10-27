@@ -6,16 +6,14 @@
 
 package app.morphe.extension.boost.oauth;
 
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.JsonWriter;
-import com.google.gson.stream.MalformedJsonException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Date;
 import java.util.HashMap;
@@ -114,14 +112,14 @@ public final class OAuthTokenValidator {
         checkInterrupted();
         OAuthTokenPayload tokens = new OAuthTokenPayload(access, refresh, username, clientId);
         StringWriter nativeData = new StringWriter();
-        try (JsonWriter writer = new JsonWriter(nativeData)) {
-            writer.beginObject();
-            writer.name("access_token").value(access);
-            writer.name("refresh_token").value(refresh);
-            writer.name("expires_in").value(seconds);
-            writer.name("token_type").value("bearer");
-            writer.name("scope").value(scope);
-            writer.endObject();
+        try (JsonGenerator writer = OAuthTokenPayload.JSON_FACTORY.createGenerator(nativeData)) {
+            writer.writeStartObject();
+            writer.writeStringField("access_token", access);
+            writer.writeStringField("refresh_token", refresh);
+            writer.writeNumberField("expires_in", seconds);
+            writer.writeStringField("token_type", "bearer");
+            writer.writeStringField("scope", scope);
+            writer.writeEndObject();
         }
         return new VerifiedAccount(tokens, nativeData.toString(), expiration);
     }
@@ -169,30 +167,35 @@ public final class OAuthTokenValidator {
         }
         Map<String, String> values = new HashMap<>();
         Set<String> fields = new HashSet<>();
-        try (JsonReader reader = new JsonReader(new StringReader(text))) {
-            reader.setLenient(false);
-            reader.beginObject();
-            while (reader.hasNext()) {
-                String field = reader.nextName();
+        try (JsonParser parser = OAuthTokenPayload.JSON_FACTORY.createParser(text)) {
+            if (parser.nextToken() != JsonToken.START_OBJECT) {
+                throw new OAuthTokenException("Reddit returned an invalid response.");
+            }
+            while (parser.nextToken() != JsonToken.END_OBJECT) {
+                if (parser.getCurrentToken() != JsonToken.FIELD_NAME) {
+                    throw new OAuthTokenException("Reddit returned incomplete JSON.");
+                }
+                String field = parser.getCurrentName();
                 if (!fields.add(field)) throw new OAuthTokenException("Reddit returned a duplicate JSON field.");
-                if ("expires_in".equals(field) && reader.peek() == JsonToken.NUMBER) {
-                    values.put(field, reader.nextString());
+                JsonToken value = parser.nextToken();
+                if (value == null) throw new OAuthTokenException("Reddit returned incomplete JSON.");
+                if ("expires_in".equals(field) && value.isNumeric()) {
+                    values.put(field, parser.getText());
                 } else if (("access_token".equals(field) || "refresh_token".equals(field)
                         || "token_type".equals(field) || "scope".equals(field) || "name".equals(field))
-                        && reader.peek() == JsonToken.STRING) {
-                    values.put(field, reader.nextString());
-                } else if ("refresh_token".equals(field) && reader.peek() != JsonToken.NULL) {
+                        && value == JsonToken.VALUE_STRING) {
+                    values.put(field, parser.getText());
+                } else if ("refresh_token".equals(field) && value != JsonToken.VALUE_NULL) {
                     throw new OAuthTokenException("Reddit returned an invalid refresh token.");
                 } else {
-                    reader.skipValue();
+                    parser.skipChildren();
                 }
             }
-            reader.endObject();
-            if (reader.peek() != JsonToken.END_DOCUMENT) {
+            if (parser.nextToken() != null) {
                 throw new OAuthTokenException("Reddit returned trailing JSON data.");
             }
             return values;
-        } catch (EOFException | MalformedJsonException | IllegalStateException error) {
+        } catch (JsonParseException error) {
             throw new OAuthTokenException("Reddit returned invalid JSON.");
         }
     }
