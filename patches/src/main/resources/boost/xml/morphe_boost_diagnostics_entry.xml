@@ -4,6 +4,11 @@
     <Preference
         android:key="morphe_boost_exception_log"
         android:title="Exception log"
-        android:summary="View reported errors and saved fatal-crash reports"
+        android:summary="View individual non-fatal reports or export the full exception log"
         android:fragment="app.morphe.extension.boost.settings.ExceptionLogFragment" />
+    <Preference
+        android:key="morphe_boost_crash_log_view"
+        android:title="Fatal crash logs"
+        android:summary="View saved fatal-crash reports"
+        android:fragment="app.morphe.extension.boost.settings.FatalCrashLogsFragment" />
 </PreferenceCategory>
