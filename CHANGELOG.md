@@ -1,3 +1,10 @@
+# [2.0.0-dev.9](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.8...v2.0.0-dev.9) (2026-10-28)
+
+
+### Bug Fixes
+
+* Navigation patch no longer causes subreddit list to pop up twice ([da658a1](https://github.com/wchill/patcheddit/commit/da658a1a2f3966fc1c44faf8477187dc0b0505ae))
+
 # [2.0.0-dev.8](https://github.com/wchill/patcheddit/compare/v2.0.0-dev.7...v2.0.0-dev.8) (2026-10-27)
 
 
