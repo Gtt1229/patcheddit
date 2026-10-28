@@ -2693,10 +2693,18 @@ public final class BoostSearchBottomNavigation {
         }
     }
 
+    public static void setSelectedItemSilently(View navigation, int selectedItemId) {
+        try {
+            setCheckedItem(navigation, selectedItemId);
+        } catch (IllegalStateException | ClassCastException error) {
+            Log.e(TAG, "Could not initialize bottom-navigation selection for item " + selectedItemId, error);
+        }
+    }
+
     private static void setCheckedItem(
             View navigation,
             int selectedItemId
-    ) throws Exception {
+    ) {
         Menu menu = BoostNativeNavigation.menu(navigation);
         MenuItem selectedItem =
                 menu.findItem(selectedItemId);

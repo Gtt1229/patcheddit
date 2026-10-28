@@ -8,11 +8,13 @@
 package app.morphe.patches.reddit.customclients.boostforreddit.fix.searchnav
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.reddit.customclients.AppCompatibility
 import app.morphe.patches.reddit.customclients.ExtensionPatches
 import app.morphe.patches.reddit.customclients.boostforreddit.wrapHook
 import app.morphe.patches.all.misc.PatchCategory
+import app.morphe.util.registersUsed
 
 private const val SYSTEM_SURFACE_EXTENSION_DESCRIPTOR =
     "Lapp/morphe/extension/boost/utils/BoostSearchBottomNavigation;"
@@ -30,6 +32,16 @@ val boostBottomNavigationSystemSurfacePatch = bytecodePatch(
     dependsOn(ExtensionPatches.Boost)
 
     execute {
+        // Native setup must select the tab without dispatching a user navigation callback.
+        val match = drawerMaterialBottomNavigationSelectionFingerprint.match(
+            drawerMaterialBottomNavigationFingerprint.method,
+        )
+        val selection = match.instructionMatches.single()
+        val registers = selection.instruction.registersUsed
+        match.method.replaceInstruction(
+            selection.index,
+            "invoke-static {v${registers[0]}, v${registers[1]}}, $SYSTEM_SURFACE_EXTENSION_DESCRIPTOR->setSelectedItemSilently(Landroid/view/View;I)V",
+        )
         drawerMaterialBottomNavigationFingerprint.wrapHook(
             after = "invoke-static {p0, p1}, $SYSTEM_SURFACE_EXTENSION_DESCRIPTOR->standardizeMaterialNavigation(Landroid/app/Activity;I)V",
         )
