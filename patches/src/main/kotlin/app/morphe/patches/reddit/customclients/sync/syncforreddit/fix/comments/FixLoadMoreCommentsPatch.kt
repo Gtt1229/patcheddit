@@ -89,7 +89,8 @@ val fixLoadMoreCommentsPatch = bytecodePatch(
             val superIndex = indexOfFirstInstructionOrThrow {
                 val reference = getReference<MethodReference>()
                 (opcode == Opcode.INVOKE_DIRECT || opcode == Opcode.INVOKE_DIRECT_RANGE) &&
-                    reference?.definingClass == superclass &&
+                    reference != null &&
+                    reference.definingClass == superclass &&
                     reference.name == "<init>" &&
                     reference.parameterTypes.size == 5
             }
