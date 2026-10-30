@@ -52,6 +52,10 @@ In addition, patches for some apps contain additional features that were not pre
 * Imgur album URLs are rewritten to use the newer format.
 * Enables pro features without ads.
 
+### Sync for Reddit
+* Since Oct 2026 Reddit blocks `/api/info` and `/api/morechildren` for third party clients. **Fix galleries** and **Fix load more comments** load the same data from `/comments` instead.
+    * Reddit returns at most 500 comments per request, so at the bottom of very large threads some top-level comments may still fail to load.
+
 ## 🚀 Get started
 
 1. Install [Morphe Manager](https://morphe.software/) and switch it to advanced/expert mode.
