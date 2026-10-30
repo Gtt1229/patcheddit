@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/Gtt1229/patcheddit/compare/v1.0.0...v1.0.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **Sync for Reddit:** Spoof client failing to match its fingerprints ([8bd6f4d](https://github.com/Gtt1229/patcheddit/commit/8bd6f4deefd711f2b9971b2e391b9eae42564490))
+
 # 1.0.0 (2026-10-30)
 
 
