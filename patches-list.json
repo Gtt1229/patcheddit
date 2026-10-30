@@ -1,5 +1,5 @@
 {
-  "version": "1.4.1-dev.1",
+  "version": "1.0.0",
   "patches": [
     {
       "name": "Add archive links to context menu",
@@ -128,11 +128,41 @@
       "options": []
     },
     {
+      "name": "Fix \"Other Discussions\"",
+      "description": "Fixes the \"Other Discussions\" feature.",
+      "use": true,
+      "dependencies": [],
+      "compatiblePackages": {
+        "com.laurencedawson.reddit_sync": [
+          "v23.06.30-13:39"
+        ],
+        "com.laurencedawson.reddit_sync.pro": null,
+        "com.laurencedawson.reddit_sync.dev": null
+      },
+      "options": []
+    },
+    {
+      "name": "Fix \"Restore Comment\"",
+      "description": "Fixes the \"Restore Comment\" feature (requires Sync Ultra) by fetching from an alternative API. Also includes UI changes to make this feature more accessible.",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch",
+        "BytecodePatch"
+      ],
+      "compatiblePackages": {
+        "com.laurencedawson.reddit_sync": [
+          "v23.06.30-13:39"
+        ],
+        "com.laurencedawson.reddit_sync.pro": null,
+        "com.laurencedawson.reddit_sync.dev": null
+      },
+      "options": []
+    },
+    {
       "name": "Fix /r/all",
       "description": null,
       "use": true,
       "dependencies": [
-        "BytecodePatch",
         "BytecodePatch"
       ],
       "compatiblePackages": {
@@ -176,6 +206,38 @@
     {
       "name": "Fix /s/ links",
       "description": null,
+      "use": true,
+      "dependencies": [
+        "BytecodePatch"
+      ],
+      "compatiblePackages": {
+        "com.laurencedawson.reddit_sync": [
+          "v23.06.30-13:39"
+        ],
+        "com.laurencedawson.reddit_sync.pro": null,
+        "com.laurencedawson.reddit_sync.dev": null
+      },
+      "options": []
+    },
+    {
+      "name": "Fix Image Post Selftext",
+      "description": "Fixes selftext in image posts to properly render Markdown.",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch"
+      ],
+      "compatiblePackages": {
+        "com.laurencedawson.reddit_sync": [
+          "v23.06.30-13:39"
+        ],
+        "com.laurencedawson.reddit_sync.pro": null,
+        "com.laurencedawson.reddit_sync.dev": null
+      },
+      "options": []
+    },
+    {
+      "name": "Fix Reddit Video Links",
+      "description": "Fixes reddit video links (reddit.com/link/.../video) so they open in the native video player.",
       "use": true,
       "dependencies": [
         "BytecodePatch"
@@ -241,6 +303,68 @@
       "options": []
     },
     {
+      "name": "Fix galleries",
+      "description": "Fixes Reddit galleries failing to load since Reddit blocked /api/info for third party clients. Sync loads the post from /comments instead.",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch"
+      ],
+      "compatiblePackages": {
+        "com.laurencedawson.reddit_sync": [
+          "v23.06.30-13:39"
+        ],
+        "com.laurencedawson.reddit_sync.pro": null,
+        "com.laurencedawson.reddit_sync.dev": null
+      },
+      "options": []
+    },
+    {
+      "name": "Fix imgur links",
+      "description": "Fixes imgur.com/a/ links to properly display in the image viewer.",
+      "use": true,
+      "dependencies": [],
+      "compatiblePackages": {
+        "com.laurencedawson.reddit_sync": [
+          "v23.06.30-13:39"
+        ],
+        "com.laurencedawson.reddit_sync.pro": null,
+        "com.laurencedawson.reddit_sync.dev": null
+      },
+      "options": []
+    },
+    {
+      "name": "Fix inline images",
+      "description": "Fixes images in text posts showing as plain links instead of rendering inline. Also adds captions below the images where applicable.",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch"
+      ],
+      "compatiblePackages": {
+        "com.laurencedawson.reddit_sync": [
+          "v23.06.30-13:39"
+        ],
+        "com.laurencedawson.reddit_sync.pro": null,
+        "com.laurencedawson.reddit_sync.dev": null
+      },
+      "options": []
+    },
+    {
+      "name": "Fix load more comments",
+      "description": "Fixes \"load more comments\" failing since Reddit blocked /api/morechildren for third party clients. Sync loads the missing comments from /comments instead. At the bottom of huge threads Reddit's 500-comment limit can still leave some out.",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch"
+      ],
+      "compatiblePackages": {
+        "com.laurencedawson.reddit_sync": [
+          "v23.06.30-13:39"
+        ],
+        "com.laurencedawson.reddit_sync.pro": null,
+        "com.laurencedawson.reddit_sync.dev": null
+      },
+      "options": []
+    },
+    {
       "name": "Fix missing audio in video downloads",
       "description": "Fixes audio missing in videos downloaded from v.redd.it.",
       "use": true,
@@ -270,12 +394,42 @@
       "options": []
     },
     {
+      "name": "Fix r/random",
+      "description": "Restores random subreddit functionality by fetching from an alternative API.",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch"
+      ],
+      "compatiblePackages": {
+        "com.laurencedawson.reddit_sync": [
+          "v23.06.30-13:39"
+        ],
+        "com.laurencedawson.reddit_sync.pro": null,
+        "com.laurencedawson.reddit_sync.dev": null
+      },
+      "options": []
+    },
+    {
       "name": "Fix video downloads",
       "description": "Fixes a bug in Sync's MPD parser resulting in only the audio-track being saved.",
       "use": true,
       "dependencies": [
         "BytecodePatch"
       ],
+      "compatiblePackages": {
+        "com.laurencedawson.reddit_sync": [
+          "v23.06.30-13:39"
+        ],
+        "com.laurencedawson.reddit_sync.pro": null,
+        "com.laurencedawson.reddit_sync.dev": null
+      },
+      "options": []
+    },
+    {
+      "name": "Hide broken link previews",
+      "description": "Sync's website preview feature for outbound comment/selftext links depends on Sync's own backend (ap.syncforreddit.com), which is permanently offline now that the app is unmaintained -- every attempt fails with an HTTP 401. Rather than reserving space for a preview that will never load, this makes every link ineligible for the feature, so the link renders as plain text/link like it would if the feature were off.",
+      "use": true,
+      "dependencies": [],
       "compatiblePackages": {
         "com.laurencedawson.reddit_sync": [
           "v23.06.30-13:39"
@@ -408,6 +562,22 @@
       "options": []
     },
     {
+      "name": "Open Redgifs links in WebView on failure",
+      "description": "When a Redgifs video fails to load in the native player (\"Error connecting to Redgifs\"), automatically falls back to an in-app WebView instead of showing the error. The native/API player is always tried first; the WebView only opens as a fallback on failure. Redgifs pages in the WebView also try to auto-accept the cookie consent banner and keep it accepted between opens.",
+      "use": true,
+      "dependencies": [
+        "BytecodePatch"
+      ],
+      "compatiblePackages": {
+        "com.laurencedawson.reddit_sync": [
+          "v23.06.30-13:39"
+        ],
+        "com.laurencedawson.reddit_sync.pro": null,
+        "com.laurencedawson.reddit_sync.dev": null
+      },
+      "options": []
+    },
+    {
       "name": "Spoof client",
       "description": "Restores functionality of the app by using custom client ID.",
       "use": true,
@@ -461,47 +631,6 @@
         "com.rubenmayayo.reddit": [
           "1.12.12"
         ]
-      },
-      "options": [
-        {
-          "key": "client-id",
-          "title": "OAuth client ID",
-          "description": "The Reddit OAuth client ID. Refer to Patcheddit documentation for more information on what to put here.",
-          "required": true,
-          "type": "kotlin.String",
-          "default": null,
-          "values": null
-        },
-        {
-          "key": "redirect-uri",
-          "title": "Redirect URI",
-          "description": "The Reddit OAuth redirect URI. Refer to Patcheddit documentation for more information on what to put here. Default value is RedReader's redirect URI.",
-          "required": true,
-          "type": "kotlin.String",
-          "default": "redreader://rr_oauth_redir",
-          "values": null
-        },
-        {
-          "key": "user-agent",
-          "title": "User agent",
-          "description": "The app's user agent. Refer to Patcheddit documentation for more information on what to put here. Default value is RedReader's user agent.",
-          "required": true,
-          "type": "kotlin.String",
-          "default": "org.quantumbadger.redreader/1.25.1",
-          "values": null
-        }
-      ]
-    },
-    {
-      "name": "Spoof client",
-      "description": "Allows modifying Continuum's client ID, redirect URI and user agent in API Keys settings menu. Patch options will modify default values.",
-      "use": true,
-      "dependencies": [
-        "BytecodePatch",
-        "ResourcePatch"
-      ],
-      "compatiblePackages": {
-        "org.cygnusx1.continuum": null
       },
       "options": [
         {
@@ -706,46 +835,6 @@
     },
     {
       "name": "Spoof client",
-      "description": "Allows modifying Slide's client ID, redirect URI and user agent in settings. Patch options will modify default values.",
-      "use": true,
-      "dependencies": [
-        "BytecodePatch"
-      ],
-      "compatiblePackages": {
-        "me.edgan.redditslide": null
-      },
-      "options": [
-        {
-          "key": "client-id",
-          "title": "OAuth client ID",
-          "description": "The Reddit OAuth client ID. Refer to Patcheddit documentation for more information on what to put here.",
-          "required": true,
-          "type": "kotlin.String",
-          "default": null,
-          "values": null
-        },
-        {
-          "key": "redirect-uri",
-          "title": "Redirect URI",
-          "description": "The Reddit OAuth redirect URI. Refer to Patcheddit documentation for more information on what to put here. Default value is RedReader's redirect URI.",
-          "required": true,
-          "type": "kotlin.String",
-          "default": "redreader://rr_oauth_redir",
-          "values": null
-        },
-        {
-          "key": "user-agent",
-          "title": "User agent",
-          "description": "The app's user agent. Refer to Patcheddit documentation for more information on what to put here. Default value is RedReader's user agent.",
-          "required": true,
-          "type": "kotlin.String",
-          "default": "org.quantumbadger.redreader/1.25.1",
-          "values": null
-        }
-      ]
-    },
-    {
-      "name": "Spoof client",
       "description": "Restores functionality of the app by using custom client ID.",
       "use": true,
       "dependencies": [
@@ -788,6 +877,20 @@
           "values": null
         }
       ]
+    },
+    {
+      "name": "Unlock Sync Ultra",
+      "description": "Unlocks Sync Ultra Lifetime.",
+      "use": true,
+      "dependencies": [],
+      "compatiblePackages": {
+        "com.laurencedawson.reddit_sync": [
+          "v23.06.30-13:39"
+        ],
+        "com.laurencedawson.reddit_sync.pro": null,
+        "com.laurencedawson.reddit_sync.dev": null
+      },
+      "options": []
     },
     {
       "name": "Use /user/ endpoint",
